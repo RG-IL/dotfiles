@@ -1,0 +1,71 @@
+confirm-close-surface = false
+quit-after-last-window-closed = true
+foreground = #F2D5CF
+font-family = "CaskaydiaCove Nerd Font"
+font-style = Italic
+theme = Catppuccin Frappe
+font-size = 14.7
+mouse-hide-while-typing = true
+window-decoration = auto
+macos-option-as-alt = true
+window-padding-balance = true
+window-padding-x = 12
+window-padding-y = 12
+window-save-state = always
+macos-titlebar-style = hidden
+font-thicken = false
+focus-follows-mouse = false
+cursor-style = bar
+mouse-hide-while-typing = true
+background-opacity = 0.67
+background-blur-radius = 40
+custom-shader = /Users/raphael/.config/ghostty/shader/cursor_warp.glsl
+custom-shader = /Users/raphael/.config/ghostty/shader/ripple_cursor.glsl
+custom-shader = /Users/raphael/.config/ghostty/shader/x.glsl
+custom-shader = /Users/raphael/.config/ghostty/shader/grain.glsl
+custom-shader-animation = true
+window-inherit-working-directory = false
+env = LANG=en_US.UTF-8
+keybind = cmd+n=unbind
+keybind = cmd+n=text:\x01N
+keybind = cmd+r=text:\x01r
+keybind = cmd+shift+r=unbind
+keybind = cmd+shift+r=text:\x01R
+keybind = cmd+t=text:\x01\x03
+keybind = cmd+w=text:\x01c
+keybind = cmd+shift+left_bracket=text:\x01H
+keybind = cmd+shift+right_bracket=text:\x01L
+keybind = cmd+f=unbind
+keybind = cmd+f=text:\x01z
+keybind = cmd+d=unbind
+keybind = cmd+d=text:\x01d
+keybind = cmd+g=text:\x01g
+keybind = cmd+p=text:\x01p
+keybind = cmd+shift+d=text:\x01D
+keybind = cmd+s=unbind
+keybind = cmd+s=text:\x01s
+keybind = cmd+physical:one=unbind
+keybind = cmd+physical:two=unbind
+keybind = cmd+physical:three=unbind
+keybind = cmd+physical:four=unbind
+keybind = cmd+physical:five=unbind
+keybind = cmd+physical:six=unbind
+keybind = cmd+physical:seven=unbind
+keybind = cmd+physical:eight=unbind
+keybind = cmd+physical:nine=unbind
+keybind = cmd+physical:one=text:\x011
+keybind = cmd+physical:two=text:\x012
+keybind = cmd+physical:three=text:\x013
+keybind = cmd+physical:four=text:\x014
+keybind = cmd+physical:five=text:\x015
+keybind = cmd+physical:six=text:\x016
+keybind = cmd+physical:seven=text:\x017
+keybind = cmd+physical:eight=text:\x018
+keybind = cmd+physical:nine=text:\x019
+keybind = cmd+b=text:\x01b
+# custom-shader = /Users/raphael/.config/ghostty/shader/space.glsl
+# background-image = /Users/raphael/.config/ghostty/output.jpg
+# background-image-fit = cover
+# background-image-position = center
+# background-image-repeat = false
+# background-image-opacity = 0.2

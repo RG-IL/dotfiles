@@ -1,0 +1,30 @@
+# This is Git's per-user configuration file.
+[user]
+	gmail = grumbachraphael@gmail.com
+	email = grumbachraphael@gmail.com
+# Please adapt and uncomment the following lines:
+#	name = Raphael
+#	email = grumbachraphael@gmail.com
+[core]
+	editor = nvim
+	preloadIndex = false
+	protectNTFS = false
+	pager = delta
+[diff]
+	tool = nvimdiff
+[difftool]
+	prompt = false
+[merge]
+	tool = nvimdiff
+	conflictStyle = zdiff3
+[pack]
+	threads = 1
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	navigate = true
+	dark = true
+	features = catppuccin-mocha
+	side-by-side = true
+[include]
+	path = /Users/raphael/.config/delta/catppuccin.gitconfig

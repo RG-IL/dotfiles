@@ -1,0 +1,34 @@
+[[mgr.prepend_keymap]]
+on   = [ "e" ]
+run  = "plugin what-size"
+desc = "Calc size of selection or cwd" 
+
+[[mgr.prepend_keymap]]
+on   = "l"
+run  = "plugin smart-enter"
+desc = "Enter the child directory, or open the file"
+
+[[mgr.prepend_keymap]]
+on   = "f"
+run  = "plugin smart-filter"
+desc = "Smart filter"
+
+[[mgr.prepend_keymap]]
+on   = "+"
+run  = "plugin zoom 1"
+desc = "Zoom in hovered file"
+
+[[mgr.prepend_keymap]]
+on   = "_"
+run  = "plugin zoom -1"
+desc = "Zoom out hovered file"
+
+[[mgr.prepend_keymap]]
+on   = "S"
+run  = "shell '~/.config/yazi/blip-send.sh \"$@\"'"
+desc = "Send files via Blip to Samsung"
+
+[[mgr.prepend_keymap]]
+on   = "W"
+run  = "shell '~/.config/yazi/blip-send-windows.sh \"$@\"'"
+desc = "Send files via Blip to Windows PC"

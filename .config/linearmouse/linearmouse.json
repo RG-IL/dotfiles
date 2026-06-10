@@ -1,0 +1,137 @@
+{
+  "$schema" : "https:\/\/schema.linearmouse.app\/0.11.2",
+  "schemes" : [
+    {
+      "buttons" : {
+        "mappings" : [
+          {
+            "action" : {
+              "keyPress" : [
+                "command",
+                "v"
+              ]
+            },
+            "button" : 3,
+            "command" : false,
+            "control" : false,
+            "option" : false,
+            "shift" : false
+          },
+          {
+            "action" : {
+              "keyPress" : [
+                "command",
+                "c"
+              ]
+            },
+            "button" : 4,
+            "command" : false,
+            "control" : false,
+            "option" : false,
+            "shift" : false
+          }
+        ],
+        "switchPrimaryButtonAndSecondaryButtons" : false,
+        "universalBackForward" : false
+      },
+      "if" : {
+        "device" : {
+          "category" : "mouse",
+          "productID" : "0x9e4a",
+          "productName" : "HP 400\/405 Quiet Wireless Mouse",
+          "serialNumber" : "88001A01",
+          "vendorID" : "0x3f0"
+        }
+      },
+      "pointer" : {
+        "acceleration" : 0.1423,
+        "disableAcceleration" : false,
+        "redirectsToScroll" : false,
+        "speed" : 0.3144
+      },
+      "scrolling" : {
+        "acceleration" : {
+          "vertical" : 0.04
+        },
+        "modifiers" : {
+          "vertical" : {
+            "command" : {
+              "type" : "zoom"
+            }
+          }
+        },
+        "reverse" : {
+          "vertical" : true
+        },
+        "speed" : {
+          "vertical" : 40.16
+        }
+      }
+    },
+    {
+      "if" : {
+        "device" : {
+          "category" : "trackpad",
+          "productID" : "0x0",
+          "productName" : "Apple Internal Keyboard \/ Trackpad",
+          "serialNumber" : "FM7HCX0AFEQ0000F97+AKWN",
+          "vendorID" : "0x0"
+        }
+      },
+      "scrolling" : {
+        "modifiers" : {
+          "vertical" : {
+            "command" : {
+              "type" : "auto"
+            }
+          }
+        },
+        "reverse" : {
+          "vertical" : false
+        },
+        "speed" : {
+          "vertical" : 3.61
+        }
+      }
+    },
+    {
+      "if" : {
+        "device" : {
+          "category" : "mouse",
+          "productID" : "0x9e4a",
+          "productName" : "RG Mouse",
+          "serialNumber" : "88001A01",
+          "vendorID" : "0x3f0"
+        }
+      },
+      "pointer" : {
+        "acceleration" : 0.6875
+      },
+      "scrolling" : {
+        "acceleration" : {
+          "vertical" : 1
+        },
+        "distance" : {
+          "vertical" : "auto"
+        },
+        "reverse" : {
+          "vertical" : true
+        },
+        "smoothed" : {
+          "vertical" : {
+            "acceleration" : 1.1,
+            "bouncing" : true,
+            "enabled" : true,
+            "inertia" : 0.74,
+            "preset" : "easeInOut",
+            "response" : 0.68,
+            "speed" : 0.31
+          }
+        },
+        "speed" : {
+          "vertical" : 0
+        }
+      }
+    }
+  ]
+}

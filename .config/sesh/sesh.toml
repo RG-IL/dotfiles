@@ -1,0 +1,14 @@
+#:schema https://github.com/joshmedeski/sesh/raw/main/sesh.schema.json
+blacklist = ["scratch"]
+
+[[session]]
+name = "configs"
+path = "~/.config"
+startup_command = "y"
+preview_command = "eza ~/.config --icons=always --color=always --group-directories-first --git -1"
+
+[[session]]
+name = "coddy"
+path = "~/coding/coddy-c"
+startup_command = "nvim coddy.c"
+preview_command = "eza ~/coding/coddy-c/ --icons=always --color=always --group-directories-first --git -1"

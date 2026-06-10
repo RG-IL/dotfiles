@@ -1,0 +1,13 @@
+Library/
+.cache/
+.local/
+.Trash/
+.npm/
+.rustup/
+.dotnet/
+.wine/
+.nuget/
+.android/
+Movies/
+Music/
+Pictures/

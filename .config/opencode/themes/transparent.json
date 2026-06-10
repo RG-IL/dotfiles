@@ -1,0 +1,23 @@
+{
+  "id": "transparent",
+  "name": "Transparent",
+  "description": "Transparent background, inherits terminal defaults",
+  "type": "dark",
+  "background": "none",
+  "backgroundPanel": "none",
+  "backgroundElement": "none",
+  "backgroundMenu": "none",
+  "border": "none",
+  "borderActive": "none",
+  "borderSubtle": "none",
+  "text": "none",
+  "textMuted": "none",
+  "textDim": "none",
+  "primary": "none",
+  "secondary": "none",
+  "accent": "none",
+  "success": "none",
+  "warning": "none",
+  "error": "none",
+  "info": "none"
+}
