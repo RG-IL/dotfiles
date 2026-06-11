@@ -32,3 +32,8 @@ desc = "Send files via Blip to Samsung"
 on   = "W"
 run  = "shell '~/.config/yazi/blip-send-windows.sh \"$@\"'"
 desc = "Send files via Blip to Windows PC"
+
+[[mgr.prepend_keymap]]
+on   = [ "g", "d" ]
+run  = [ "cd ~/dotfiles", 'hidden "show"' ]
+desc = "Go to dotfiles directory (shows hidden)"
