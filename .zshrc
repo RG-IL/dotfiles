@@ -10,7 +10,8 @@ if [[ $- == *i* ]] && [[ -z "$TMUX" ]] && [[ -t 0 ]] && [[ "$TERM_PROGRAM" != "v
   fi
   exec tmux new-session -s main 2>/dev/null
 fi
-anifetch --framerate 30 --playback-rate 30 -ca '--symbols brail --fg-only' -w 75 -H 75  /Users/raphael/.config/fastfetch/ghostty-ani.mov
+anifetch --framerate 30 --playback-rate 30 -ca '--symbols brail --fg-only' -w 90 -H 20  /Users/raphael/.config/fastfetch/ghostty-ani.mov
+
 coddy(){
   python3 /Users/raphael/.config/random-scripts/screen_section_scraper.py
 }
@@ -392,4 +393,4 @@ function csc() {
 
 # Generated for envman. Do not edit.
 [ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
-alias cool="anifetch --framerate 30 --playback-rate 30 -ca '--symbols brail --fg-only' -w 75 -H 75  /Users/raphael/.config/fastfetch/*.mov"
+alias cool="anifetch --framerate 30 --playback-rate 30 -ca '--symbols brail --fg-only' -w 90 -H 20  /Users/raphael/.config/fastfetch/ghostty-ani.mov"
