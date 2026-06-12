@@ -5,7 +5,6 @@ return {
       opts = opts or {}
       require("snacks.notifier")
 
-      -- הגדרת ה-picker
       opts.picker = opts.picker or {}
       opts.picker.sources = opts.picker.sources or {}
       opts.picker.sources.files = opts.picker.sources.files or {
@@ -47,6 +46,6 @@ return {
       }
 
       return opts
-    end, -- סגירת הפונקציה
-  }, -- סגירת הטבלה הפנימית
-} -- סגירת ה-return
+    end,
+  },
+}
