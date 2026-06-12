@@ -10,6 +10,24 @@ vim.api.nvim_create_user_command("CopilotStatusFile", function()
   print("Copilot status written to " .. file)
 end, { desc = "Write Copilot status to /tmp/copilot_status.json" })
 
+vim.api.nvim_create_autocmd("LspAttach", {
+  group = vim.api.nvim_create_augroup("CopilotStatusFix", { clear = true }),
+  callback = function(args)
+    local client = vim.lsp.get_client_by_id(args.data.client_id)
+    if client and client.name == "copilot" then
+      local ok, status = pcall(require, "copilot.status")
+      if ok then
+        status.register_status_notification_handler(function(data)
+          if data.status == "Warning" and data.message:match("ERR_INVALID_CHAR") then
+            data.status = "Normal"
+            data.message = ""
+          end
+        end)
+      end
+    end
+  end,
+})
+
 return {
   {
     "CopilotC-Nvim/CopilotChat.nvim",
