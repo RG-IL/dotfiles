@@ -1,5 +1,8 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "lsp": true,
-  "model": "opencode/big-pickle"
+  "model": "opencode/big-pickle",
+  "instructions": [
+    "~/.config/opencode/skills/favorite-theme/SKILL.md"
+  ]
 }
