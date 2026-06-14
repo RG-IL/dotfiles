@@ -28,8 +28,17 @@ return {
     },
     config = function()
         ---@type opencode.Opts
+        local opencode_cmd = "opencode --port"
+        local snacks_terminal_opts = {
+            win = { position = "right", enter = false },
+        }
+
         vim.g.opencode_opts = {
-            -- Your configuration, if any; goto definition on the type or field for details
+            server = {
+                start = function()
+                    require("snacks.terminal").open(opencode_cmd, snacks_terminal_opts)
+                end,
+            },
         }
 
         vim.o.autoread = true -- Required for `opts.events.reload`
@@ -42,7 +51,7 @@ return {
             require("opencode").select()
         end, { desc = "Select opencode…" })
         vim.keymap.set({ "n", "t" }, "<C-.>", function()
-            require("opencode").toggle()
+            require("snacks.terminal").toggle(opencode_cmd, snacks_terminal_opts)
         end, { desc = "Toggle opencode" })
 
         vim.keymap.set({ "n", "x" }, "go", function()
@@ -52,10 +61,10 @@ return {
             return require("opencode").operator("@this ") .. "_"
         end, { desc = "Add line to opencode", expr = true })
 
-        vim.keymap.set("n", "<S-C-u>", function()
+        vim.keymap.set("n", "<S-C-k>", function()
             require("opencode").command("session.half.page.up")
         end, { desc = "Scroll opencode up" })
-        vim.keymap.set("n", "<S-C-d>", function()
+        vim.keymap.set("n", "<S-C-j>", function()
             require("opencode").command("session.half.page.down")
         end, { desc = "Scroll opencode down" })
 
