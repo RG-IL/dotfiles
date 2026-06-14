@@ -31,7 +31,7 @@ vim.keymap.set("n", "<M-C-S-E>", function()
     end
 end, { silent = true })
 vim.keymap.set({ "n", "i" }, "<M-C-S-W>", "<cmd>wa<cr>", { silent = true })
-vim.keymap.set({ "n", "i" }, "<M-C-S-Z>", "<cmd>wqa<cr>", { silent = true })
+vim.keymap.set({ "n", "i" }, "<M-C-S-Z>", "<cmd>wqa!<cr>", { silent = true })
 vim.keymap.set({ "n", "t" }, "<M-C-S-T>", function()
     require("snacks").terminal()
 end, { silent = true, desc = "Toggle Terminal" })

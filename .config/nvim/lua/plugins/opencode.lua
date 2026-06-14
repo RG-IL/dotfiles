@@ -27,12 +27,16 @@ return {
         },
     },
     config = function()
-        ---@type opencode.Opts
         local opencode_cmd = "opencode --port"
+        ---@type snacks.terminal.Opts
         local snacks_terminal_opts = {
-            win = { position = "right", enter = false },
+            win = {
+                position = "right",
+                enter = false,
+            },
         }
 
+        ---@type opencode.Opts
         vim.g.opencode_opts = {
             server = {
                 start = function()
@@ -43,6 +47,14 @@ return {
 
         vim.o.autoread = true -- Required for `opts.events.reload`
 
+        ---Toggle the opencode TUI terminal.
+        vim.api.nvim_create_user_command("OpencodeToggle", function()
+            require("snacks.terminal").toggle(opencode_cmd, snacks_terminal_opts)
+        end, { desc = "Toggle opencode TUI" })
+
+        -- Toggle opencode with Ctrl+.
+        vim.keymap.set({ "n", "t", "x", "i" }, "<C-.>", "<cmd>OpencodeToggle<CR>", { desc = "Toggle opencode TUI" })
+
         -- Recommended/example keymaps
         vim.keymap.set({ "n", "x" }, "<a-a>", function()
             require("opencode").ask("@this: ", { submit = true })
@@ -50,9 +62,6 @@ return {
         vim.keymap.set({ "n", "x" }, "<C-x>", function()
             require("opencode").select()
         end, { desc = "Select opencode…" })
-        vim.keymap.set({ "n", "t" }, "<C-.>", function()
-            require("snacks.terminal").toggle(opencode_cmd, snacks_terminal_opts)
-        end, { desc = "Toggle opencode" })
 
         vim.keymap.set({ "n", "x" }, "go", function()
             return require("opencode").operator("@this ")
