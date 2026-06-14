@@ -1,8 +1,5 @@
 return {
     {
-        "github/copilot.vim",
-    },
-    {
         "neovim/nvim-lspconfig",
         ---@class PluginLspOpts
         opts = {
@@ -12,8 +9,7 @@ return {
                     before_init = function(_, config)
                         config.settings = config.settings or {}
                         config.settings.python = config.settings.python or {}
-                        config.settings.python.pythonPath =
-                            "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3"
+                        config.settings.python.pythonPath = vim.fn.exepath("python3")
                     end,
                     settings = {
                         python = {
@@ -73,12 +69,10 @@ return {
                 },
             },
             sources = {
-                -- ... מקורות אחרים ...
                 providers = {
                     copilot = {
                         name = "copilot",
                         module = "blink-copilot",
-                        -- הוסף את השורה הזו:
                         enabled = function()
                             return vim.g.copilot_enabled ~= false
                         end,

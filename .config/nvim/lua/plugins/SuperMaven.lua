@@ -85,7 +85,7 @@ return {
     end,
     opts = {
         keymaps = {
-            accept_suggestion_with_tab = false, -- none
+            accept_suggestion_with_tab = true,
 
             clear_suggestion = "<C-]>",
             accept_word = "<C-j>",

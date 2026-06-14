@@ -49,7 +49,7 @@ return {
             -- Python setup
             dap_python.setup(vim.fn.exepath("python3"))
 
-            -- Default configuration (שלא ישאל כל פעם)
+            -- Default configuration
             dap.configurations.python = {
                 {
                     type = "python",

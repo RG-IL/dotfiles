@@ -17,8 +17,8 @@ vim.api.nvim_create_autocmd("VimEnter", {
             vim.cmd("syntax off")
             vim.cmd("syntax on")
             vim.cmd("colorscheme catppuccin")
-        end, 30) -- 500 מילי-שניות = חצי שנייה
+        end, 30)
     end,
 })
-vim.env.PATH = "/opt/homebrew/bin:/usr/local/bin:" .. vim.fn.stdpath("data") .. "/mason/bin:" .. vim.env.PATH
+vim.env.PATH = vim.fn.stdpath("data") .. "/mason/bin:" .. vim.env.PATH
 vim.opt.fixendofline = false

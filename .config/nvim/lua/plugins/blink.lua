@@ -14,7 +14,7 @@ return {
                 ["<C-f>"] = { "snippet_forward", "fallback" },
                 ["<C-b>"] = { "snippet_backward", "fallback" },
             },
-            -- הגדרת מסגרת עגולה וקישור ל-Highlights מותאמים
+            -- Rounded borders with custom highlights
             completion = {
                 menu = {
                     border = "rounded",

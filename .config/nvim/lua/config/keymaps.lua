@@ -41,7 +41,7 @@ local function get_python()
     if vim.fn.executable(venv) == 1 then
         return venv
     end
-    return "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3"
+    return vim.fn.exepath("python3") or "python3"
 end
 
 vim.keymap.set("n", "<M-C-S-R>", function()
@@ -133,7 +133,7 @@ Snacks.toggle({
 
 local ls = require("luasnip")
 
--- קפיצה קדימה
+-- Jump forward
 vim.keymap.set({ "n", "i", "s" }, "<M-C-S-L>", function()
     if ls.expand_or_jumpable() then
         ls.expand_or_jump()

@@ -8,6 +8,7 @@ return {
         ---@type render.md.UserConfig
         opts = {},
     },
+    { "ThePrimeagen/vim-be-good" },
     {
         "folke/noice.nvim",
         opts = function(_, opts)
@@ -15,7 +16,7 @@ return {
 
             opts.views.hover = {
                 position = {
-                    row = 3, -- (גדול יותר = יותר למטה) תעלה/תרד לפי הצורך
+                    row = 3,
                     col = 0,
                 },
                 border = {
@@ -49,7 +50,8 @@ return {
             if opts.sections and opts.sections.lualine_a and opts.sections.lualine_a[1] then
                 local comp = opts.sections.lualine_a[1]
                 if type(comp) == "string" then
-                    opts.sections.lualine_a[1] = { comp, color = { fg = "#5C3A21" }, separator = { left = "", right = "" } }
+                    opts.sections.lualine_a[1] =
+                        { comp, color = { fg = "#5C3A21" }, separator = { left = "", right = "" } }
                 elseif type(comp) == "table" then
                     comp.color = { fg = "#5C3A21" }
                     comp.separator = { left = "", right = "" }
@@ -80,7 +82,7 @@ return {
 
             opts.sections.lualine_x = opts.sections.lualine_x or {}
             table.insert(opts.sections.lualine_x, 3, function()
-              return require("opencode").statusline() .. " "
+                return require("opencode").statusline() .. " "
             end)
         end,
     },
@@ -261,6 +263,8 @@ return {
                     ["@lsp.type.typeParameter"] = { fg = "#ef9f76" },
                     ["@lsp.type.parameter"] = { fg = "#c6d0f5" },
                     ["@lsp.type.variable"] = { fg = "#c6d0f5" },
+                    SupermavenSuggestion = { fg = "#838ba7", italic = true },
+
                     BlinkCmpMenu = { bg = "NONE" },
                     BlinkCmpMenuBorder = { fg = "#d4c5d5", bg = "NONE" },
                     BlinkCmpMenuSelection = { bg = "NONE", fg = "#f4b8e4" },
@@ -272,11 +276,9 @@ return {
     {
         "kdheepak/lazygit.nvim",
         keys = {
-            -- זה דורס את המיפוי המקורי של LazyVim ומריץ פקודה "נקייה"
             { "<leader>gg", "<cmd>LazyGit<cr>", desc = "LazyGit (Clean Config)" },
         },
         config = function()
-            -- מבטל לחלוטין את הניסיון של הפלאגין לייצר Theme מה-Neovim
             vim.g.lazygit_config = 0
         end,
     },
