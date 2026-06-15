@@ -14,10 +14,10 @@ This is `~/.config` — a user's dotfiles configuration directory, **not a proje
 |------|--------|-------|
 | neovim | `nvim/` | LazyVim-based. Custom plugins in `lua/plugins/`. Tab=4 spaces, blackhole registers by default (`d`/`c`/`x`/`dd` → `"_`). |
 | tmux | `tmux/tmux.conf` | Prefix `Ctrl+A`. Floating pane: `prefix+p`. Sesh session picker: `prefix+s`. LazyGit popup: `prefix+g`. Bluetooth popup: `prefix+b` via btui. |
-| ghostty | `ghostty/config` | Hidden titlebar, custom GLSL cursor shaders (cursor_warp, ripple_cursor, x), background opacity 0.7, blur 35. Cmd+key forwarded as `\x01`+key (tmux prefix) for window management. |
+| ghostty | `ghostty/config` | Hidden titlebar, custom GLSL cursor shaders (cursor_warp, ripple_cursor, x), background opacity 0.67, blur 40. Cmd+key forwarded as `\x01`+key (tmux prefix) for window management. Blur scripts in `ghostty/scripts/`: `*-blur.sh` (single-shot), `*-blur-loop.sh` (hold-to-repeat via Karabiner), `stop-blur.sh` (kill switch). |
 | atuin | `atuin/config.toml` | `search_mode = "daemon-fuzzy"`, AI enabled, compact style, daemon autostart. Theme: catppuccin-frappe-sapphire. |
 | yazi | `yazi/` | Plugins: full-border, what-size, smart-enter. Edit with nvim, open with macOS `open`. Sorted by size descending. |
-| karabiner | `karabiner/karabiner.json` | Right Command+h/j/k/l → arrow keys. |
+| karabiner | `karabiner/karabiner.json` | Right Command+h/j/k/l → arrow keys. Cmd+Shift+J/K → `ghostty/scripts/*-blur-loop.sh` (blur, hold repeat). Opt+Shift+J/K → `ghostty/scripts/*-opacity-loop.sh` (opacity ±0.05, hold repeat). Both stop via `stop-blur.sh`. |
 | gh | `gh/config.yml` | `git_protocol: https`, alias `co` = `pr checkout`. |
 | delta | `delta/catppuccin.gitconfig` | Delta themes for all 4 Catppuccin flavors (latte, frappe, macchiato, mocha). Referenced by `.gitconfig`. |
 | sesh | `sesh/sesh.toml` | `sesh` session manager. Two named sessions: `configs` (`~/.config`) and `coddy` (`~/coding/csharp/project/`). |

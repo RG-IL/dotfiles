@@ -52,6 +52,92 @@
                                 "type": "basic"
                             }
                         ]
+                    },
+                    {
+                        "description": "Cmd+Shift+J/K to adjust Ghostty blur (hold to repeat)",
+                        "manipulators": [
+                            {
+                                "from": {
+                                    "key_code": "j",
+                                    "modifiers": {
+                                        "mandatory": ["left_command", "shift"]
+                                    }
+                                },
+                                "to": [
+                                    {
+                                        "shell_command": "$HOME/.config/ghostty/scripts/decrease-blur-loop.sh &>/dev/null &"
+                                    }
+                                ],
+                                "to_after_key_up": [
+                                    {
+                                        "shell_command": "$HOME/.config/ghostty/scripts/stop-blur.sh"
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "k",
+                                    "modifiers": {
+                                        "mandatory": ["left_command", "shift"]
+                                    }
+                                },
+                                "to": [
+                                    {
+                                        "shell_command": "$HOME/.config/ghostty/scripts/increase-blur-loop.sh &>/dev/null &"
+                                    }
+                                ],
+                                "to_after_key_up": [
+                                    {
+                                        "shell_command": "$HOME/.config/ghostty/scripts/stop-blur.sh"
+                                    }
+                                ],
+                                "type": "basic"
+                            }
+                        ]
+                    },
+                    {
+                        "description": "Opt+Shift+J/K to adjust Ghostty opacity (hold to repeat)",
+                        "manipulators": [
+                            {
+                                "from": {
+                                    "key_code": "j",
+                                    "modifiers": {
+                                        "mandatory": ["left_option", "shift"]
+                                    }
+                                },
+                                "to": [
+                                    {
+                                        "shell_command": "$HOME/.config/ghostty/scripts/decrease-opacity-loop.sh &>/dev/null &"
+                                    }
+                                ],
+                                "to_after_key_up": [
+                                    {
+                                        "shell_command": "$HOME/.config/ghostty/scripts/stop-blur.sh"
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "k",
+                                    "modifiers": {
+                                        "mandatory": ["left_option", "shift"]
+                                    }
+                                },
+                                "to": [
+                                    {
+                                        "shell_command": "$HOME/.config/ghostty/scripts/increase-opacity-loop.sh &>/dev/null &"
+                                    }
+                                ],
+                                "to_after_key_up": [
+                                    {
+                                        "shell_command": "$HOME/.config/ghostty/scripts/stop-blur.sh"
+                                    }
+                                ],
+                                "type": "basic"
+                            }
+                        ]
                     }
                 ]
             },
