@@ -8,7 +8,7 @@ if [[ $- == *i* ]] && [[ -z "$TMUX" ]] && [[ -t 0 ]] && [[ "$TERM_PROGRAM" != "v
       exec tmux attach-session -t "$last_session"
     fi
   fi
-  exec tmux new-session -s main 2>/dev/null
+  exec tmux -f /tmp/tmux_notpm.conf new-session -s main 2>/dev/null
 fi
 
 export PATH="/Library/Frameworks/Python.framework/Versions/3.14/bin:$PATH"
