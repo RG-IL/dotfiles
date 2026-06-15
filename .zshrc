@@ -8,7 +8,7 @@ if [[ $- == *i* ]] && [[ -z "$TMUX" ]] && [[ -t 0 ]] && [[ "$TERM_PROGRAM" != "v
       exec tmux attach-session -t "$last_session"
     fi
   fi
-  exec tmux -f /tmp/tmux_notpm.conf new-session -s main 2>/dev/null
+  exec tmux new-session -s main 2>/dev/null
 fi
 
 export PATH="/Library/Frameworks/Python.framework/Versions/3.14/bin:$PATH"
@@ -103,6 +103,10 @@ CSC_DIR=~/.cache/csc
 [ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
 # Run anifetch in all shells EXCEPT sesh sessions that have a startup_command
 if ! [[ -n "$TMUX" ]] || ! grep -A2 "name = \"$(tmux display-message -p '#{session_name}' 2>/dev/null)\"" ~/.config/sesh/sesh.toml 2>/dev/null | grep -q "startup_command"; then
-  anifetch_with_timeout 6
+  anifetch_with_timeout 8
 fi
+# Reset cursor to steady bar on every prompt (fixes block cursor after exiting nvim)
+_reset_cursor() { printf '\033[6 q' >/dev/tty }
+precmd_functions+=(_reset_cursor)
+
 alias cool="anifetch --framerate 30 --playback-rate 30 -ca '--symbols brail --fg-only' -w 90 -H 20  /Users/raphael/.config/fastfetch/ghostty-ani.mov"

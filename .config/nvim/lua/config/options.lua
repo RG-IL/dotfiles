@@ -9,3 +9,10 @@ vim.opt.backupcopy = "yes"
 vim.g.lazygit_config = false
 vim.opt.spell = true
 vim.opt.spelllang = { "en_us" }
+
+vim.api.nvim_create_autocmd("VimLeave", {
+  callback = function()
+    io.write("\027[6 q")
+    io.flush()
+  end,
+})
