@@ -1,0 +1,33 @@
+function ls() {
+    local show_all=0
+    for arg in "$@"; do
+        if [[ "$arg" == -*a* ]]; then
+            show_all=1
+            break
+        fi
+    done
+
+    local eza_args=(
+        --long
+        --color=always
+        --icons
+        --no-filesize
+        --no-time
+        --no-user
+        --no-permissions
+        --group-directories-first
+    )
+
+    if [[ $show_all -eq 1 ]]; then
+        eza "${eza_args[@]}" -A "$@"
+    else
+        local mac_hidden=$(command ls -lO | grep 'hidden' | awk '{print $NF}' | tr '\n' '|')
+        mac_hidden=${mac_hidden%|}
+
+        if [[ -n "$mac_hidden" ]]; then
+            eza "${eza_args[@]}" --ignore-glob="$mac_hidden" "$@"
+        else
+            eza "${eza_args[@]}" "$@"
+        fi
+    fi
+}

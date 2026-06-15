@@ -1,0 +1,35 @@
+function y() {
+	local tmp cwd target
+
+	tmp="$(mktemp -t yazi-cwd.XXXXXX)"
+
+	if [[ -n "$1" ]]; then
+		if [[ -d "$1" ]]; then
+			target="$1"
+		else
+			target="$(zoxide query -- "$1" 2>/dev/null)"
+
+			if [[ -z "$target" ]]; then
+				echo "zoxide: no match found for '$1'"
+				rm -f -- "$tmp"
+				return 1
+			fi
+		fi
+	fi
+
+	if [[ -n "$target" ]]; then
+		command yazi "$target" --cwd-file="$tmp"
+	else
+		command yazi --cwd-file="$tmp"
+	fi
+
+	if [[ -f "$tmp" ]]; then
+		cwd="$(cat "$tmp")"
+
+		if [[ -n "$cwd" && "$cwd" != "$PWD" && -d "$cwd" ]]; then
+			cd "$cwd"
+		fi
+	fi
+
+	rm -f -- "$tmp"
+}

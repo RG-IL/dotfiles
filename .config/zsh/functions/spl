@@ -1,0 +1,15 @@
+spl() {
+  (
+    osascript -e '
+      tell application "Spotify" to launch
+      delay 0.5
+      tell application "Spotify" to play track "spotify:collection:tracks"
+    ' 2>/dev/null
+    sleep 1
+    osascript -e '
+      tell application "System Events"
+        set visible of process "Spotify" to false
+      end tell
+    ' 2>/dev/null
+  ) &>/dev/null &!
+}

@@ -1,0 +1,3 @@
+coddy(){
+  python3 /Users/raphael/.config/random-scripts/screen_section_scraper.py
+}

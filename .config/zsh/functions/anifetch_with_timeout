@@ -1,0 +1,14 @@
+anifetch_with_timeout() {
+  perl -e '
+    $SIG{ALRM} = sub { kill 15, $pid; sleep 1; kill 9, $pid; exit 0 };
+    $timeout = shift;
+    $pid = fork;
+    if (!$pid) { exec @ARGV; exit 1 }
+    alarm $timeout;
+    waitpid $pid, 0;
+    exit 0;
+  ' "$1" \
+    anifetch --framerate 30 --playback-rate 30 -ca '--symbols brail --fg-only' -w 90 -H 20 \
+    /Users/raphael/.config/fastfetch/ghostty-ani.mov
+  tput cnorm 2>/dev/null || stty sane 2>/dev/null
+}

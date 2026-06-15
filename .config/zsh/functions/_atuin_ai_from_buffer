@@ -1,0 +1,28 @@
+_atuin_ai_from_buffer() {
+    local query="$BUFFER"
+    BUFFER=""
+    local output
+    output=$(atuin ai inline "$query" 3>&1 1>&2 2>&3)
+
+    if [[ $output == __atuin_ai_execute__:* ]]; then
+        LBUFFER=${output#__atuin_ai_execute__:}
+        RBUFFER=""
+        zle reset-prompt
+        zle accept-line
+    elif [[ $output == __atuin_ai_insert__:* ]]; then
+        LBUFFER=${output#__atuin_ai_insert__:}
+        RBUFFER=""
+        zle reset-prompt
+    elif [[ $output == __atuin_ai_cancel__ ]]; then
+        zle reset-prompt
+    elif [[ $output == __atuin_ai_print__:* ]]; then
+        zle -I
+        echo "${output#__atuin_ai_print__:}"
+    elif [[ -n $output ]]; then
+        LBUFFER=$output
+        RBUFFER=""
+        zle reset-prompt
+    else
+        zle reset-prompt
+    fi
+}
