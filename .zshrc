@@ -10,14 +10,13 @@ if [[ $- == *i* ]] && [[ -z "$TMUX" ]] && [[ -t 0 ]] && [[ "$TERM_PROGRAM" != "v
   fi
   exec tmux new-session -s main 2>/dev/null
 fi
-anifetch --framerate 30 --playback-rate 30 -ca '--symbols brail --fg-only' -w 90 -H 20  /Users/raphael/.config/fastfetch/ghostty-ani.mov
 
 coddy(){
   python3 /Users/raphael/.config/random-scripts/screen_section_scraper.py
 }
 
 export PATH="/Library/Frameworks/Python.framework/Versions/3.14/bin:$PATH"
-export BREW_PREFIX="$(brew --prefix)"
+export BREW_PREFIX="/opt/homebrew"
 [[ -d ~/.cache/zsh ]] || mkdir -p ~/.cache/zsh
 setopt SHARE_HISTORY
 rs() {
@@ -111,6 +110,21 @@ ai() {
     opencode run "$1"
 }
 
+anifetch_with_timeout() {
+  perl -e '
+    $SIG{ALRM} = sub { kill 15, $pid; sleep 1; kill 9, $pid; exit 0 };
+    $timeout = shift;
+    $pid = fork;
+    if (!$pid) { exec @ARGV; exit 1 }
+    alarm $timeout;
+    waitpid $pid, 0;
+    exit 0;
+  ' "$1" \
+    anifetch --framerate 30 --playback-rate 30 -ca '--symbols brail --fg-only' -w 90 -H 20 \
+    /Users/raphael/.config/fastfetch/ghostty-ani.mov
+  tput cnorm 2>/dev/null || stty sane 2>/dev/null
+}
+
 if [[ ! -f ~/.cache/zsh/omp-init.zsh || ~/.ZSHThemes.json -nt ~/.cache/zsh/omp-init.zsh ]]; then
   oh-my-posh init zsh --config ~/.ZSHThemes.json > ~/.cache/zsh/omp-init.zsh
 fi
@@ -119,7 +133,6 @@ source ~/.cache/zsh/omp-init.zsh
 export TERM=xterm-256color
 
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#f2d3b7"
-source $BREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
@@ -241,7 +254,21 @@ alias oc="opencode"
 
 
 
-source $BREW_PREFIX/opt/zsh-fast-syntax-highlighting/share/zsh-fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh
+# Defer slow plugins to first prompt
+typeset -a _zsh_defer_plugins
+_zsh_defer_plugins=(
+  "$BREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+  "$BREW_PREFIX/opt/zsh-fast-syntax-highlighting/share/zsh-fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh"
+  "$HOME/.cache/zsh/at-init.zsh"
+)
+_load_deferred_plugins() {
+  local p
+  for p in $_zsh_defer_plugins; do source "$p"; done
+  unset _zsh_defer_plugins
+  unfunction _load_deferred_plugins
+}
+precmd_functions+=(_load_deferred_plugins)
+
 export LG_CONFIG_FILE="$HOME/.config/lazygit/config.yml"
 function y() {
 	local tmp cwd target
@@ -288,7 +315,7 @@ export VISUAL="nvim"
 if [[ ! -f ~/.cache/zsh/at-init.zsh ]]; then
   atuin init zsh > ~/.cache/zsh/at-init.zsh
 fi
-source ~/.cache/zsh/at-init.zsh
+# Sourced via deferred plugins below
 
 # play Spotify liked songs (starts hidden, no window)
 spl() {
@@ -393,4 +420,8 @@ function csc() {
 
 # Generated for envman. Do not edit.
 [ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
+# Run anifetch in all shells EXCEPT sesh sessions that have a startup_command
+if ! [[ -n "$TMUX" ]] || ! grep -A2 "name = \"$(tmux display-message -p '#{session_name}' 2>/dev/null)\"" ~/.config/sesh/sesh.toml 2>/dev/null | grep -q "startup_command"; then
+  anifetch_with_timeout 6
+fi
 alias cool="anifetch --framerate 30 --playback-rate 30 -ca '--symbols brail --fg-only' -w 90 -H 20  /Users/raphael/.config/fastfetch/ghostty-ani.mov"
