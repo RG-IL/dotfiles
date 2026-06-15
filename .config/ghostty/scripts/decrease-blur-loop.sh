@@ -12,6 +12,6 @@ while [[ -f "$LOCK" ]]; do
   new=$((current - STEP))
   [[ $new -lt 0 ]] && new=0
   sed -i '' "s/^background-blur-radius = .*/background-blur-radius = $new/" "$CONFIG"
-  osascript -e 'tell application "System Events" to tell process "Ghostty" to click menu item "Reload Configuration" of menu "Ghostty" of menu bar 1' 2>/dev/null || true
-  sleep 0.005
+  pgrep -q ghostty && osascript -e 'tell application "System Events" to tell process "Ghostty" to click menu item "Reload Configuration" of menu "Ghostty" of menu bar 1' 2>/dev/null || true
+  sleep 0.05
 done
