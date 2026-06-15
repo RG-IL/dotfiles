@@ -14,7 +14,7 @@ This is `~/.config` — a user's dotfiles configuration directory, **not a proje
 |------|--------|-------|
 | neovim | `nvim/` | LazyVim-based. Custom plugins in `lua/plugins/`. Tab=4 spaces, blackhole registers by default (`d`/`c`/`x`/`dd` → `"_`). |
 | tmux | `tmux/tmux.conf` | Prefix `Ctrl+A`. Floating pane: `prefix+p`. Sesh session picker: `prefix+s`. LazyGit popup: `prefix+g`. Bluetooth popup: `prefix+b` via btui. |
-| ghostty | `ghostty/config` | Hidden titlebar, custom GLSL cursor shaders (cursor_warp, ripple_cursor, x), background opacity 0.67, blur 40. Cmd+key forwarded as `\x01`+key (tmux prefix) for window management. Blur scripts in `ghostty/scripts/`: `*-blur.sh` (single-shot), `*-blur-loop.sh` (hold-to-repeat via Karabiner), `stop-blur.sh` (kill switch). |
+| ghostty | `ghostty/config` | Hidden titlebar, custom GLSL cursor shaders (cursor_warp, ripple_cursor, x), background opacity 0.67, blur 40. Cmd+key forwarded as `\x01`+key (tmux prefix) for window management. Blur/opacity scripts in `ghostty/scripts/` write to `~/Library/Application Support/com.mitchellh.ghostty/config` (not git-tracked). |
 | atuin | `atuin/config.toml` | `search_mode = "daemon-fuzzy"`, AI enabled, compact style, daemon autostart. Theme: catppuccin-frappe-sapphire. |
 | yazi | `yazi/` | Plugins: full-border, what-size, smart-enter. Edit with nvim, open with macOS `open`. Sorted by size descending. |
 | karabiner | `karabiner/karabiner.json` | Right Command+h/j/k/l → arrow keys. Cmd+Shift+J/K → Ghostty blur (tap=single, hold=loop after 0.5s). Opt+Shift+J/K → Ghostty opacity (tap=single, hold=loop after 0.5s). Both stop via `stop-blur.sh`. |
