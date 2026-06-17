@@ -45,7 +45,7 @@ bindkey '^[' fzf-completion
 bindkey '^[^L' forward-word
 
 source "$BREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
-
+export BW_SESSION="tkBGDkMDkTSG8vck2o09kecMbBDrc8GpULijN6wPPFvyPfMyuOaq6XipV5tGfbDedZJPS1SERTto+anWoIc1EQ=="
 # Insert mode = bar, Normal mode = block (vim-like)
 
 alias cd="z"
