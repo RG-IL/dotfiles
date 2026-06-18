@@ -1,13 +1,12 @@
 # Auto-attach to latest tmux session (only with a real TTY, not in VSCode/Terminal.app)
 if [[ $- == *i* ]] && [[ -z "$TMUX" ]] && [[ -t 0 ]] && [[ "$TERM_PROGRAM" != "vscode" ]] && [[ "$TERM_PROGRAM" != "Apple_Terminal" ]] && command -v tmux >/dev/null 2>&1; then
-  # Fast path: only query tmux if server is already running
-  local socket="${TMUX_TMPDIR:-/private/tmp}/tmux-$(id -u)/default"
-  if [[ -S "$socket" ]]; then
-    last_session=$(tmux ls -F '#{session_name}' 2>/dev/null | grep -v '^scratch$' | tail -1)
-    if [[ -n "$last_session" ]]; then
-      exec tmux attach-session -t "$last_session"
-    fi
+  last_session=$(tmux ls -F '#{session_name}' 2>/dev/null | grep -v '^scratch$' | tail -1)
+  if [[ -n "$last_session" ]]; then
+    exec tmux attach-session -t "$last_session"
   fi
+  # No reachable sessions — clean up stale socket if present, then start fresh
+  local socket="${TMUX_TMPDIR:-/private/tmp}/tmux-$(id -u)/default"
+  [[ -S "$socket" ]] && rm -f "$socket"
   exec tmux new-session -s main 2>/dev/null
 fi
 
