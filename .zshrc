@@ -92,7 +92,128 @@ export FZF_DEFAULT_OPTS=" \
 --color=fg:#C6D0F5,header:#E78284,info:#CA9EE6,pointer:#F2D5CF \
 --color=marker:#BABBF1,fg+:#C6D0F5,prompt:#CA9EE6,hl+:#E78284 \
 --color=selected-bg:#51576D \
---color=border:#737994,label:#C6D0F5"
+--color=border:#737994,label:#C6D0F5 \
+--bind 'tab:down,btab:up'"
+
+# fzf custom completions — subcommands + flags (trigger: Alt after command + space)
+
+# awk helper: extract --word and -X flags from help text
+__fzf_flags() {
+  awk '{gsub(/[\[\]<>(),|]/," ",$0);gsub(/=[^ ]*/,"",$0);for(i=1;i<=NF;i++){if($i~/^--[a-zA-Z][-a-zA-Z0-9]*$/)print $i;if($i~/^-[a-zA-Z]$/&&$i!="-")print $i}}' | sort -u
+}
+
+_fzf_complete_git() {
+  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
+    --preview-window 'right:70%:wrap' \
+    --preview 'git {} -h 2>/dev/null | bat -pp --color=always -l bash 2>/dev/null | head -200' \
+    -- "$@" < <(
+    { git help -a 2>/dev/null | awk '/^   [a-z]/ {print $1}'; git --help 2>/dev/null | __fzf_flags; } | sort -u
+  )
+}
+_fzf_complete_brew() {
+  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
+    --preview-window 'right:70%:wrap' \
+    --preview 'brew help {} 2>/dev/null | bat -pp --color=always -l bash 2>/dev/null | head -200' \
+    -- "$@" < <(
+    {
+      brew commands 2>/dev/null | awk '/^[a-z]/ {print $1}'
+      brew --help 2>/dev/null | __fzf_flags
+      printf '%s\n' --version --help --prefix --cellar --repository --caskroom --env --cache --quiet --no-auto-update
+    } | sort -u
+  )
+}
+_fzf_complete_tmux() {
+  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
+    --preview-window 'right:70%:wrap' \
+    --preview 'tmux list-commands 2>/dev/null | grep "^{} "' \
+    -- "$@" < <(
+    { tmux list-commands 2>/dev/null | awk '{print $1}'; printf '%s\n' -2 -C -D -h -l -N -u -V -v -c -f -L -S -T; } | sort -u
+  )
+}
+_fzf_complete_atuin() {
+  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
+    --preview-window 'right:70%:wrap' \
+    --preview 'atuin {} --help 2>/dev/null | bat -pp --color=always -l bash 2>/dev/null | head -200' \
+    -- "$@" < <(
+    { atuin --help 2>/dev/null | awk '/^  [a-z]/ {print $1}'; atuin --help 2>/dev/null | __fzf_flags; } | sort -u
+  )
+}
+_fzf_complete_dotnet() {
+  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
+    --preview-window 'right:70%:wrap' \
+    --preview 'dotnet {} --help 2>/dev/null | bat -pp --color=always -l bash 2>/dev/null | head -200' \
+    -- "$@" < <(
+    { dotnet --help 2>/dev/null | awk '/^  [a-z]/ {print $1}'; dotnet --help 2>/dev/null | __fzf_flags; } | sort -u
+  )
+}
+_fzf_complete_gh() {
+  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
+    --preview-window 'right:70%:wrap' \
+    --preview 'gh {} --help 2>/dev/null | bat -pp --color=always -l bash 2>/dev/null | head -200' \
+    -- "$@" < <(
+    {
+      gh --help 2>/dev/null | awk '/^  [a-z]/ && !/gh </ {gsub(/^  |:.*/,"",$0); print}'
+      gh --help 2>/dev/null | __fzf_flags
+    } | sort -u
+  )
+}
+_fzf_complete_bw() {
+  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
+    --preview-window 'right:70%:wrap' \
+    --preview 'bw {} --help 2>/dev/null | bat -pp --color=always -l bash 2>/dev/null | head -200' \
+    -- "$@" < <(
+    {
+      bw --help 2>/dev/null | awk '/^Commands:/{p=1;next} p && /^  [a-z]/{print $1}'
+      bw --help 2>/dev/null | __fzf_flags
+    } | sort -u
+  )
+}
+_fzf_complete_npm() {
+  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
+    --preview-window 'right:70%:wrap' \
+    --preview 'npm {} --help 2>/dev/null | bat -pp --color=always -l bash 2>/dev/null | head -200' \
+    -- "$@" < <(
+    {
+      npm help 2>/dev/null | awk '/^All commands:/{p=1;next} p && /^    [a-z]/{gsub(/,/," ",$0);for(i=1;i<=NF;i++)if($i!="")print $i}'
+      printf '%s\n' --help --version
+    } | sort -u
+  )
+}
+_fzf_complete_opencode() {
+  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
+    --preview-window 'right:70%:wrap' \
+    --preview 'opencode {} --help 2>&1 | bat -pp --color=always -l bash 2>/dev/null | head -200' \
+    -- "$@" < <(
+    {
+      opencode --help 2>&1 | awk '/^  opencode / && !/\[project\]/ {print $2}'
+      opencode --help 2>&1 | __fzf_flags
+    } | sort -u
+  )
+}
+_fzf_complete_fd() {
+  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
+    --preview-window 'right:70%:wrap' \
+    --preview 'fd {} --help 2>/dev/null | bat -pp --color=always -l bash 2>/dev/null | head -200' \
+    -- "$@" < <(
+    fd --help 2>/dev/null | __fzf_flags | sort -u
+  )
+}
+_fzf_complete_rg() {
+  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
+    --preview-window 'right:70%:wrap' \
+    --preview 'rg {} --help 2>/dev/null | bat -pp --color=always -l bash 2>/dev/null | head -200' \
+    -- "$@" < <(
+    rg --help 2>/dev/null | __fzf_flags | sort -u
+  )
+}
+_fzf_complete_nvim() {
+  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
+    --preview-window 'right:70%:wrap' \
+    --preview 'nvim {} --help 2>/dev/null | bat -pp --color=always -l bash 2>/dev/null | head -200' \
+    -- "$@" < <(
+    nvim --help 2>/dev/null | __fzf_flags | sort -u
+  )
+}
 
 export PATH=$PATH:/Users/raphael/.spicetify
 
