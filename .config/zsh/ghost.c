@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/ioctl.h>
 #include <sys/select.h>
 #include <sys/time.h>
 #include <termios.h>
@@ -133,17 +134,24 @@ int main(void) {
             if (key_pressed()) { pressed = 1; break; }
         }
 
-        // Sleep in 2ms chunks checking for keys between each — cuts max latency from 33ms to ~2ms
+        // Wait for the next frame or a keypress — replaces 2ms polling with an exact timeout
         double sleep_for = wanted - elapsed;
-        while (sleep_for > 0.0 && !pressed) {
-            double chunk = sleep_for > 0.002 ? 0.002 : sleep_for;
-            usleep((useconds_t)(chunk * 1000000.0));
-            if (f > 0 && key_pressed()) { pressed = 1; break; }
-            gettimeofday(&now, NULL);
-            elapsed = (double)(now.tv_sec - start.tv_sec)
-                    + (double)(now.tv_usec - start.tv_usec) / 1000000.0;
-            if (elapsed >= 8.0) { pressed = 1; break; }
-            sleep_for = wanted - elapsed;
+        if (sleep_for > 0) {
+            fd_set rfds;
+            FD_ZERO(&rfds);
+            FD_SET(STDIN_FILENO, &rfds);
+            struct timeval tv;
+            tv.tv_sec = (long)sleep_for;
+            tv.tv_usec = (long)((sleep_for - tv.tv_sec) * 1000000.0);
+            if (select(STDIN_FILENO + 1, &rfds, NULL, NULL, &tv) > 0) {
+                unsigned char c;
+                if (read(STDIN_FILENO, &c, 1) > 0) {
+                    if (c != 'q' && c != 27) {
+                        ioctl(STDIN_FILENO, TIOCSTI, &c);
+                    }
+                    pressed = 1;
+                }
+            }
         }
         if (pressed) break;
 

@@ -63,6 +63,8 @@ keybind = cmd+physical:seven=text:\x017
 keybind = cmd+physical:eight=text:\x018
 keybind = cmd+physical:nine=text:\x019
 keybind = cmd+b=text:\x01b
+keybind = cmd+option+tab=text:\x01n
+keybind = cmd+option+shift+tab=text:\x01p
 
 # custom-shader = /Users/raphael/.config/ghostty/shader/space.glsl
 # background-image = /Users/raphael/.config/ghostty/output.jpg
