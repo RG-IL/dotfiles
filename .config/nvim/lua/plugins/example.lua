@@ -12,6 +12,9 @@ return {
     {
         "folke/noice.nvim",
         opts = function(_, opts)
+            opts.presets = opts.presets or {}
+            opts.presets.command_palette = false
+
             opts.views = opts.views or {}
 
             opts.views.hover = {
