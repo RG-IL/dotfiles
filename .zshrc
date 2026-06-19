@@ -15,7 +15,12 @@ export BREW_PREFIX="/opt/homebrew"
 
 # Autoload functions on first use instead of defining at startup
 fpath=(~/.config/zsh/functions $fpath)
-autoload -Uz ai anifetch_with_timeout coddy csc iv ls rs רד spl y _atuin_ai_from_buffer
+autoload -Uz ai coddy csc iv ls rs רד spl y _atuin_ai_from_buffer
+
+# Show animated system info early (compiled C — instant startup)
+if ! [[ -n "$TMUX" ]] || ! grep -A2 "name = \"$(tmux display-message -p '#{session_name}' 2>/dev/null)\"" ~/.config/sesh/sesh.toml 2>/dev/null | grep -q "startup_command"; then
+  ~/.config/zsh/ghost
+fi
 
 [[ -d ~/.cache/zsh ]] || mkdir -p ~/.cache/zsh
 setopt SHARE_HISTORY
@@ -221,12 +226,8 @@ export PATH=$PATH:/Users/raphael/.spicetify
 CSC_DIR=~/.cache/csc
 # Generated for envman. Do not edit.
 [ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
-# Run anifetch in all shells EXCEPT sesh sessions that have a startup_command
-if ! [[ -n "$TMUX" ]] || ! grep -A2 "name = \"$(tmux display-message -p '#{session_name}' 2>/dev/null)\"" ~/.config/sesh/sesh.toml 2>/dev/null | grep -q "startup_command"; then
-  anifetch_with_timeout 8
-fi
 # Reset cursor to steady bar on every prompt (fixes block cursor after exiting nvim)
 _reset_cursor() { printf '\033[6 q' >/dev/tty }
 precmd_functions+=(_reset_cursor)
 
-alias cool="anifetch --framerate 30 --playback-rate 30 -ca '--symbols brail --fg-only' -w 90 -H 20  /Users/raphael/.config/fastfetch/ghostty-ani.mov"
+function cool { ~/.config/zsh/ghost }
