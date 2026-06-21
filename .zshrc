@@ -221,6 +221,7 @@ _fzf_complete_nvim() {
 
 export PATH=$PATH:/Users/raphael/.spicetify
 
+alias cat="bat"
 # csc - watches clipboard, saves each copy, auto-creates .cs files when
 #       filenames (ending with " X" or " x") are detected
 CSC_DIR=~/.cache/csc
