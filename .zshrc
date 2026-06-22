@@ -1,4 +1,18 @@
 # Auto-attach to latest tmux session (only with a real TTY, not in VSCode/Terminal.app)
+if [[ -n "$NVIM_QUICK_ACTION" ]] && command -v tmux >/dev/null 2>&1; then
+  local file="$NVIM_QUICK_FILE"
+  unset NVIM_QUICK_ACTION NVIM_QUICK_FILE
+
+  if [[ -S /tmp/nvim-editor.sock ]]; then
+    /opt/homebrew/bin/nvim --server /tmp/nvim-editor.sock --remote "$file"
+  elif tmux has-session -t editor 2>/dev/null; then
+    tmux send-keys -t "editor" " /opt/homebrew/bin/nvim --listen /tmp/nvim-editor.sock \"$file\"" Enter
+    exec tmux attach-session -t editor
+  else
+    exec tmux new-session -s editor "/opt/homebrew/bin/nvim --listen /tmp/nvim-editor.sock \"$file\"; exec /bin/zsh -l"
+  fi
+fi
+
 if [[ $- == *i* ]] && [[ -z "$TMUX" ]] && [[ -t 0 ]] && [[ "$TERM_PROGRAM" != "vscode" ]] && [[ "$TERM_PROGRAM" != "Apple_Terminal" ]] && command -v tmux >/dev/null 2>&1; then
   last_session=$(tmux ls -F '#{session_name}' 2>/dev/null | grep -v '^scratch$' | tail -1)
   if [[ -n "$last_session" ]]; then
@@ -208,14 +222,6 @@ _fzf_complete_rg() {
     --preview 'rg {} --help 2>/dev/null | bat -pp --color=always -l bash 2>/dev/null | head -200' \
     -- "$@" < <(
     rg --help 2>/dev/null | __fzf_flags | sort -u
-  )
-}
-_fzf_complete_nvim() {
-  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
-    --preview-window 'right:70%:wrap' \
-    --preview 'nvim {} --help 2>/dev/null | bat -pp --color=always -l bash 2>/dev/null | head -200' \
-    -- "$@" < <(
-    nvim --help 2>/dev/null | __fzf_flags | sort -u
   )
 }
 

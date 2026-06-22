@@ -20,5 +20,5 @@ vim.api.nvim_create_autocmd("VimEnter", {
         end, 30)
     end,
 })
-vim.env.PATH = vim.fn.stdpath("data") .. "/mason/bin:" .. vim.env.PATH
+vim.env.PATH = "/opt/homebrew/bin:" .. vim.fn.stdpath("data") .. "/mason/bin:" .. vim.env.PATH
 vim.opt.fixendofline = false
