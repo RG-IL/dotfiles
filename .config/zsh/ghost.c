@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/ioctl.h>
 #include <sys/select.h>
+#include <sys/ioctl.h>
 #include <sys/time.h>
 #include <termios.h>
 #include <unistd.h>
@@ -17,14 +17,6 @@
 #define PLAYBACK_RATE 30
 
 static struct termios orig_term;
-
-static int key_pressed(void) {
-    fd_set rfds;
-    FD_ZERO(&rfds);
-    FD_SET(STDIN_FILENO, &rfds);
-    struct timeval tv = {0, 0};
-    return select(STDIN_FILENO + 1, &rfds, NULL, NULL, &tv) > 0;
-}
 
 int main(void) {
     int pressed = 0;
@@ -131,7 +123,6 @@ int main(void) {
 
         if (f > 0) {
             if (elapsed >= 8.0) { pressed = 1; break; }
-            if (key_pressed()) { pressed = 1; break; }
         }
 
         // Wait for the next frame or a keypress — replaces 2ms polling with an exact timeout
@@ -144,10 +135,13 @@ int main(void) {
             tv.tv_sec = (long)sleep_for;
             tv.tv_usec = (long)((sleep_for - tv.tv_sec) * 1000000.0);
             if (select(STDIN_FILENO + 1, &rfds, NULL, NULL, &tv) > 0) {
-                unsigned char c;
-                if (read(STDIN_FILENO, &c, 1) > 0) {
-                    if (c != 'q' && c != 27) {
-                        ioctl(STDIN_FILENO, TIOCSTI, &c);
+                char buf[4096];
+                int n = read(STDIN_FILENO, buf, sizeof(buf));
+                if (n > 0) {
+                    for (int i = 0; i < n; i++) {
+                        if (buf[i] != 'q' && buf[i] != 27) {
+                            ioctl(STDIN_FILENO, TIOCSTI, &buf[i]);
+                        }
                     }
                     pressed = 1;
                 }
