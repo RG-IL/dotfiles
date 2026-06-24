@@ -1,9 +1,10 @@
 #include <dirent.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/select.h>
 #include <sys/ioctl.h>
+#include <sys/select.h>
 #include <sys/time.h>
 #include <termios.h>
 #include <unistd.h>
@@ -135,13 +136,24 @@ int main(void) {
             tv.tv_sec = (long)sleep_for;
             tv.tv_usec = (long)((sleep_for - tv.tv_sec) * 1000000.0);
             if (select(STDIN_FILENO + 1, &rfds, NULL, NULL, &tv) > 0) {
-                char buf[4096];
-                int n = read(STDIN_FILENO, buf, sizeof(buf));
-                if (n > 0) {
-                    for (int i = 0; i < n; i++) {
-                        if (buf[i] != 'q' && buf[i] != 27) {
+                char buf[65536];
+                int total = 0;
+                for (;;) {
+                    int n = (int)read(STDIN_FILENO, buf + total,
+                                      sizeof(buf) - (size_t)total);
+                    if (n <= 0) break;
+                    total += n;
+                    if ((size_t)total >= sizeof(buf)) break;
+                    fd_set more;
+                    FD_ZERO(&more);
+                    FD_SET(STDIN_FILENO, &more);
+                    struct timeval tw = {0, 2000};
+                    if (select(STDIN_FILENO + 1, &more, NULL, NULL, &tw) <= 0) break;
+                }
+                if (total > 0) {
+                    for (int i = 0; i < total; i++) {
+                        if (buf[i] != 'q' && buf[i] != 27)
                             ioctl(STDIN_FILENO, TIOCSTI, &buf[i]);
-                        }
                     }
                     pressed = 1;
                 }
@@ -178,10 +190,10 @@ int main(void) {
             o += sprintf(out + o, "\033[K");
         }
 
-        write(STDOUT_FILENO, out, (size_t)o);
-    }
+    write(STDOUT_FILENO, out, (size_t)o);
+}
 
-    // Leave ECHO off when restoring terminal — zsh's ZLE sets its own mode.
+// Leave ECHO off when restoring terminal — zsh's ZLE sets its own mode.
     // Prevents line-discipline echo of pending input inside the animation area.
     struct termios noecho = orig_term;
     noecho.c_lflag &= ~ECHO;
