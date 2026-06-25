@@ -11,6 +11,12 @@
       "type": "local",
       "command": ["npx", "-y", "@upstash/context7-mcp@latest"],
       "enabled": true
-    }
-  }
+    },
+    "composio": {
+      "type": "local",
+      "command": ["node", "/Users/raphael/.config/opencode/mcp-servers/composio-mcp.mjs"],
+      "enabled": true
+    },
+  },
+  "plugin": ["superpowers@git+https://github.com/obra/superpowers.git"]
 }
