@@ -1,0 +1,10 @@
+{
+  "notifyChildSessions": false,
+  "terminal": "ghostty",
+  "sounds": {
+    "idle": "Glass",
+    "error": "Basso",
+    "permission": "Submarine",
+    "question": "Submarine"
+  }
+}

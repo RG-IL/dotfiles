@@ -20,6 +20,7 @@
   },
   "plugin": [
     "superpowers@git+https://github.com/obra/superpowers.git",
-    "opentmux"
+    "opentmux",
+    "file:///Users/raphael/.config/opencode/plugins/notify.ts"
   ]
 }
