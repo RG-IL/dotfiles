@@ -1,4 +1,10 @@
 {
   "$schema": "https://opencode.ai/tui.json",
-  "theme": "catppuccin-transparent"
+  "theme": "catppuccin-transparent",
+  "plugin": [
+    "@streetturtle/opencode-open-in",
+    "@streetturtle/opencode-context-progress",
+    "@streetturtle/opencode-recap",
+    "@streetturtle/opencode-session-tokens"
+  ]
 }

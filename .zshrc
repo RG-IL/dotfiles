@@ -71,7 +71,7 @@ if [[ ! -f ~/.cache/zsh/zx-init.zsh ]]; then
   zoxide init zsh > ~/.cache/zsh/zx-init.zsh
 fi
 source ~/.cache/zsh/zx-init.zsh
-alias oc="opencode"
+alias oc="opencode-tmux"
 
 
 
@@ -238,3 +238,24 @@ _reset_cursor() { printf '\033[6 q' >/dev/tty }
 precmd_functions+=(_reset_cursor)
 
 function cool { ~/.config/zsh/ghost }
+
+# Composio CLI
+export COMPOSIO_INSTALL_DIR="/Users/raphael/.composio"
+export PATH="$COMPOSIO_INSTALL_DIR:$PATH"
+export PATH="$HOME/.composio:$PATH"
+
+
+# >>> opentmux >>>
+export OPENCODE_PORT=4096
+alias opencode='opentmux'
+# <<< opentmux <<<
+
+
+# opencode
+export PATH=/Users/raphael/.opencode/bin:$PATH
+
+# >>> opencode-agent-tmux >>>
+export OPENCODE_PORT=4096
+alias opencode='opencode-tmux'
+# <<< opencode-agent-tmux <<<
+export OPENCODE_API_KEY="sk-10WcqcQCc3gsb3oAxZfKTNRQOa7QR1R660CZUG4lrOhqqNonhs836XuwyHkYBWSg"
