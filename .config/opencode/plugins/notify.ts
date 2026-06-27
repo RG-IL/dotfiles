@@ -192,6 +192,30 @@ async function isTerminalFocused(terminalInfo: TerminalInfo): Promise<boolean> {
 }
 
 // ==========================================
+// TMUX WINDOW FOCUS CHECK
+// ==========================================
+
+async function shouldSuppressNotificationForFocusedWindow(
+	terminalInfo: TerminalInfo,
+	ourTmuxWindowId: string | null,
+): Promise<boolean> {
+	if (!ourTmuxWindowId) return false
+	if (!(await isTerminalFocused(terminalInfo))) return false
+
+	try {
+		const activeWindowsProc = Bun.spawn(
+			["tmux", "list-windows", "-f", "#{window_active}", "-F", "#{window_id}"],
+			{ stdout: "pipe", stderr: "pipe" },
+		)
+		const activeWindowId = (await new Response(activeWindowsProc.stdout).text())
+			.trim().split("\n")[0]?.trim()
+		return activeWindowId === ourTmuxWindowId
+	} catch {
+		return false
+	}
+}
+
+// ==========================================
 // QUIET HOURS CHECK
 // ==========================================
 
@@ -510,23 +534,9 @@ async function handleSessionIdle(
 		)
 	}
 
-	// Check if focused tmux window is the OpenCode window (only at idle transition)
-	if (await isTerminalFocused(terminalInfo) && ourTmuxWindowId) {
-		let opencodeWindowFocused = false
-		try {
-			const activeWindowsProc = Bun.spawn(
-				["tmux", "list-windows", "-f", "#{window_active}", "-F", "#{window_id}"],
-				{ stdout: "pipe", stderr: "pipe" },
-			)
-			const activeWindowId = (await new Response(activeWindowsProc.stdout).text())
-				.trim().split("\n")[0]?.trim()
-			opencodeWindowFocused = activeWindowId === ourTmuxWindowId
-		} catch {
-			// Not in tmux — can't determine window focus, fall through to notify
-		}
-		if (opencodeWindowFocused) {
-			return
-		}
+	// Suppress if terminal is focused on the OpenCode tmux window
+	if (await shouldSuppressNotificationForFocusedWindow(terminalInfo, ourTmuxWindowId)) {
+		return
 	}
 
 	await doSend()
@@ -539,6 +549,7 @@ async function handleSessionError(
 	config: NotifyConfig,
 	terminalInfo: TerminalInfo,
 	notificationRuntime: NotificationRuntime,
+	ourTmuxWindowId: string | null,
 ): Promise<void> {
 	// Check if we should notify for this session
 	if (!config.notifyChildSessions) {
@@ -549,6 +560,11 @@ async function handleSessionError(
 	// Check quiet hours
 	if (isQuietHours(config)) return
 
+	// Suppress if terminal is focused on the OpenCode tmux window
+	if (await shouldSuppressNotificationForFocusedWindow(terminalInfo, ourTmuxWindowId)) {
+		return
+	}
+
 	const errorMessage = error?.slice(0, 100) || "Something went wrong"
 
 	await sendNotification(
@@ -557,6 +573,8 @@ async function handleSessionError(
 			message: errorMessage,
 			sound: config.sounds.error,
 			terminalInfo,
+			tmuxPaneId: process.env.TMUX_PANE,
+			tmuxWindowId: ourTmuxWindowId ?? undefined,
 		},
 		notificationRuntime,
 	)
@@ -566,6 +584,7 @@ async function handlePermissionUpdated(
 	config: NotifyConfig,
 	terminalInfo: TerminalInfo,
 	notificationRuntime: NotificationRuntime,
+	ourTmuxWindowId: string | null,
 ): Promise<void> {
 	// Always notify for permission events - AI is blocked waiting for human
 	// No parent check needed: permissions always need human attention
@@ -573,12 +592,19 @@ async function handlePermissionUpdated(
 	// Check quiet hours
 	if (isQuietHours(config)) return
 
+	// Suppress if terminal is focused on the OpenCode tmux window
+	if (await shouldSuppressNotificationForFocusedWindow(terminalInfo, ourTmuxWindowId)) {
+		return
+	}
+
 	await sendNotification(
 		{
 			title: "Waiting for you",
 			message: "OpenCode needs your input",
 			sound: config.sounds.permission,
 			terminalInfo,
+			tmuxPaneId: process.env.TMUX_PANE,
+			tmuxWindowId: ourTmuxWindowId ?? undefined,
 		},
 		notificationRuntime,
 	)
@@ -588,9 +614,15 @@ async function handleQuestionAsked(
 	config: NotifyConfig,
 	terminalInfo: TerminalInfo,
 	notificationRuntime: NotificationRuntime,
+	ourTmuxWindowId: string | null,
 ): Promise<void> {
-	// Guard: quiet hours only (no focus check for questions - tmux workflow)
+	// Check quiet hours
 	if (isQuietHours(config)) return
+
+	// Suppress if terminal is focused on the OpenCode tmux window
+	if (await shouldSuppressNotificationForFocusedWindow(terminalInfo, ourTmuxWindowId)) {
+		return
+	}
 
 	const sound = config.sounds.question ?? config.sounds.permission
 
@@ -600,6 +632,8 @@ async function handleQuestionAsked(
 			message: "OpenCode needs your input",
 			sound,
 			terminalInfo,
+			tmuxPaneId: process.env.TMUX_PANE,
+			tmuxWindowId: ourTmuxWindowId ?? undefined,
 		},
 		notificationRuntime,
 	)
@@ -974,7 +1008,7 @@ async function handleQuestionAsked(
 			return
 		}
 
-		await handleQuestionAsked(config, terminalInfo, notificationRuntime)
+		await handleQuestionAsked(config, terminalInfo, notificationRuntime, ourTmuxWindowId)
 	}
 
 	const notifySessionReadyIfNeeded = async (sessionID: unknown): Promise<void> => {
@@ -1016,7 +1050,7 @@ async function handleQuestionAsked(
 			return
 		}
 
-		await handlePermissionUpdated(config, terminalInfo, notificationRuntime)
+		await handlePermissionUpdated(config, terminalInfo, notificationRuntime, ourTmuxWindowId)
 	}
 
 	return {
@@ -1056,6 +1090,7 @@ async function handleQuestionAsked(
 							config,
 							terminalInfo,
 							notificationRuntime,
+							ourTmuxWindowId,
 						)
 					}
 					break

@@ -71,7 +71,7 @@ if [[ ! -f ~/.cache/zsh/zx-init.zsh ]]; then
   zoxide init zsh > ~/.cache/zsh/zx-init.zsh
 fi
 source ~/.cache/zsh/zx-init.zsh
-alias oc="opencode-tmux"
+alias oc='opencode'
 
 
 
@@ -245,20 +245,11 @@ export PATH="$COMPOSIO_INSTALL_DIR:$PATH"
 export PATH="$HOME/.composio:$PATH"
 
 
-# >>> opentmux >>>
-export OPENCODE_PORT=4096
-alias opencode='opentmux'
-# <<< opentmux <<<
-
-
 # opencode
 export PATH=/Users/raphael/.opencode/bin:$PATH
 
 export OPENCODE_API_KEY="sk-10WcqcQCc3gsb3oAxZfKTNRQOa7QR1R660CZUG4lrOhqqNonhs836XuwyHkYBWSg"
 
-
-# >>> opencode-agent-tmux >>>
 export OPENCODE_PORT=4096
-alias opencode='opencode-tmux'
-# <<< opencode-agent-tmux <<<
-alias ocf="OPENCODE_CONFIG=~/.config/opencode/opencode-full.jsonc opencode"
+
+alias ocf='OPENCODE_CONFIG=~/.config/opencode/opencode-full.jsonc opencode '
