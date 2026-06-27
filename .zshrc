@@ -261,3 +261,4 @@ export OPENCODE_API_KEY="sk-10WcqcQCc3gsb3oAxZfKTNRQOa7QR1R660CZUG4lrOhqqNonhs83
 export OPENCODE_PORT=4096
 alias opencode='opencode-tmux'
 # <<< opencode-agent-tmux <<<
+alias ocf="OPENCODE_CONFIG=~/.config/opencode/opencode-full.jsonc opencode"
