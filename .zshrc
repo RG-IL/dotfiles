@@ -254,8 +254,10 @@ alias opencode='opentmux'
 # opencode
 export PATH=/Users/raphael/.opencode/bin:$PATH
 
+export OPENCODE_API_KEY="sk-10WcqcQCc3gsb3oAxZfKTNRQOa7QR1R660CZUG4lrOhqqNonhs836XuwyHkYBWSg"
+
+
 # >>> opencode-agent-tmux >>>
 export OPENCODE_PORT=4096
 alias opencode='opencode-tmux'
 # <<< opencode-agent-tmux <<<
-export OPENCODE_API_KEY="sk-10WcqcQCc3gsb3oAxZfKTNRQOa7QR1R660CZUG4lrOhqqNonhs836XuwyHkYBWSg"
