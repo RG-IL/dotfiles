@@ -231,8 +231,7 @@ alias cat="bat"
 # csc - watches clipboard, saves each copy, auto-creates .cs files when
 #       filenames (ending with " X" or " x") are detected
 CSC_DIR=~/.cache/csc
-# Generated for envman. Do not edit.
-[ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
+
 # Reset cursor to steady bar on every prompt (fixes block cursor after exiting nvim)
 _reset_cursor() { printf '\033[6 q' >/dev/tty }
 precmd_functions+=(_reset_cursor)
