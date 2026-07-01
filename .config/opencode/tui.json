@@ -6,6 +6,7 @@
     "@streetturtle/opencode-context-progress",
     "@streetturtle/opencode-recap",
     "@streetturtle/opencode-session-tokens",
-    "@cortexkit/opencode-magic-context@latest"
+    "@cortexkit/opencode-magic-context@latest",
+    "/Users/raphael/.config/opencode/plugins/subagent-statusline-tui.js"
   ]
 }

@@ -3,6 +3,7 @@ quit-after-last-window-closed = true
 foreground = #F2D5CF
 font-family = "CaskaydiaCove Nerd Font"
 font-style = Italic
+font-codepoint-map = U+2591-U+2593=JetBrainsMono NF
 theme = Catppuccin Frappe
 font-size = 14.7
 mouse-hide-while-typing = true
