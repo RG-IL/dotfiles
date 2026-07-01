@@ -5,6 +5,7 @@
     "@streetturtle/opencode-open-in",
     "@streetturtle/opencode-context-progress",
     "@streetturtle/opencode-recap",
-    "@streetturtle/opencode-session-tokens"
+    "@streetturtle/opencode-session-tokens",
+    "@cortexkit/opencode-magic-context@latest"
   ]
 }
