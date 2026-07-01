@@ -29,7 +29,14 @@ export BREW_PREFIX="/opt/homebrew"
 
 # Autoload functions on first use instead of defining at startup
 fpath=(~/.config/zsh/functions $fpath)
+
+# Generated native zsh completions (replaces fzf-based atuin completions)
+if [[ ! -f ~/.config/zsh/functions/_atuin ]] && [[ -x ~/.atuin/bin/atuin ]]; then
+  ~/.atuin/bin/atuin gen-completions --shell zsh --out-dir ~/.config/zsh/functions
+fi
+
 autoload -Uz ai coddy csc iv ls rs רד spl y _atuin_ai_from_buffer
+autoload -Uz compinit && compinit
 
 # Show animated system info early (compiled C — instant startup)
 if ! [[ -n "$TMUX" ]] || ! grep -A2 "name = \"$(tmux display-message -p '#{session_name}' 2>/dev/null)\"" ~/.config/sesh/sesh.toml 2>/dev/null | grep -q "startup_command"; then
@@ -60,6 +67,9 @@ ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 ZSH_AUTOSUGGEST_USE_ASYNC=true
 ZSH_AUTOSUGGEST_MANUAL_REBIND=1
 export FZF_COMPLETION_TRIGGER=''
+zle -C native-complete complete-word _main_complete
+bindkey '^T' native-complete
+LISTMAX=0
 bindkey '^[' fzf-completion
 bindkey '^[^L' forward-word
 
@@ -121,41 +131,161 @@ __fzf_flags() {
   awk '{gsub(/[\[\]<>(),|]/," ",$0);gsub(/=[^ ]*/,"",$0);for(i=1;i<=NF;i++){if($i~/^--[a-zA-Z][-a-zA-Z0-9]*$/)print $i;if($i~/^-[a-zA-Z]$/&&$i!="-")print $i}}' | sort -u
 }
 
+
 _fzf_complete_git() {
+  local lookup="${TMPDIR:-/tmp}/git-desc-$$"
+  local gitcomp="/usr/share/zsh/5.9/functions/_git"
   _fzf_complete --height=40% --layout=reverse --prompt=" > " \
-    --preview-window 'right:70%:wrap' \
-    --preview 'git {} -h 2>/dev/null | bat -pp --color=always -l bash 2>/dev/null | head -200' \
+    --preview-window 'right:50%:wrap' \
+    --preview "grep -m1 '^{}:' $lookup 2>/dev/null | cut -d: -f2-" \
     -- "$@" < <(
-    { git help -a 2>/dev/null | awk '/^   [a-z]/ {print $1}'; git --help 2>/dev/null | __fzf_flags; } | sort -u
-  )
-}
-_fzf_complete_brew() {
-  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
-    --preview-window 'right:70%:wrap' \
-    --preview 'brew help {} 2>/dev/null | bat -pp --color=always -l bash 2>/dev/null | head -200' \
-    -- "$@" < <(
+    local words=(${(z)@})
+    # Collect non-flag arguments after 'git'
+    local -a subcmds=()
+    for w in $words[2,-1]; do
+      [[ -z $w || $w == -* ]] && continue
+      subcmds+=("$w")
+    done
     {
-      brew commands 2>/dev/null | awk '/^[a-z]/ {print $1}'
-      brew --help 2>/dev/null | __fzf_flags
-      printf '%s\n' --version --help --prefix --cellar --repository --caskroom --env --cache --quiet --no-auto-update
+      if [[ ${#subcmds} -eq 0 ]]; then
+        # Top-level: all git commands
+        grep -E "^\s+[a-z][-a-z]+:'[^']+'" "$gitcomp" 2>/dev/null \
+          | sed "s/^[[:space:]]*//;s/'//g;s/)$//" | tee "$lookup" | cut -d: -f1
+      else
+        # Extract the _git-<subcmd> function body
+        local funcbody
+        funcbody=$(sed -n "/^_git-${subcmds[1]}[() ]/,/^(( /p" "$gitcomp" 2>/dev/null)
+
+        if [[ ${#subcmds} -ge 2 ]]; then
+          # Sub-subcommand: look for flags in the case branch for subcmds[2]
+          echo "$funcbody" | sed -n "/(\{0,1\}${subcmds[2]})/,/;;\|esac/p" \
+            | grep -oE "'--?[-a-zA-Z=]+\[[^]]*\]" \
+            | sed "s/^'//;s/\[/:/;s/\]$//" | tee "$lookup" | cut -d: -f1
+        else
+          # Check if this subcommand has sub-subcommands defined
+          local sub_commands
+          sub_commands=$(echo "$funcbody" | grep -E "^\s+[-a-z]+:'[^']+'" \
+            | sed "s/^[[:space:]]*//;s/'//g;s/)$//")
+
+          if [[ -n $sub_commands ]]; then
+            # Show sub-subcommands (e.g., maintenance → run, start, stop)
+            echo "$sub_commands" | tee "$lookup" | cut -d: -f1
+          else
+            # No sub-subcommands, show flags
+            echo "$funcbody" \
+              | grep -oE "'--?[-a-zA-Z=]+\[[^]]*\]" \
+              | sed "s/^'//;s/\[/:/;s/\]$//" | tee "$lookup" | cut -d: -f1
+          fi
+        fi
+      fi
     } | sort -u
   )
+  command rm -f "$lookup"
 }
+
+_fzf_complete_brew() {
+      local lookup="${TMPDIR:-/tmp}/brew-desc-$$"
+      local brewcomp="/opt/homebrew/completions/zsh/_brew"
+      _fzf_complete --height=40% --layout=reverse --prompt=" > " \
+        --preview-window 'right:50%:wrap' \
+        --preview "grep -m1 '^{}:' $lookup 2>/dev/null | cut -d: -f2-" \
+        -- "$@" < <(
+        local words=(${(z)@})
+        local -a subcmds=()
+        for w in $words[2,-1]; do
+          [[ -z $w || $w == -* ]] && continue
+          subcmds+=("$w")
+        done
+        {
+          if [[ ${#subcmds} -eq 0 ]]; then
+            # Top-level commands from commands=() array
+            sed -n "/^  commands=(/,/^  )/p" "$brewcomp" 2>/dev/null \
+              | grep -E "^\s+'" | sed "s/^[[:space:]]*'//;s/'$//"
+            # Top-level flags
+            sed -n "/^_brew()/,/^}/p" "$brewcomp" 2>/dev/null \
+              | grep -oE "(-?-[-a-zA-Z=]+)\[[^]]*\]" \
+              | sed "s/\[/:/;s/\]$//"
+          elif [[ ${#subcmds} -eq 1 ]]; then
+            # Get the function body for _brew_<subcmd>
+            local funcname="_brew_${subcmds[1]//-/_}"
+            local funcbody
+            funcbody=$(sed -n "/^${funcname}()/,/^}/p" "$brewcomp" 2>/dev/null)
+            # Sub-subcommands
+            echo "$funcbody" | grep -E "^\s+'[a-z][-a-z]*:" \
+              | sed "s/^[[:space:]]*'//;s/'$//"
+            # Flags
+            echo "$funcbody" \
+              | grep -oE "(-?-[-a-zA-Z=]+)\[[^]]*\]" \
+              | sed "s/\[/:/;s/\]$//"
+          else
+            # Sub-subcommand: look for case branch in _brew_<subcmd>
+            local funcname="_brew_${subcmds[1]//-/_}"
+            local funcbody
+            funcbody=$(sed -n "/^${funcname}()/,/^}/p" "$brewcomp" 2>/dev/null)
+            echo "$funcbody" | sed -n "/${subcmds[2]})/,/;;\|esac/p" \
+              | grep -oE "(-?-[-a-zA-Z=]+)\[[^]]*\]" \
+              | sed "s/\[/:/;s/\]$//"
+          fi
+        } | sort -u | tee "$lookup" | cut -d: -f1
+      )
+      command rm -f "$lookup"
+    }
+
 _fzf_complete_tmux() {
+  local lookup="${TMPDIR:-/tmp}/tmux-desc-$$"
+  local tmuxcomp="/usr/share/zsh/5.9/functions/_tmux"
   _fzf_complete --height=40% --layout=reverse --prompt=" > " \
-    --preview-window 'right:70%:wrap' \
-    --preview 'tmux list-commands 2>/dev/null | grep "^{} "' \
+    --preview-window 'right:50%:wrap' \
+    --preview "grep -m1 '^{}:' $lookup 2>/dev/null | cut -d: -f2-" \
     -- "$@" < <(
-    { tmux list-commands 2>/dev/null | awk '{print $1}'; printf '%s\n' -2 -C -D -h -l -N -u -V -v -c -f -L -S -T; } | sort -u
+    local words=(${(z)@})
+    # Collect non-flag arguments after 'tmux'
+    local -a subcmds=()
+    for w in $words[2,-1]; do
+      [[ -z $w || $w == -* ]] && continue
+      subcmds+=("$w")
+    done
+    {
+      if [[ ${#subcmds} -eq 0 ]]; then
+        # Top-level: all tmux commands with descriptions
+        grep "^_tmux-" "$tmuxcomp" | sed 's/() {//' | while read -r func; do
+          local cmd="${func#_tmux-}"
+          local desc=$(sed -n "/^${func}()/,/return$/p" "$tmuxcomp" | grep 'print "' | head -1 | sed 's/.*print "//;s/".*//')
+          [[ -n $desc ]] && echo "${cmd}:${desc}" || echo "$cmd"
+        done | tee "$lookup" | cut -d: -f1
+        # Top-level flags (-l, -L, -S, etc.) from _tmux() function
+        sed -n "/^_tmux()/,/^}/p" "$tmuxcomp" 2>/dev/null \
+          | grep -oE "(-?-[-a-zA-Z=]+)[+=]*\[[^]]*\]" \
+          | sed "s/[+=]*\[/:/;s/\]$//" | tee -a "$lookup" | cut -d: -f1
+      else
+        # Subcommand: extract flags from _tmux-<subcmd> function
+        sed -n "/^_tmux-${subcmds[1]}()/,/^}/p" "$tmuxcomp" 2>/dev/null \
+          | grep -oE "(-?-[-a-zA-Z=]+)[+=]*\[[^]]*\]" \
+          | sed "s/[+=]*\[/:/;s/\]$//" | tee "$lookup" | cut -d: -f1
+      fi
+    } | sort -u
   )
+  command rm -f "$lookup"
 }
+
 _fzf_complete_atuin() {
+  local lookup="${TMPDIR:-/tmp}/atuin-desc-$$"
   _fzf_complete --height=40% --layout=reverse --prompt=" > " \
-    --preview-window 'right:70%:wrap' \
-    --preview 'atuin {} --help 2>/dev/null | bat -pp --color=always -l bash 2>/dev/null | head -200' \
+    --preview-window 'right:50%:wrap' \
+    --preview "grep -m1 '^{}:' $lookup 2>/dev/null | cut -d: -f2-" \
     -- "$@" < <(
-    { atuin --help 2>/dev/null | awk '/^  [a-z]/ {print $1}'; atuin --help 2>/dev/null | __fzf_flags; } | sort -u
+    local words=(${(z)@}) fun="_atuin_commands"
+    for w in $words[2,-1]; do
+      [[ -z $w ]] && continue
+      fun="${fun%_commands}__${w}_commands"
+    done
+    {
+      sed -n "/^${fun}()/,/^}/p" ~/.config/zsh/functions/_atuin 2>/dev/null | grep "^'" | cut -d"'" -f2 > "$lookup"
+      sed -n "/^${fun}()/,/^}/p" ~/.config/zsh/functions/_atuin 2>/dev/null | grep "^'" | cut -d"'" -f2 | cut -d: -f1
+      [[ $words[2] == "" ]] && atuin --help 2>/dev/null | __fzf_flags
+    } | sort -u
   )
+  command rm -f "$lookup"
 }
 _fzf_complete_dotnet() {
   _fzf_complete --height=40% --layout=reverse --prompt=" > " \
@@ -176,54 +306,112 @@ _fzf_complete_gh() {
     } | sort -u
   )
 }
-_fzf_complete_bw() {
-  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
-    --preview-window 'right:70%:wrap' \
-    --preview 'bw {} --help 2>/dev/null | bat -pp --color=always -l bash 2>/dev/null | head -200' \
-    -- "$@" < <(
-    {
-      bw --help 2>/dev/null | awk '/^Commands:/{p=1;next} p && /^  [a-z]/{print $1}'
-      bw --help 2>/dev/null | __fzf_flags
-    } | sort -u
-  )
-}
+
 _fzf_complete_npm() {
-  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
-    --preview-window 'right:70%:wrap' \
-    --preview 'npm {} --help 2>/dev/null | bat -pp --color=always -l bash 2>/dev/null | head -200' \
-    -- "$@" < <(
-    {
-      npm help 2>/dev/null | awk '/^All commands:/{p=1;next} p && /^    [a-z]/{gsub(/,/," ",$0);for(i=1;i<=NF;i++)if($i!="")print $i}'
-      printf '%s\n' --help --version
-    } | sort -u
-  )
-}
+      local lookup="${TMPDIR:-/tmp}/npm-desc-$$"
+      _fzf_complete --height=40% --layout=reverse --prompt=" > " \
+        --preview-window 'right:50%:wrap' \
+        --preview "npm {} -h 2>/dev/null | head -5" \
+        -- "$@" < <(
+        local words=(${(z)@})
+        local -a subcmds=()
+        for w in $words[2,-1]; do
+          [[ -z $w || $w == -* ]] && continue
+          subcmds+=("$w")
+        done
+        {
+          if [[ ${#subcmds} -eq 0 ]]; then
+            COMP_CWORD=1 COMP_LINE="npm " COMP_POINT=4 \
+              npm completion -- "npm" "" 2>/dev/null
+            COMP_CWORD=1 COMP_LINE="npm -" COMP_POINT=5 \
+              npm completion -- "npm" "-" 2>/dev/null
+            echo "--version"
+            echo "--help"
+            echo "-v"
+            echo "-h"
+          else
+            npm "${subcmds[1]}" -h 2>/dev/null | awk '
+              /^  -[A-Za-z]\|--[-a-z]/ {
+                split($0, a, "|")
+                short = a[1]; gsub(/^  /, "", short)
+                long = a[2]; sub(/ .*/, "", long)
+                flag = short "|" long
+                getline; gsub(/^  +/, "")
+                printf "%s:%s\n", flag, $0
+              }
+              /^  --[-a-z]/ {
+                flag = $1
+                getline; gsub(/^  +/, "")
+                printf "%s:%s\n", flag, $0
+              }
+            ' > "$lookup"
+            cut -d: -f1 "$lookup"
+          fi
+        } | sort -u
+      )
+      command rm -f "$lookup"
+    }
+
+
+
 _fzf_complete_opencode() {
+  local lookup="${TMPDIR:-/tmp}/opencode-desc-$$"
   _fzf_complete --height=40% --layout=reverse --prompt=" > " \
-    --preview-window 'right:70%:wrap' \
-    --preview 'opencode {} --help 2>&1 | bat -pp --color=always -l bash 2>/dev/null | head -200' \
+    --preview-window 'right:50%:wrap' \
+    --preview "grep -m1 '^{}:' $lookup 2>/dev/null | cut -d: -f2-" \
+    -- "$@" < <(
+    local words=(${(z)@})
+    local nwords=${#words}
+    {
+      # Get subcommands/values
+      COMP_CWORD="$((nwords-1))" COMP_LINE="${words[*]}" COMP_POINT="${#${words[*]}}" \
+        opencode --get-yargs-completions "${words[@]}" "" 2>/dev/null
+      # Get flags
+      COMP_CWORD="$((nwords-1))" COMP_LINE="${words[*]} -" COMP_POINT="$((${#${words[*]}}+2))" \
+        opencode --get-yargs-completions "${words[@]}" "-" 2>/dev/null
+    } | sort -u | tee "$lookup" | cut -d: -f1
+  )
+  command rm -f "$lookup"
+}
+_fzf_complete_oc(){
+    _fzf_complete_opencode "$@"
+}
+_fzf_complete_ocf(){
+    _fzf_complete_opencode "$@"
+}
+
+_fzf_complete_fd() {
+  local lookup="${TMPDIR:-/tmp}/fd-desc-$$"
+  local fdcomp="/opt/homebrew/share/zsh/site-functions/_fd"
+  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
+    --preview-window 'right:50%:wrap' \
+    --preview "grep -m1 '^{}:' $lookup 2>/dev/null | cut -d: -f2-" \
     -- "$@" < <(
     {
-      opencode --help 2>&1 | awk '/^  opencode / && !/\[project\]/ {print $2}'
-      opencode --help 2>&1 | __fzf_flags
+      # Match '--flag[desc]' format
+      grep -oE "(-?-[-a-zA-Z0-9=]+)\[[^]]*\]" "$fdcomp" 2>/dev/null \
+        | sed "s/\[/:/;s/\]$//"
+      # Match '{-X,--flag}'[desc]' format
+      grep -oE "\{-.,--[-a-zA-Z0-9=]+\}'\[[^]]*\]" "$fdcomp" 2>/dev/null \
+        | sed "s/{-.,//;s/}'\[/:/;s/\]$//"
+    } | sort -u | tee "$lookup" | cut -d: -f1
+  )
+  command rm -f "$lookup"
+}
+
+_fzf_complete_rg() {
+  local lookup="${TMPDIR:-/tmp}/rg-desc-$$"
+  local rgcomp="/opt/homebrew/share/zsh/site-functions/_rg"
+  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
+    --preview-window 'right:50%:wrap' \
+    --preview "grep -m1 '^{}:' $lookup 2>/dev/null | cut -d: -f2-" \
+    -- "$@" < <(
+    {
+      grep -oE "(-?-[-a-zA-Z0-9=]+)\[[^]]*\]" "$rgcomp" 2>/dev/null \
+        | sed "s/\[/:/;s/\]$//" | tee "$lookup" | cut -d: -f1
     } | sort -u
   )
-}
-_fzf_complete_fd() {
-  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
-    --preview-window 'right:70%:wrap' \
-    --preview 'fd {} --help 2>/dev/null | bat -pp --color=always -l bash 2>/dev/null | head -200' \
-    -- "$@" < <(
-    fd --help 2>/dev/null | __fzf_flags | sort -u
-  )
-}
-_fzf_complete_rg() {
-  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
-    --preview-window 'right:70%:wrap' \
-    --preview 'rg {} --help 2>/dev/null | bat -pp --color=always -l bash 2>/dev/null | head -200' \
-    -- "$@" < <(
-    rg --help 2>/dev/null | __fzf_flags | sort -u
-  )
+  command rm -f "$lookup"
 }
 
 export PATH=$PATH:/Users/raphael/.spicetify
@@ -253,3 +441,4 @@ export OPENCODE_API_KEY="sk-10WcqcQCc3gsb3oAxZfKTNRQOa7QR1R660CZUG4lrOhqqNonhs83
 export OPENCODE_PORT=4096
 
 alias ocf='OPENCODE_CONFIG=~/.config/opencode/opencode-full.jsonc opencode '
+ZSH_AUTOSUGGEST_COMPLETION_IGNORE="(?|*[| ]|*[| ]?)"
