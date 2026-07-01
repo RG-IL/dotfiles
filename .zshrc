@@ -58,6 +58,7 @@ bindkey '^I'      autosuggest-accept
 ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(buffer-empty bracketed-paste accept-line push-line-or-edit)
 ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 ZSH_AUTOSUGGEST_USE_ASYNC=true
+ZSH_AUTOSUGGEST_MANUAL_REBIND=1
 export FZF_COMPLETION_TRIGGER=''
 bindkey '^[' fzf-completion
 bindkey '^[^L' forward-word
