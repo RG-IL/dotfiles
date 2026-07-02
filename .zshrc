@@ -26,6 +26,7 @@ fi
 
 export PATH="/Library/Frameworks/Python.framework/Versions/3.14/bin:$PATH"
 export BREW_PREFIX="/opt/homebrew"
+fpath+=(/opt/homebrew/share/zsh/site-functions)
 
 # Autoload functions on first use instead of defining at startup
 fpath=(~/.config/zsh/functions $fpath)
@@ -39,7 +40,7 @@ autoload -Uz ai coddy csc iv ls rs רד spl y _atuin_ai_from_buffer
 autoload -Uz compinit && compinit
 
 # Show animated system info early (compiled C — instant startup)
-if ! [[ -n "$TMUX" ]] || ! grep -A2 "name = \"$(tmux display-message -p '#{session_name}' 2>/dev/null)\"" ~/.config/sesh/sesh.toml 2>/dev/null | grep -q "startup_command"; then
+if [[ -z "$MANIM_PANE" ]] && { ! [[ -n "$TMUX" ]] || ! grep -A2 "name = \"$(tmux display-message -p '#{session_name}' 2>/dev/null)\"" ~/.config/sesh/sesh.toml 2>/dev/null | grep -q "startup_command"; }; then
   ~/.config/zsh/ghost
 fi
 

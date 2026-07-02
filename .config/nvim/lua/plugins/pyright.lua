@@ -9,13 +9,14 @@ return {
                     before_init = function(_, config)
                         config.settings = config.settings or {}
                         config.settings.python = config.settings.python or {}
-                        config.settings.python.pythonPath = vim.fn.exepath("python3")
+                        config.settings.python.pythonPath =
+                            "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3"
                     end,
                     settings = {
                         python = {
                             analysis = {
                                 diagnosticSeverityOverrides = {
-                                    reportIncompatibleMethodOverride = "none",
+                                    reportWildcardImportFromLibrary = "none",
                                 },
                             },
                         },

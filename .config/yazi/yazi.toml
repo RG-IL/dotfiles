@@ -17,13 +17,28 @@ edit = [
 open = [
     { run = 'open "$@"', desc = "Open", for = "macos" },
 ]
+play = [
+    { run = 'open -a "QuickTime Player" "$@"', desc = "play", for = "unix" },
+]
 
 [open]
-rules = [
-    { mime = "inode/directory", use = ["open"] },
-    { mime = "text/*", use = ["edit"] },
-    { name = "*.cs", mime = "*", use = ["edit"] },
-    { mime = "*", use = ["open"] },
+prepend_rules = [
+{url = "*.mp4", use = ["play", "open"]},
+{url = "*.mkv", use = ["play", "open"]},
+{ url = "*.avi", use = ["play", "open"] },
+{ url = "*.mov", use = ["play", "open"] },
+{ url = "*.webm", use = ["play", "open"] },
+{ url = "*.ogg", use = ["play", "open"] },
+{ url = "*.ogv", use = ["play", "open"] },
+{ url = "*.mpg", use = ["play", "open"] },
+{ url = "*.mpeg", use = ["play", "open"] },
+{ url = "*.mp3", use = ["play", "open"] },
+{ url = "*.flac", use = ["play", "open"] },
+{ url = "*.wav", use = ["play", "open"] },
+{ url = "*.m4a", use = ["play", "open"] },
+{ url = "*.aiff", use = ["play", "open"] },
+{ url = "*.wma", use = ["play", "open"] },
+{url = "*", use = ["edit", "open"]},
 ]
 
 [[plugin.prepend_fetchers]]
