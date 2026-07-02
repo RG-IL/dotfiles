@@ -415,7 +415,77 @@ _fzf_complete_rg() {
   command rm -f "$lookup"
 }
 
-export PATH=$PATH:/Users/raphael/.spicetify
+_fzf_complete_bat() {
+  local lookup="${TMPDIR:-/tmp}/bat-desc-$$"
+  local batcomp="/opt/homebrew/share/zsh/site-functions/_bat"
+  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
+    --preview-window 'right:50%:wrap' \
+    --preview "grep -m1 '^{}:' $lookup 2>/dev/null | cut -d: -f2-" \
+    -- "$@" < <({
+    sed -n "s/.*\(--[-a-zA-Z0-9=]*\)[^[]*\[\([^]]*\)\].*/\1:\2/p" "$batcomp" 2>/dev/null
+  } | sort -u | tee "$lookup" | cut -d: -f1)
+  command rm -f "$lookup"
+}
+
+_fzf_complete_delta() {
+  local lookup="${TMPDIR:-/tmp}/delta-desc-$$"
+  local deltacomp="/opt/homebrew/share/zsh/site-functions/_delta"
+  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
+    --preview-window 'right:50%:wrap' \
+    --preview "grep -m1 '^{}:' $lookup 2>/dev/null | cut -d: -f2-" \
+    -- "$@" < <({
+    sed -n "s/.*\(--[-a-zA-Z0-9=]*\)[^[]*\[\([^]]*\)\].*/\1:\2/p" "$deltacomp" 2>/dev/null
+  } | sort -u | tee "$lookup" | cut -d: -f1)
+  command rm -f "$lookup"
+}
+
+_fzf_complete_eza() {
+  local lookup="${TMPDIR:-/tmp}/eza-desc-$$"
+  local ezacomp="/opt/homebrew/share/zsh/site-functions/_eza"
+  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
+    --preview-window 'right:50%:wrap' \
+    --preview "grep -m1 '^{}:' $lookup 2>/dev/null | cut -d: -f2-" \
+    -- "$@" < <({
+    sed -n "s/.*\(--[-a-zA-Z0-9=]*\)[^[]*\[\([^]]*\)\].*/\1:\2/p" "$ezacomp" 2>/dev/null
+  } | sort -u | tee "$lookup" | cut -d: -f1)
+  command rm -f "$lookup"
+}
+
+_fzf_complete_mpv() {
+  local lookup="${TMPDIR:-/tmp}/mpv-desc-$$"
+  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
+    --preview-window 'right:50%:wrap' \
+    --preview "grep -m1 '^{}:' $lookup 2>/dev/null | cut -d: -f2-" \
+    -- "$@" < <({
+    mpv --no-config --list-options 2>/dev/null \
+      | awk '{for(i=1;i<=NF;i++) if($i~/^--/) print $i}'
+  } | sort -u | tee "$lookup" | cut -d: -f1)
+  command rm -f "$lookup"
+}
+
+_fzf_complete_yazi() {
+  local lookup="${TMPDIR:-/tmp}/yazi-desc-$$"
+  local yazicomp="/opt/homebrew/share/zsh/site-functions/_yazi"
+  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
+    --preview-window 'right:50%:wrap' \
+    --preview "grep -m1 '^{}:' $lookup 2>/dev/null | cut -d: -f2-" \
+    -- "$@" < <({
+    sed -n "s/.*\(--[-a-zA-Z0-9=]*\)[^[]*\[\([^]]*\)\].*/\1:\2/p" "$yazicomp" 2>/dev/null
+  } | sort -u | tee "$lookup" | cut -d: -f1)
+  command rm -f "$lookup"
+}
+
+_fzf_complete_yt-dlp() {
+  local lookup="${TMPDIR:-/tmp}/yt-dlp-desc-$$"
+  _fzf_complete --height=40% --layout=reverse --prompt=" > " \
+    --preview-window 'right:50%:wrap' \
+    --preview "grep -m1 '^{}:' $lookup 2>/dev/null | cut -d: -f2-" \
+    -- "$@" < <({
+    yt-dlp --help 2>/dev/null | grep -oE '\s--[-a-zA-Z-]+' | sed 's/^ *//'
+  } | sort -u | tee "$lookup" | cut -d: -f1)
+  command rm -f "$lookup"
+}
+
 
 alias cat="bat"
 # csc - watches clipboard, saves each copy, auto-creates .cs files when
