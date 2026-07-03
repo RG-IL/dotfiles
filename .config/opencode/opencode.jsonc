@@ -9,7 +9,7 @@
     }
   },
   "plugin": [
-    "@cortexkit/opencode-magic-context@latest"
+    "@cortexkit/opencode-magic-context"
   ],
   "compaction": {
     "auto": false,
