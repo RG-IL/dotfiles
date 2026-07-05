@@ -12,11 +12,3 @@ name = "coddy"
 path = "~/coding/coddy-c"
 startup_command = "nvim coddy.c"
 preview_command = "eza ~/coding/coddy-c/ --icons=always --color=always --group-directories-first --git -1"
-
-
-
-[[session]]
-name = "music"
-path = "~"
-startup_command = "termusic '/Users/raphael/Music/downloads_music/#1 playlist.m3u'"
-preview_command = "eza ~/Music/downloads_music/ --icons=always --color=always --group-directories-first --git -1"
