@@ -1,18 +1,18 @@
 {
-  "$schema": "https://opencode.ai/config.json",
-  "lsp": true,
-  "small_model": "opencode/big-pickle",
-  "permission": "allow",
-  "agent": {
-    "build": {
-      "color": "#00d4ff"
+    "$schema": "https://opencode.ai/config.json",
+    "lsp": true,
+    "small_model": "opencode/big-pickle",
+    "permission": "allow",
+    "agent": {
+        "build": {
+            "color": "#00d4ff"
+        }
+    },
+    "plugin": [
+        "@cortexkit/opencode-magic-context"
+    ],
+    "compaction": {
+        "auto": false,
+        "prune": false
     }
-  },
-  "plugin": [
-    "@cortexkit/opencode-magic-context"
-  ],
-  "compaction": {
-    "auto": false,
-    "prune": false
-  }
 }

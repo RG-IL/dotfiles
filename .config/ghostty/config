@@ -1,8 +1,6 @@
 # Always Start to maximize. 
-window-width = 2500
-window-height = 1600
-window-position-x = 0
-window-position-y = 0
+maximize = true
+window-save-state = never
 confirm-close-surface = false
 quit-after-last-window-closed = true
 foreground = #F2D5CF
@@ -17,7 +15,6 @@ macos-option-as-alt = true
 window-padding-balance = true
 window-padding-x = 12
 window-padding-y = 12
-window-save-state = always
 macos-titlebar-style = hidden
 font-thicken = false
 focus-follows-mouse = false

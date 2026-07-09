@@ -12,7 +12,6 @@
 # @raycast.author RaphaelGrumbach
 # @raycast.authorURL https://raycast.com/RaphaelG
 
-
 window_width=150
 window_height=40
 window_x=80
@@ -24,10 +23,12 @@ exec env -i \
   HOME="$HOME" \
   PATH="/opt/homebrew/bin:/usr/bin:/bin" \
   open -na Ghostty.app --args \
+  --maximize=false \
   --window-width="$window_width" \
   --window-height="$window_height" \
   --window-position-x="$window_x" \
   --window-position-y="$window_y" \
   -e env sh -c '
-    termusic
+  termusic --layout-4 && exit
 ' || true
+

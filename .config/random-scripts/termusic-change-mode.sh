@@ -12,5 +12,4 @@
 # @raycast.author RaphaelGrumbach
 # @raycast.authorURL https://raycast.com/RaphaelG
 
-termusic change-mode
-
+termusic change-mode 2>/dev/null

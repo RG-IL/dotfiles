@@ -151,11 +151,16 @@ int main(void) {
                     if (select(STDIN_FILENO + 1, &more, NULL, NULL, &tw) <= 0) break;
                 }
                 if (total > 0) {
-                    for (int i = 0; i < total; i++) {
-                        if (buf[i] != 'q' && buf[i] != 27)
-                            ioctl(STDIN_FILENO, TIOCSTI, &buf[i]);
+                    // Standalone ESC → close animation
+                    if (total == 1 && buf[0] == 27) {
+                        pressed = 1;
+                    } else {
+                        for (int i = 0; i < total; i++) {
+                            if (buf[i] != 'q')
+                                ioctl(STDIN_FILENO, TIOCSTI, &buf[i]);
+                        }
+                        pressed = 1;
                     }
-                    pressed = 1;
                 }
             }
         }

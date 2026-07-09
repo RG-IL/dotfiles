@@ -54,29 +54,6 @@ Chords use `<M-C-S-X>` = Opt+Cmd+Shift+letter (macOS with `macos-option-as-alt`)
 - nvim plugin (`lua/plugins/opencode.lua`) with `<a-a>` for ask, `<C-x>` for select, `<C-.>` for toggle, `go` operator.
 - Theme: `catppuccin-transparent` (in `tui.json`)
 
-## Composio MCP (`opencode/mcp-servers/composio-mcp.mjs`)
-
-Use these MCP tools instead of the built-in `composio_composio_*` tools — they handle complex JSON correctly.
-
-| MCP Tool | Purpose |
-|----------|---------|
-| `composio_search` | Find tool slugs by use case |
-| `composio_execute` | Execute a tool by slug — pass `data` as a JSON object |
-| `composio_run` | Run inline JS with pre-injected `execute()`/`search()` |
-| `composio_tools_list` | List tools in a toolkit (e.g. `hackernews`) |
-| `composio_link` | Connect an account for a toolkit |
-
-**Tool knowledge base (`~/.config/opencode/learned-tools.md`):**
-- **Read it first** before any composio tool call — it has param names, types, quirks
-- **Update it after** every successful tool use — add new tools, fix quirks discovered
-- The file grows over time; check it before searching
-
-**Rules to never guess again:**
-1. **Check learned-tools.md first** — if the tool is there, use it directly. If not, check schema.
-2. **No guessing parameter names** — e.g. `HACKERNEWS_GET_ITEM_WITH_ID` expects `item_id` (string), not `id` (number). `HACKERNEWS_SEARCH_POSTS` expects `tags` as an array `["story"]`, not a string `"story"`.
-3. **Use `composio_execute` (MCP)** not the built-in `composio_composio_execute` — the MCP version passes data through `composio run` which handles type coercion correctly.
-4. **For multi-step workflows** — use `composio_run` with `Promise.all` for parallel fetches, but batch responsibly to avoid fork bombs (no 60-item `Promise.all`).
-
 ## Sensitive
 
 - **`raycast/config.json`** contains API tokens — do not read or expose.
