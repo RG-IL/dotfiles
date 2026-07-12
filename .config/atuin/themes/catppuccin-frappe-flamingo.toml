@@ -1,0 +1,12 @@
+[theme]
+name = "catppuccin-frappe-flamingo"
+
+[colors]
+AlertInfo = "#a6d189"
+AlertWarn = "#ef9f76"
+AlertError = "#E8CB93"
+Annotation = "#eebebe"
+Base = "#a6d0f5"
+Guidance = "#f49cbb"
+Important = "#e78284"
+Title = "#eebebe"

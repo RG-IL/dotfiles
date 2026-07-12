@@ -6,6 +6,7 @@ return {
             "rcarriga/nvim-dap-ui",
             "mfussenegger/nvim-dap-python",
             "theHamsta/nvim-dap-virtual-text",
+            "mason-org/mason.nvim",
         },
         config = function()
             local dap = require("dap")
@@ -60,6 +61,56 @@ return {
                     pythonPath = function()
                         return vim.fn.exepath("python3")
                     end,
+                },
+            }
+
+            -- Rust / codelldb adapter (installed via Mason)
+            local mason_registry = require("mason-registry")
+            local codelldb_pkg = mason_registry.get_package("codelldb")
+            local extension_path = codelldb_pkg:get_install_path() .. "/extension/"
+            local codelldb_path = extension_path .. "adapter/codelldb"
+            local liblldb_path = extension_path .. "lldb/lib/liblldb.dylib"
+
+            dap.adapters.codelldb = {
+                type = "server",
+                port = "${port}",
+                host = "127.0.0.1",
+                executable = {
+                    command = codelldb_path,
+                    args = { "--liblldb", liblldb_path, "--port", "${port}" },
+                },
+            }
+
+            dap.configurations.rust = {
+                {
+                    name = "Launch (debug build)",
+                    type = "codelldb",
+                    request = "launch",
+                    sourceLanguages = { "rust" },
+                    showDisassembly = "never",
+                    initCommands = {
+                        "settings set target.process.thread.step-avoid-regexp ^(std|core|alloc)::",
+                    },
+                    program = function()
+                        -- Locate the cargo workspace root from the current file
+                        local cargo_toml = vim.fs.find("Cargo.toml", {
+                            upward = true,
+                            path = vim.fn.expand("%:p:h"),
+                        })[1]
+                        local root = cargo_toml and vim.fs.dirname(cargo_toml) or vim.fn.getcwd()
+                        -- Build (synchronously) so the debug binary exists, then return it
+                        local build = vim.system({ "cargo", "build" }, { cwd = root, text = true }):wait()
+                        if build.code ~= 0 then
+                            vim.notify("cargo build failed:\n" .. (build.stderr or ""), vim.log.levels.ERROR)
+                            return nil
+                        end
+                        local meta = vim.json.decode(
+                            vim.system({ "cargo", "metadata", "--no-deps", "--format-version", "1" }, { cwd = root, text = true }):wait().stdout
+                        )
+                        return meta.target_directory .. "/debug/" .. meta.packages[1].name
+                    end,
+                    cwd = "${workspaceFolder}",
+                    stopOnEntry = false,
                 },
             }
 

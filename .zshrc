@@ -90,8 +90,8 @@ alias oc='opencode'
 # Defer slow plugins to first prompt
 typeset -a _zsh_defer_plugins
 _zsh_defer_plugins=(
-  "$BREW_PREFIX/opt/zsh-fast-syntax-highlighting/share/zsh-fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh"
   "$HOME/.cache/zsh/at-init.zsh"
+  "$BREW_PREFIX/opt/zsh-fast-syntax-highlighting/share/zsh-fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh"
 )
 _load_deferred_plugins() {
   local p

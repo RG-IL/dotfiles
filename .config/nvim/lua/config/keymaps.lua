@@ -55,6 +55,9 @@ vim.keymap.set("n", "<M-C-S-R>", function()
     elseif vim.bo.filetype == "cs" then
         vim.cmd("terminal dotnet run")
         vim.cmd("startinsert")
+    elseif vim.bo.filetype == "rust" then
+        vim.cmd("terminal cargo run")
+        vim.cmd("startinsert")
     elseif vim.bo.filetype == "c" then
         local out = "." .. vim.fn.expand("%:r")
         vim.cmd("terminal gcc " .. vim.fn.expand("%") .. " -o " .. out .. " && ./" .. out)
