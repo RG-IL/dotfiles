@@ -19,6 +19,59 @@
 
 static struct termios orig_term;
 
+// Convert truecolor \033[38;2;R;G;Bm to 256-color \033[38;5;Nm
+static int r24_to_ansi256(int r, int g, int b) {
+    if (r == g && g == b) {
+        if (r < 8) return 0;
+        if (r < 188) return 232 + (int)((r - 8) / 10);
+        return 255;
+    }
+    return 16 + 36 * (int)(r / 51) + 6 * (int)(g / 51) + (int)(b / 51);
+}
+
+static void optimize_escapes(char *s) {
+    char *out = s;
+    char *p = s;
+    int last256 = -1;
+    while (*p) {
+        // Truecolor foreground: \033[38;2;R;G;Bm
+        if (p[0] == '\033' && p[1] == '[' && p[2] == '3' && p[3] == '8' &&
+            p[4] == ';' && p[5] == '2' && p[6] == ';') {
+            int r = 0, g = 0, b = 0;
+            char *start = p + 7;
+            r = atoi(start);
+            while (*start && *start != ';') start++;
+            if (*start == ';') start++;
+            g = atoi(start);
+            while (*start && *start != ';') start++;
+            if (*start == ';') start++;
+            b = atoi(start);
+            while (*start && *start != 'm') start++;
+            if (*start == 'm') start++;
+            int c = r24_to_ansi256(r, g, b);
+            if (c == last256) continue;
+            last256 = c;
+            int n = sprintf(out, "\033[38;5;%dm", c);
+            out += n;
+            p = start;
+            continue;
+        }
+        // Reset: \033[0m
+        if (p[0] == '\033' && p[1] == '[' && p[2] == '0' && p[3] == 'm') {
+            char *after = p + 4;
+            if (*after == '\033') { p = after; continue; }
+            if (*after == '\n' || *after == '\0') { p = after; continue; }
+            last256 = -1;
+            memcpy(out, p, 4);
+            out += 4;
+            p = after;
+            continue;
+        }
+        *out++ = *p++;
+    }
+    *out = '\0';
+}
+
 int main(void) {
     int pressed = 0;
     tcgetattr(STDIN_FILENO, &orig_term);
@@ -99,6 +152,10 @@ int main(void) {
         }
         free(copy);
     }
+
+    for (size_t f = 0; f < fcnt; f++)
+        for (int i = 0; i < nlines[f]; i++)
+            optimize_escapes(fl[f][i]);
 
     int max_h = 1;
     for (size_t f = 0; f < fcnt; f++) if (nlines[f] > max_h) max_h = nlines[f];
