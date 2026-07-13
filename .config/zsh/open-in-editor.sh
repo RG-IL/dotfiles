@@ -14,13 +14,11 @@ if [[ -n "$client" ]]; then
   if /opt/homebrew/bin/tmux has-session -t editor 2>/dev/null; then
     /opt/homebrew/bin/tmux send-keys -t "editor" " /opt/homebrew/bin/nvim --listen /tmp/nvim-editor.sock \"$first\"" Enter
   else
-    /opt/homebrew/bin/tmux new-session -d -s editor "/opt/homebrew/bin/nvim --listen /tmp/nvim-editor.sock \"$first\"; exec /bin/zsh -l"
+    /opt/homebrew/bin/tmux new-session -d -s editor "/opt/homebrew/bin/nvim --listen /tmp/nvim-editor.sock \"$first\""
   fi
   /opt/homebrew/bin/tmux switch-client -c "$client" -t editor
 else
-  export NVIM_QUICK_ACTION=1
-  export NVIM_QUICK_FILE="$first"
-  /Applications/Ghostty.app/Contents/MacOS/ghostty </dev/null >/dev/null 2>&1 &
+  /Applications/Ghostty.app/Contents/MacOS/ghostty -e "/opt/homebrew/bin/nvim --listen /tmp/nvim-editor.sock \"$first\"" </dev/null >/dev/null 2>&1 &
 fi
 
 # Wait for socket to be ready, then send remaining files

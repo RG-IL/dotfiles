@@ -12,4 +12,4 @@
 # @raycast.author RaphaelGrumbach
 # @raycast.authorURL https://raycast.com/RaphaelG
 
-termusic change-mode 2>/dev/null
+termusic cycle-loop 2>/dev/null | cut -d' ' -f2-

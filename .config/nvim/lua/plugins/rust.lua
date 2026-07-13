@@ -1,4 +1,17 @@
 return {
+    -- LazyVim auto-enables the `rust_analyzer` lspconfig server by default, which
+    -- attaches a SECOND rust-analyzer client alongside rustaceanvim's own
+    -- `rust-analyzer` client. Two clients means every diagnostic is reported
+    -- twice (once per client namespace). Disable the lspconfig one so only
+    -- rustaceanvim manages rust-analyzer.
+    {
+        "neovim/nvim-lspconfig",
+        opts = {
+            servers = {
+                rust_analyzer = { enabled = false },
+            },
+        },
+    },
     {
         "mrcjkb/rustaceanvim",
         version = "^5",

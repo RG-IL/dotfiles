@@ -13,6 +13,45 @@ return {
             local dapui = require("dapui")
             local dap_python = require("dap-python")
 
+            -- A frame is part of the Rust std/core/alloc runtime (e.g. core::ops::function,
+            -- std::rt::lang_start) when stepping past `main` lands there instead of exiting.
+            local function is_runtime_frame(frame)
+                if not frame then
+                    return false
+                end
+                local path = frame.source and frame.source.path or ""
+                local name = frame.name or ""
+                return path:match("/rustc/")
+                    or path:match("rustlib/src/rust/library")
+                    or path:match("%.rustup/toolchains/")
+                    or name:match("^std::")
+                    or name:match("^core::")
+                    or name:match("^alloc::")
+                    or name:match("lang_start")
+                    or name:match("call_once")
+            end
+
+            -- Close the std runtime view (e.g. function.rs) that stepping past `main`
+            -- opened, by closing the current window/buffer showing it. Never closes the
+            -- last tabpage or the last window.
+            local function close_runtime_view()
+                local buf = vim.api.nvim_get_current_buf()
+                local name = vim.api.nvim_buf_get_name(buf)
+                local is_runtime = name ~= "" and (
+                    name:match("function%.rs")
+                    or name:match("/rustc/")
+                    or name:match("rustlib/src/rust/library")
+                    or name:match("%.rustup/toolchains/")
+                )
+                if not is_runtime then
+                    return
+                end
+                if #vim.api.nvim_list_wins() > 1 then
+                    pcall(vim.api.nvim_win_close, 0, true)
+                end
+                pcall(vim.api.nvim_buf_delete, buf, { force = true })
+            end
+
             dap.adapters.python = {
                 type = "executable",
                 command = vim.fn.exepath("python3"),
@@ -137,7 +176,7 @@ return {
                 vim.cmd("silent! wa")
             end
 
-            -- Auto open/close UI
+            -- Auto open/close UI (stock)
             dap.listeners.after.event_initialized["dapui_config"] = function()
                 dapui.open()
             end
@@ -148,6 +187,36 @@ return {
 
             dap.listeners.before.event_exited["dapui_config"] = function()
                 dapui.close()
+            end
+
+            -- When stepping (over/out) past the end of `main`, the program has actually
+            -- finished, but LLDB lands in the Rust std runtime frame
+            -- (core::ops::function / std::rt::lang_start) instead of exiting. Detect a step
+            -- stop whose frame is in the std/core/alloc runtime and terminate the session.
+            local function is_step_reason(reason)
+                return reason == "step" or reason == "step over" or reason == "step out" or reason == "step in"
+            end
+
+            dap.listeners.before.event_stopped["auto_exit_runtime"] = function(session, body)
+                if not is_step_reason(body and body.reason) then
+                    return
+                end
+                local thread_id = body and body.threadId
+                if not thread_id then
+                    return
+                end
+                session:request("stackTrace", { threadId = thread_id, levels = 1, startFrame = 0 }, function(err, response)
+                    if err or not response or not response.stackFrames or #response.stackFrames == 0 then
+                        return
+                    end
+                    if is_runtime_frame(response.stackFrames[1]) then
+                        -- Terminate, then delete the runtime buffer (function.rs) via :bd.
+                        require("dap").terminate()
+                        vim.defer_fn(function()
+                            vim.cmd("bd")
+                        end, 150)
+                    end
+                end)
             end
 
             local opts = { noremap = true, silent = true }
