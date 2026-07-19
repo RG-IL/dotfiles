@@ -4,186 +4,35 @@
     "blocks": [
         {
             "alignment": "left",
-            "newline": true,
             "segments": [
                 {
-                    "background": "#f4b8e4",
-                    "foreground": "#303446",
-                    "style": "diamond",
-                    "leading_diamond": "\ue0b6",
-                    "trailing_diamond": "\ue0b4",
-                    "template": " \ueefe ghostty ",
+                    "foreground": "#eebebe",
+                    "style": "plain",
+                    "template": " <#f4b8e4>{{ .PWD }}</> ",
                     "type": "text"
                 },
                 {
-                    "background": "#f2d5cf",
-                    "foreground": "#303446",
-                    "options": {
-                        "alpine": "\uf300",
-                        "arch": "\uf303",
-                        "centos": "\uf304",
-                        "debian": "\uf306",
-                        "elementary": "\uf309",
-                        "fedora": "\uf30a",
-                        "gentoo": "\uf30d",
-                        "linux": "\ue712",
-                        "macos": "\ue711",
-                        "manjaro": "\uf312",
-                        "mint": "\uf30f",
-                        "opensuse": "\uf314",
-                        "raspbian": "\uf315",
-                        "ubuntu": "\uf31c",
-                        "windows": "\ue70f"
-                    },
-                    "style": "diamond",
-                    "template": " {{ if .WSL }}\ue712 on {{ end }}{{ .Icon }} ",
-                    "type": "os"
-                },
-                {
-                    "background": "#eebebe",
-                    "foreground": "#303446",
-                    "powerline_symbol": "\ue0b4",
-                    "style": "powerline",
-                    "template": " \uf489 {{ .Name }} ",
-                    "type": "shell"
-                },
-                {
-                    "background": "#e78284",
-                    "foreground": "#303446",
-                    "powerline_symbol": "\ue0b4",
-                    "style": "powerline",
-                    "template": " \uf09c admin ",
-                    "type": "root"
-                },
-                {
-                    "type": "cmake",
-                    "style": "powerline",
-                    "powerline_symbol": "\ue0b4",
-                    "foreground": "#303446",
-                    "background": "#a6d189",
-                    "template": " \ue61e \ue61d cmake {{ .Full }} "
-                },
-                {
-                    "type": "python",
-                    "style": "powerline",
-                    "powerline_symbol": "\ue0b4",
-                    "options": {
-                        "display_mode": "context"
-                    },
-                    "foreground": "#303446",
-                    "background": "#e5c890",
-                    "template": " \ue73c {{ if .Venv }}{{ .Venv }} {{ end }}{{ .Full }} "
-                },
-                {
-                    "type": "go",
-                    "style": "powerline",
-                    "powerline_symbol": "\ue0b4",
-                    "foreground": "#303446",
-                    "background": "#99d1db",
-                    "template": " \u202d\ue626 {{ .Full }} "
-                },
-                {
-                    "type": "rust",
-                    "style": "powerline",
-                    "powerline_symbol": "\ue0b4",
-                    "foreground": "#303446",
-                    "background": "#ef9f76",
-                    "template": " \ue7a8 {{ .Full }} "
-                },
-                {
-                    "background": "#a6d189",
-                    "background_templates": [
+                    "foreground": "#a6d189",
+                    "foreground_templates": [
                         "{{ if or (.Working.Changed) (.Staging.Changed) }}#ef9f76{{ end }}",
                         "{{ if and (gt .Ahead 0) (gt .Behind 0) }}#ef9f76{{ end }}",
                         "{{ if gt .Ahead 0 }}#f4b8e4{{ end }}",
                         "{{ if gt .Behind 0 }}#f4b8e4{{ end }}"
                     ],
-                    "foreground": "#303446",
-                    "powerline_symbol": "\ue0b4",
                     "options": {
                         "branch_icon": "\ue725 ",
                         "fetch_status": true,
                         "fetch_upstream_icon": true
                     },
-                    "style": "powerline",
-                    "template": " {{ .UpstreamIcon }}{{ .HEAD }}{{if .BranchStatus }} {{ .BranchStatus }}{{ end }}{{ if .Working.Changed }} \uf044 {{ .Working.String }}{{ end }}{{ if and (.Working.Changed) (.Staging.Changed) }} |{{ end }}{{ if .Staging.Changed }}<#81c8be> \uf046 {{ .Staging.String }}</>{{ end }}{{ if gt .StashCount 0 }} \ueb4b {{ .StashCount }}{{ end }} ",
+                    "style": "plain",
+                    "template": "<#f2d5cf>::❯</> {{ .UpstreamIcon }}{{ .HEAD }}{{if .BranchStatus }} {{ .BranchStatus }}{{ end }}{{ if .Working.Changed }} \uf044 {{ .Working.String }}{{ end }}{{ if and (.Working.Changed) (.Staging.Changed) }} |{{ end }}{{ if .Staging.Changed }}<#81c8be> \uf046 {{ .Staging.String }}</>{{ end }}{{ if gt .StashCount 0 }} \ueb4b {{ .StashCount }}{{ end }} ",
                     "type": "git"
-                }
-            ],
-            "type": "prompt"
-        },
-        {
-            "alignment": "right",
-            "overflow": "hide",
-            "segments": [
-                {
-                    "background": "#f2d5cf",
-                    "foreground": "#303446",
-                    "options": {
-                        "style": "roundrock",
-                        "threshold": 0
-                    },
-                    "style": "diamond",
-                    "leading_diamond": "\ue0b6",
-                    "template": " \uf252 {{ .FormattedMs }} ",
-                    "trailing_diamond": "\ue0b4",
-                    "type": "executiontime"
-                }
-            ],
-            "type": "prompt"
-        },
-        {
-            "alignment": "left",
-            "newline": true,
-            "segments": [
-                {
-                    "foreground": "#f4b8e4",
-                    "style": "plain",
-                    "template": "\u256d\u2500",
-                    "type": "text"
-                },
-                {
-                    "foreground": "#eebebe",
-                    "options": {},
-                    "style": "plain",
-                    "template": "{{ .CurrentDate | date \"15:04\" }} <#ca9ee6>|</>",
-                    "type": "time"
                 },
                 {
                     "foreground": "#f2d5cf",
-                    "leading_diamond": "<#babbf1></>",
-                    "options": {
-                        "folder_icon": " \uf07c ",
-                        "folder_separator_icon": " \uf061 ",
-                        "home_icon": "\ueb06 ",
-                        "style": "agnoster_short",
-                        "max_depth": 3
-                    },
-                    "style": "diamond",
-                    "template": " {{ .Path }} ",
-                    "type": "path"
-                }
-            ],
-            "type": "prompt"
-        },
-        {
-            "alignment": "left",
-            "newline": true,
-            "segments": [
-                {
-                    "foreground": "#f4b8e4",
-                    "style": "plain",
-                    "template": "\u2570\u2500",
-                    "type": "text"
-                },
-                {
-                    "foreground": "#f2d5cf",
-                    "options": {
-                        "always_enabled": true
-                    },
                     "style": "plain",
                     "template": "\u276f ",
-                    "type": "status"
+                    "type": "text"
                 }
             ],
             "type": "prompt"
