@@ -37,12 +37,13 @@ return {
             local function close_runtime_view()
                 local buf = vim.api.nvim_get_current_buf()
                 local name = vim.api.nvim_buf_get_name(buf)
-                local is_runtime = name ~= "" and (
-                    name:match("function%.rs")
-                    or name:match("/rustc/")
-                    or name:match("rustlib/src/rust/library")
-                    or name:match("%.rustup/toolchains/")
-                )
+                local is_runtime = name ~= ""
+                    and (
+                        name:match("function%.rs")
+                        or name:match("/rustc/")
+                        or name:match("rustlib/src/rust/library")
+                        or name:match("%.rustup/toolchains/")
+                    )
                 if not is_runtime then
                     return
                 end
@@ -127,6 +128,7 @@ return {
                     request = "launch",
                     sourceLanguages = { "rust" },
                     showDisassembly = "never",
+                    console = "integratedTerminal",
                     initCommands = {
                         "settings set target.process.thread.step-avoid-regexp ^(std|core|alloc)::",
                     },
@@ -144,7 +146,11 @@ return {
                             return nil
                         end
                         local meta = vim.json.decode(
-                            vim.system({ "cargo", "metadata", "--no-deps", "--format-version", "1" }, { cwd = root, text = true }):wait().stdout
+                            vim.system(
+                                { "cargo", "metadata", "--no-deps", "--format-version", "1" },
+                                { cwd = root, text = true }
+                            )
+                                :wait().stdout
                         )
                         return meta.target_directory .. "/debug/" .. meta.packages[1].name
                     end,
@@ -205,18 +211,22 @@ return {
                 if not thread_id then
                     return
                 end
-                session:request("stackTrace", { threadId = thread_id, levels = 1, startFrame = 0 }, function(err, response)
-                    if err or not response or not response.stackFrames or #response.stackFrames == 0 then
-                        return
+                session:request(
+                    "stackTrace",
+                    { threadId = thread_id, levels = 1, startFrame = 0 },
+                    function(err, response)
+                        if err or not response or not response.stackFrames or #response.stackFrames == 0 then
+                            return
+                        end
+                        if is_runtime_frame(response.stackFrames[1]) then
+                            -- Terminate, then delete the runtime buffer (function.rs) via :bd.
+                            require("dap").terminate()
+                            vim.defer_fn(function()
+                                vim.cmd("bd")
+                            end, 150)
+                        end
                     end
-                    if is_runtime_frame(response.stackFrames[1]) then
-                        -- Terminate, then delete the runtime buffer (function.rs) via :bd.
-                        require("dap").terminate()
-                        vim.defer_fn(function()
-                            vim.cmd("bd")
-                        end, 150)
-                    end
-                end)
+                )
             end
 
             local opts = { noremap = true, silent = true }

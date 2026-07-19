@@ -67,4 +67,22 @@ return {
             })
         end,
     },
+    {
+        "nvim-mini/mini.pairs",
+        opts = {
+            skip_ts = { "string" },
+        },
+        config = function(_, opts)
+            require("mini.pairs").setup(opts)
+
+            vim.api.nvim_create_autocmd("FileType", {
+                pattern = "rust",
+                callback = function()
+                    require("mini.pairs").setup({
+                        skip_ts = {},
+                    })
+                end,
+            })
+        end,
+    },
 }

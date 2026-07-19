@@ -1,12 +1,12 @@
 {
-    "$schema": "https://opencode.ai/tui.json",
-    "theme": "catppuccin-transparent",
-    "plugin": [
-        "/Users/raphael/.config/opencode/plugins/subagent-statusline-tui.js",
-        "/Users/raphael/.config/opencode/plugins/context-progress/dist/tui.tsx",
-        "/Users/raphael/.config/opencode/plugins/open-in/dist/tui.tsx",
-        "/Users/raphael/.config/opencode/plugins/recap/dist/tui.tsx",
-        "/Users/raphael/.config/opencode/plugins/session-tokens/dist/tui.tsx",
-        "@cortexkit/opencode-magic-context"
-    ]
+  "$schema": "https://opencode.ai/tui.json",
+  "theme": "catppuccin-transparent",
+  "plugin": [
+    "/Users/raphael/.config/opencode/plugins/subagent-statusline-tui.js",
+    "/Users/raphael/.config/opencode/plugins/context-progress/dist/tui.tsx",
+    "/Users/raphael/.config/opencode/plugins/open-in/dist/tui.tsx",
+    "/Users/raphael/.config/opencode/plugins/recap/dist/tui.tsx",
+    "/Users/raphael/.config/opencode/plugins/session-tokens/dist/tui.tsx",
+    "@cortexkit/opencode-magic-context@latest"
+  ]
 }

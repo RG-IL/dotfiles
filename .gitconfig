@@ -30,3 +30,5 @@
 	side-by-side = true
 [include]
 	path = /Users/raphael/.config/delta/catppuccin.gitconfig
+[coderabbit]
+	machineId = cli/bcbd717c2dab45b0a7ee42e3102fec1e

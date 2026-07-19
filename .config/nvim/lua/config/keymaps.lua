@@ -165,9 +165,32 @@ vim.keymap.set("n", "<leader><leader>", function()
     require("telescope.builtin").find_files({
         hidden = true,
         cwd = vim.fn.expand("~"),
+        file_ignore_patterns = {
+            "target/",
+            ".git/",
+            "node_modules/",
+            ".cache/",
+            "Library/",
+            "vendor/",
+            ".zsh_sessions/",
+            ".cargo/",
+            ".venv/",
+            ".direnv/",
+            ".vscode/",
+            ".dotnet/",
+            ".wine/",
+            ".agents/",
+            ".terraform/",
+            ".github/",
+            ".vscode_shared/",
+            ".gem/",
+            ".ServiceHub/",
+            ".cortexkit",
+            ".atuin/",
+            ".copilot/",
+        },
     })
 end, { desc = "Find files from home" })
-
 -- --- Smart Toggle Ignore ---
 local function smart_toggle_ignore()
     local ft = vim.bo.filetype

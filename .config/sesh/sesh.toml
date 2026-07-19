@@ -8,7 +8,7 @@ startup_command = "y"
 preview_command = "eza ~/.config --icons=always --color=always --group-directories-first --git -1"
 
 [[session]]
-name = "coddy"
+name = "rust"
 path = "~/coding/rust"
 startup_command = "nvim main.rs"
 preview_command = "eza ~/coding/rust/ --icons=always --color=always --group-directories-first --git -1"

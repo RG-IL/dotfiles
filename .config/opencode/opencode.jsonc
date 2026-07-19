@@ -1,15 +1,18 @@
 {
     "$schema": "https://opencode.ai/config.json",
     "lsp": true,
-    "small_model": "opencode/big-pickle",
+    "small_model": "opencode/hy3-free",
     "permission": "allow",
     "agent": {
         "build": {
-            "color": "#00d4ff"
+            "color": "#e9cc94"
+        },
+        "plan": {
+            "color": "#efc0c0"
         }
     },
     "plugin": [
-        "@cortexkit/opencode-magic-context"
+        "@cortexkit/opencode-magic-context@latest"
     ],
     "compaction": {
         "auto": false,
