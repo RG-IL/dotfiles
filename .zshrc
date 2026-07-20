@@ -37,7 +37,7 @@ if [[ ! -f ~/.config/zsh/functions/_atuin ]] && [[ -x ~/.atuin/bin/atuin ]]; the
 fi
 
 autoload -Uz ai coddy csc iv ls rs רד spl y _atuin_ai_from_buffer
-autoload -Uz compinit && compinit
+autoload -Uz compinit && compinit -C -d ~/.cache/zsh/completion.dump
 
 # Show animated system info early (compiled C — instant startup)
 if [[ -z "$MANIM_PANE" ]] && { ! [[ -n "$TMUX" ]] || ! grep -A2 "name = \"$(tmux display-message -p '#{session_name}' 2>/dev/null)\"" ~/.config/sesh/sesh.toml 2>/dev/null | grep -q "startup_command"; }; then
@@ -259,6 +259,7 @@ alias oc='opencode'
 # Defer slow plugins to first prompt
 typeset -a _zsh_defer_plugins
 _zsh_defer_plugins=(
+  "$HOME/.atuin/bin/env"
   "$HOME/.cache/zsh/at-init.zsh"
   "$BREW_PREFIX/opt/zsh-fast-syntax-highlighting/share/zsh-fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh"
 )
@@ -274,12 +275,10 @@ export LG_CONFIG_FILE="$HOME/.config/lazygit/config.yml"
 export EDITOR="nvim"
 export VISUAL="nvim"
 
-. "$HOME/.atuin/bin/env"
-
 if [[ ! -f ~/.cache/zsh/at-init.zsh ]]; then
   atuin init zsh > ~/.cache/zsh/at-init.zsh
 fi
-# Sourced via deferred plugins below
+# atuin env sourced via deferred plugins above
 
 # play Spotify liked songs (starts hidden, no window)
 # Atuin AI: type a prompt, then hit Ctrl+O to send it to AI
@@ -685,3 +684,8 @@ ZSH_AUTOSUGGEST_COMPLETION_IGNORE="(?|*[| ]|*[| ]?)"
 
 # Added by CodeRabbit CLI installer
 export PATH="/Users/raphael/.local/bin:$PATH"
+
+# Start persistent CPU collector for tmux status bar
+setsid bash -c 'DIR="/tmp/sysstat_cpu"; mkdir -p "$DIR"; while true; do iostat -w 2 -c 60 | awk "NR > 2 { print int(100-\$(NF-3)); fflush() }" | while read -r v; do echo "$v" > "$DIR/cpu_collect.metric"; done; done' &>/dev/null < /dev/null
+
+

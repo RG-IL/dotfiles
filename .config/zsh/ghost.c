@@ -208,8 +208,8 @@ int main(void) {
                     if (select(STDIN_FILENO + 1, &more, NULL, NULL, &tw) <= 0) break;
                 }
                 if (total > 0) {
-                    // Standalone ESC → close animation
-                    if (total == 1 && buf[0] == 27) {
+                    // ESC, Enter, 'q' → close animation
+                    if (total == 1 && (buf[0] == 27 || buf[0] == '\n' || buf[0] == '\r' || buf[0] == 'q')) {
                         pressed = 1;
                     } else {
                         for (int i = 0; i < total; i++) {
