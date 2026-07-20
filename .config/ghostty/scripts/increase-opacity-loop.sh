@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-MAIN="$HOME/.config/ghostty/config"
-CONFIG="$HOME/Library/Application Support/com.mitchellh.ghostty/config"
+CONFIG="$HOME/.config/ghostty/config"
 LOCK="/tmp/ghostty-opacity-increase.lock"
 STEP=0.05
 
 touch "$LOCK"
 
 while [[ -f "$LOCK" ]]; do
-  current=$(sed -n 's/^background-opacity = //p' "$CONFIG" || sed -n 's/^background-opacity = //p' "$MAIN" || echo 1)
+  current=$(sed -n 's/^background-opacity = //p' "$CONFIG" || echo 1)
   new=$(awk "BEGIN { v = $current + $STEP; if (v > 1) v = 1; printf \"%.2f\", v }")
   if grep -q '^background-opacity' "$CONFIG" 2>/dev/null; then
     sed -i '' "s/^background-opacity = .*/background-opacity = $new/" "$CONFIG"

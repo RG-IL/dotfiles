@@ -685,7 +685,5 @@ ZSH_AUTOSUGGEST_COMPLETION_IGNORE="(?|*[| ]|*[| ]?)"
 # Added by CodeRabbit CLI installer
 export PATH="/Users/raphael/.local/bin:$PATH"
 
-# Start persistent CPU collector for tmux status bar
-setsid bash -c 'DIR="/tmp/sysstat_cpu"; mkdir -p "$DIR"; while true; do iostat -w 2 -c 60 | awk "NR > 2 { print int(100-\$(NF-3)); fflush() }" | while read -r v; do echo "$v" > "$DIR/cpu_collect.metric"; done; done' &>/dev/null < /dev/null
 
 

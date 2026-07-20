@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-MAIN="$HOME/.config/ghostty/config"
-CONFIG="$HOME/Library/Application Support/com.mitchellh.ghostty/config"
+CONFIG="$HOME/.config/ghostty/config"
 LOCK="/tmp/ghostty-blur-increase.lock"
 STEP=5
 
 touch "$LOCK"
 
 while [[ -f "$LOCK" ]]; do
-  current=$(sed -n 's/^background-blur-radius = //p' "$CONFIG" || sed -n 's/^background-blur-radius = //p' "$MAIN" || echo 0)
+  current=$(sed -n 's/^background-blur-radius = //p' "$CONFIG" || echo 0)
   new=$((current + STEP))
   if grep -q '^background-blur-radius' "$CONFIG" 2>/dev/null; then
     sed -i '' "s/^background-blur-radius = .*/background-blur-radius = $new/" "$CONFIG"
