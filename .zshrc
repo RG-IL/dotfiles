@@ -62,7 +62,176 @@ ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#f2d3b7"
 [ -f ~/.cache/zsh/fzf-init.zsh ] || fzf --zsh > ~/.cache/zsh/fzf-init.zsh
 source ~/.cache/zsh/fzf-init.zsh
 
+# Override fzf-completion to use generic completions for all commands
+fzf-completion() {
+  local tokens prefix trigger tail matches lbuf d_cmds cursor_pos cmd_word
+  setopt localoptions noshwordsplit noksh_arrays noposixbuiltins
+
+  tokens=(${(z)LBUFFER})
+  if [ ${#tokens} -lt 1 ]; then
+    zle ${fzf_default_completion:-expand-or-complete}
+    return
+  fi
+
+  trigger=${FZF_COMPLETION_TRIGGER-'**'}
+  [[ -z $trigger && ${LBUFFER[-1]} == ' ' ]] && tokens+=("")
+
+  if [[ ${LBUFFER} = *"${tokens[-2]-}${tokens[-1]}" ]]; then
+    tokens[-2]="${tokens[-2]-}${tokens[-1]}"
+    tokens=(${tokens[0,-2]})
+  fi
+
+  lbuf=$LBUFFER
+  tail=${LBUFFER:$(( ${#LBUFFER} - ${#trigger} ))}
+
+  if [ ${#tokens} -gt 1 -a "$tail" = "$trigger" ]; then
+    d_cmds=(${=FZF_COMPLETION_DIR_COMMANDS-cd pushd rmdir})
+
+    {
+      cursor_pos=$CURSOR
+      CURSOR=$((cursor_pos - ${#trigger} - 1))
+      if ! zmodload -F zsh/parameter p:functions 2>/dev/null || ! (( ${+functions[compdef]} )); then
+        zmodload -F zsh/compctl 2>/dev/null
+      fi
+      zle -C __fzf_extract_command .complete-word __fzf_extract_command
+      zle __fzf_extract_command
+    } always {
+      CURSOR=$cursor_pos
+      zle -D __fzf_extract_command  2>/dev/null
+    }
+
+    [ -z "$trigger"      ] && prefix=${tokens[-1]} || prefix=${tokens[-1]:0:-${#trigger}}
+    if [[ $prefix = *'$('* ]] || [[ $prefix = *'<('* ]] || [[ $prefix = *'>('* ]] || [[ $prefix = *':='* ]] || [[ $prefix = *'`'* ]]; then
+      return
+    fi
+    [ -n "${tokens[-1]}" ] && lbuf=${lbuf:0:-${#tokens[-1]}}
+
+    if eval "noglob type _fzf_complete_${cmd_word} >/dev/null"; then
+      prefix="$prefix" eval _fzf_complete_${cmd_word} ${(q)lbuf}
+      zle reset-prompt
+    elif [ ${d_cmds[(i)$cmd_word]} -le ${#d_cmds} ]; then
+      _fzf_dir_completion "$prefix" "$lbuf"
+    elif [[ "$cmd_word" == (nvim|vim|vi|nano|emacs|less) ]]; then
+      _fzf_path_completion "$prefix" "$lbuf"
+    elif [[ -n "${_comps[$cmd_word]-}" ]] || (( ${+functions[_$cmd_word]} )); then
+      _fzf_complete --height=40% --layout=reverse --prompt=" > " \
+        --preview-window 'right:50%:wrap' \
+        --preview "grep -m1 '^{}:' ${TMPDIR:-/tmp}/fzf-desc-${cmd_word}-* 2>/dev/null | cut -d: -f2-" \
+        -- "$lbuf" < <(__fzf_generic_completions "$cmd_word" "$lbuf")
+      command rm -f ${TMPDIR:-/tmp}/fzf-desc-${cmd_word}-*
+      zle reset-prompt
+    else
+      _fzf_path_completion "$prefix" "$lbuf"
+    fi
+  else
+    zle ${fzf_default_completion:-expand-or-complete}
+  fi
+}
+
 bindkey '^I'      autosuggest-accept
+
+# Override fzf dir completion to show hidden directories
+_fzf_compgen_dir() {
+  command fd --type d --follow --hidden \
+    --exclude '.git' --exclude 'target' --exclude 'node_modules' \
+    --exclude '.cache' --exclude 'Library' --exclude 'vendor' \
+    --exclude '.cargo' --exclude '.venv' --exclude '.direnv' \
+    --exclude '.vscode' --exclude '.dotnet' --exclude '.wine' \
+    --exclude '.agents' --exclude '.terraform' --exclude '.github' \
+    --exclude '.gem' --exclude '.ServiceHub' --exclude '.cortexkit' \
+    --exclude '.atuin' --exclude '.copilot' --exclude '.zsh_sessions' \
+    --exclude '.hg' --exclude '.svn' \
+    --exclude '.coderabbit' --exclude '.aspnet' --exclude '.npm' \
+    --exclude '.trash' --exclude '.rustup' \
+    --exclude '.homebrew' --exclude '.zcompcache' --exclude '.nuget' \
+    --exclude '.omo' --exclude '.Trash' \
+    --exclude '.local' --exclude '.config/raycast-x' --exclude '.config/raycast' \
+    --exclude '.agi' --exclude '.android' --exclude '.bash_sessions' \
+    . "$1" 2>/dev/null | sed 's@^\./@@'
+}
+
+# Generic fzf completion: subcommands + flags from compdef files or --help
+__fzf_generic_completions() {
+  local cmd="$1"
+  local lbuf="$2"
+  local lookup="${TMPDIR:-/tmp}/fzf-desc-${cmd}-$$"
+
+  # Parse subcommands from lbuf (non-flag words after the command)
+  local words=(${(z)lbuf})
+  local -a subcmds=()
+  for w in $words[2,-1]; do
+    [[ -z $w || $w == -* ]] && continue
+    subcmds+=("$w")
+  done
+
+  # Find the completion file for this command in fpath
+  local compfile=""
+  for p in $fpath; do
+    if [[ -f "$p/_$cmd" ]]; then
+      compfile="$p/_$cmd"
+      break
+    fi
+  done
+
+  {
+    if [[ ${#subcmds} -eq 0 ]]; then
+      # Top-level: subcommands from compdef file
+      if [[ -n "$compfile" ]]; then
+        grep -E "^\s+[a-z][-a-z]+:'[^']+'" "$compfile" 2>/dev/null \
+          | sed "s/^[[:space:]]*//;s/'//g;s/)$//" | cut -d: -f1
+        # Top-level flags
+        grep -oE "(-?-[-a-zA-Z0-9=]+)\[[^]]*\]" "$compfile" 2>/dev/null \
+          | sed "s/\[/:/;s/\]$//"
+        grep -oE "\{-.,--[-a-zA-Z0-9=]+\}'\[[^]]*\]" "$compfile" 2>/dev/null \
+          | sed "s/{-.,//;s/}'\[/:/;s/\]$//"
+      fi
+      # Always supplement with --help
+      $cmd --help 2>/dev/null | __fzf_flags
+      $cmd --help 2>/dev/null | awk '
+        /^[[:space:]]+[a-z][a-z0-9_-]+[[:space:]]/ && !/^[[:space:]]+--/ {
+          gsub(/^[[:space:]]+/, ""); sub(/[: ].*/, ""); print
+        }
+      '
+    else
+      # Subcommand level: try _cmd-subcmd function in compdef
+      if [[ -n "$compfile" ]]; then
+        # Try _cmd-subcmd function
+        local funcbody
+        funcbody=$(sed -n "/^_${cmd}-${subcmds[1]}[() ]/,/^(( /p" "$compfile" 2>/dev/null)
+
+        if [[ -n "$funcbody" ]]; then
+          if [[ ${#subcmds} -ge 2 ]]; then
+            # Sub-subcommand: look for flags in case branch
+            echo "$funcbody" | sed -n "/(\{0,1\}${subcmds[2]})/,/;;\|esac/p" \
+              | grep -oE "'--?[-a-zA-Z=]+\[[^]]*\]" \
+              | sed "s/^'//;s/\[/:/;s/\]$//"
+          else
+            # Check for sub-subcommands
+            local sub_commands
+            sub_commands=$(echo "$funcbody" | grep -E "^\s+[-a-z]+:'[^']+'" \
+              | sed "s/^[[:space:]]*//;s/'//g;s/)$//")
+            if [[ -n $sub_commands ]]; then
+              echo "$sub_commands"
+            else
+              # Show flags from the subcommand function
+              echo "$funcbody" \
+                | grep -oE "'--?[-a-zA-Z=]+\[[^]]*\]" \
+                | sed "s/^'//;s/\[/:/;s/\]$//"
+            fi
+          fi
+        fi
+      fi
+      # Supplement with cmd subcmd --help
+      $cmd "${subcmds[@]}" --help 2>/dev/null | __fzf_flags
+      $cmd "${subcmds[@]}" --help 2>/dev/null | awk '
+        /^[[:space:]]+[a-z][a-z0-9_-]+[[:space:]]/ && !/^[[:space:]]+--/ {
+          gsub(/^[[:space:]]+/, ""); sub(/[: ].*/, ""); print
+        }
+      '
+    fi
+  } 2>/dev/null | sort -u | tee "$lookup" | cut -d: -f1
+
+}
 ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(buffer-empty bracketed-paste accept-line push-line-or-edit)
 ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 ZSH_AUTOSUGGEST_USE_ASYNC=true
