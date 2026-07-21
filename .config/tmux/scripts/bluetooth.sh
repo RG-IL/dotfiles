@@ -56,24 +56,26 @@ main() {
         return
     fi
 
-    local connected_info
-    connected_info=$(blueutil --connected 2>/dev/null)
-    if [[ -z "$connected_info" ]]; then
-        [[ "$mode" == "--icon" || "$mode" == "--module" ]] && echo ""
-        return
-    fi
-
-    # Parse device names + MACs
+    # blueutil 2.13.0 --connected is buggy on macOS 14+ (returns empty).
+    # Workaround: iterate paired devices and check each via --info.
     local names=() macs=()
+    local paired_lines
+    paired_lines=$(blueutil --paired 2>/dev/null | sort -u)
     while IFS= read -r line; do
         [[ -z "$line" ]] && continue
-        local name="" mac=""
-        [[ "$line" =~ name:\ \"([^\"]+)\" ]] && name="${BASH_REMATCH[1]}"
-        [[ "$line" =~ ([0-9a-fA-F]{2}([-:][0-9a-fA-F]{2}){5}) ]] && mac="${BASH_REMATCH[1]}"
-        [[ -z "$name" ]] && continue
-        names+=("$name")
-        macs+=("$mac")
-    done <<<"$connected_info"
+        local mac=""
+        [[ "$line" =~ address:\ ([0-9a-fA-F-]+) ]] && mac="${BASH_REMATCH[1]}"
+        [[ -z "$mac" ]] && continue
+        local info
+        info=$(blueutil --info "$mac" 2>/dev/null)
+        if echo "$info" | grep -q ", connected"; then
+            local name=""
+            [[ "$info" =~ name:\ \"([^\"]+)\" ]] && name="${BASH_REMATCH[1]}"
+            [[ -z "$name" ]] && continue
+            names+=("$name")
+            macs+=("$mac")
+        fi
+    done <<<"$paired_lines"
     [[ ${#names[@]} -eq 0 ]] && {
         [[ "$mode" == "--icon" || "$mode" == "--module" ]] && echo ""
         return
