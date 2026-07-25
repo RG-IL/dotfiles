@@ -4,6 +4,7 @@ local t = ls.text_node
 local i = ls.insert_node
 local c = ls.choice_node
 local f = ls.function_node
+local rep = require("luasnip.extras").rep
 
 return {
 
@@ -190,25 +191,20 @@ return {
 
     s("in", {
         t("let mut "),
-        i(1, "input"),
+        i(1, "value"),
         t(" = String::new();"),
         t({ "", "" }),
         t("io::stdin().read_line(&mut "),
-        f(function(args) return args[1][1] end, { 1 }),
+        rep(1),
         t(").unwrap();"),
-        i(0),
-    }),
-
-    s("inc", {
-        t("let mut input = String::new();"),
-        t({ "", "" }),
-        t("io::stdin().read_line(&mut input).unwrap();"),
         t({ "", "" }),
         t("let "),
-        i(1, "num"),
+        rep(1),
         t(": "),
         i(2, "i32"),
-        t(" = input.trim().parse().unwrap();"),
+        t(" = "),
+        rep(1),
+        t(".trim().parse().unwrap();"),
         i(0),
     }),
 
@@ -218,6 +214,49 @@ return {
         t({ "() {", "\t" }),
         i(2),
         t({ "}", "" }),
+        i(0),
+    }),
+
+    s("cps", {
+        t("let "),
+        i(1, "var"),
+        t(": "),
+        i(2, "Vec"),
+        t("<"),
+        i(3, "i32"),
+        t("> = "),
+        i(4, "input"),
+        t({ "", "\t" }),
+        t(".trim()"),
+        t({ "", "\t" }),
+        t(".split("),
+        i(5, "\",\""),
+        t(")"),
+        t({ "", "\t" }),
+        t(".map(|s| s.trim().parse::<"),
+        rep(3),
+        t(">().unwrap())"),
+        t({ "", "\t" }),
+        t(".collect();"),
+        i(0),
+    }),
+
+    s("fori", {
+        t("for "),
+        i(1, "i"),
+        t(" in 0.."),
+        i(2, "res"),
+        t(".len() {"),
+        t({ "", "\t" }),
+        d(3, function(args)
+            local var = args[1][1]
+            local iter = args[2][1]
+            return sn(nil, {
+                i(1, 'println!("{}", ' .. iter .. '[' .. var .. ']);'),
+            })
+        end, { 1, 2 }),
+        t({ "", "" }),
+        t("}"),
         i(0),
     }),
 }

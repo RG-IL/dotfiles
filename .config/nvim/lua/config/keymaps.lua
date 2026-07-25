@@ -188,6 +188,8 @@ vim.keymap.set("n", "<leader><leader>", function()
             ".cortexkit",
             ".atuin/",
             ".copilot/",
+            ".codex/",
+            ".cursor/",
         },
     })
 end, { desc = "Find files from home" })
