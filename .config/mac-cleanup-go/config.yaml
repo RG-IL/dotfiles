@@ -4,5 +4,5 @@ excluded_paths:
     old-downloads:
         - /Users/raphael/Downloads/8200 academy - web CTF - 5
     teams-new:
-        - /Users/raphael/Library/Group Containers/UBF8T346G9.com.microsoft.teams/Library
         - /Users/raphael/Library/Group Containers/UBF8T346G9.com.microsoft.teams/.com.apple.containermanagerd.metadata.plist
+        - /Users/raphael/Library/Group Containers/UBF8T346G9.com.microsoft.teams/Library

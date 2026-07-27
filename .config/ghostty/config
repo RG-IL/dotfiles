@@ -17,6 +17,7 @@ window-padding-x = 12
 window-padding-y = 12
 macos-titlebar-style = hidden
 font-thicken = false
+adjust-underline-position = 4
 focus-follows-mouse = false
 cursor-style = bar
 mouse-hide-while-typing = true
