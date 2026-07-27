@@ -17,10 +17,20 @@ function y() {
 		fi
 	fi
 
-	if [[ -n "$target" ]]; then
-		command yazi "$target" --cwd-file="$tmp"
+	local effective_target="${target:-$PWD}"
+	if [[ "$effective_target" == "$HOME/dotfiles" || "$effective_target" == "$HOME/dotfiles/"* ]]; then
+		local conf
+		conf="$(mktemp -d)"
+		mkdir -p "$conf/yazi"
+		for f in keymap.toml theme.toml init.lua package.toml; do
+			[[ -f ~/.config/yazi/$f ]] && ln -s ~/.config/yazi/$f "$conf/yazi/$f"
+		done
+		[[ -d ~/.config/yazi/plugins ]] && ln -s ~/.config/yazi/plugins "$conf/yazi/plugins"
+		sed 's/show_hidden = false/show_hidden = true/' ~/.config/yazi/yazi.toml > "$conf/yazi/yazi.toml"
+		XDG_CONFIG_HOME="$conf" command yazi "${target:+$target}" --cwd-file="$tmp"
+		rm -rf "$conf"
 	else
-		command yazi --cwd-file="$tmp"
+		command yazi "${target:+$target}" --cwd-file="$tmp"
 	fi
 
 	if [[ -f "$tmp" ]]; then

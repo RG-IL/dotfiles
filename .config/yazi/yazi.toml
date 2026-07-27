@@ -4,6 +4,7 @@ sort_by = "size"
 sort_reverse = true
 sort_dir_first = true
 linemode = "size"
+show_hidden = false
 
 [preview]
 max_width = 2400
