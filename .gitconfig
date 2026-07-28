@@ -11,7 +11,6 @@
 	preloadIndex = false
 	protectNTFS = false
 	pager = delta
-	hooksPath = /Users/raphael/dotfiles/git/hooks
 [diff]
 	tool = nvimdiff
 [difftool]

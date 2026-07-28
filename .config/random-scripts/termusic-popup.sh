@@ -17,18 +17,17 @@ window_height=40
 window_x=80
 window_y=100
 if ! pgrep -x termusic-server >/dev/null; then
-  termusic-server >/dev/null 2>&1 &
+    termusic-server >/dev/null 2>&1 &
 fi
 exec env -i \
-  HOME="$HOME" \
-  PATH="/opt/homebrew/bin:/usr/bin:/bin" \
-  open -na Ghostty.app --args \
-  --maximize=false \
-  --window-width="$window_width" \
-  --window-height="$window_height" \
-  --window-position-x="$window_x" \
-  --window-position-y="$window_y" \
-  -e env sh -c '
+    HOME="$HOME" \
+    PATH="/opt/homebrew/bin:/usr/bin:/bin" \
+    open -na Ghostty.app --args \
+    --maximize=false \
+    --window-width="$window_width" \
+    --window-height="$window_height" \
+    --window-position-x="$window_x" \
+    --window-position-y="$window_y" \
+    -e env sh -c '
   termusic --layout-4 && exit
 ' || true
-
