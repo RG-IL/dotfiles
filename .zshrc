@@ -666,16 +666,10 @@ precmd_functions+=(_reset_cursor)
 
 function cool { ~/.config/zsh/ghost }
 
-# Composio CLI
-export COMPOSIO_INSTALL_DIR="/Users/raphael/.composio"
-export PATH="$COMPOSIO_INSTALL_DIR:$PATH"
-export PATH="$HOME/.composio:$PATH"
-
-
 # opencode
 export PATH=/Users/raphael/.opencode/bin:$PATH
 
-export OPENCODE_API_KEY="sk-10WcqcQCc3gsb3oAxZfKTNRQOa7QR1R660CZUG4lrOhqqNonhs836XuwyHkYBWSg"
+export OPENCODE_API_KEY="sk-DFCMr4xSDRG37qeo5hoKDL5xgzOfOPXDfcIW0IZ45rIAgcYolt3mw9Up6DMDMrPy"
 
 export OPENCODE_PORT=4096
 
