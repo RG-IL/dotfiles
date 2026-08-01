@@ -24,6 +24,7 @@ exec env -i \
     PATH="/opt/homebrew/bin:/usr/bin:/bin" \
     open -na Ghostty.app --args \
     --maximize=false \
+    --title=termusic-popup \
     --window-width="$window_width" \
     --window-height="$window_height" \
     --window-position-x="$window_x" \
