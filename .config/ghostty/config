@@ -35,15 +35,14 @@ keybind = cmd+shift+r=unbind
 keybind = cmd+shift+r=text:\x01R
 keybind = cmd+t=text:\x01\x03
 keybind = cmd+w=text:\x01c
-keybind = cmd+shift+left_bracket=text:\x01H
-keybind = cmd+shift+right_bracket=text:\x01L
+keybind = cmd+opt+tab=text:\x01L
 keybind = cmd+f=unbind
 keybind = cmd+f=text:\x01z
 keybind = cmd+d=unbind
 keybind = cmd+d=text:\x01d
-keybind = opt+g=text:\x01g
-keybind = opt+y=unbind
-keybind = opt+y=text:\x01y
+keybind = cmd+g=text:\x01g
+keybind = cmd+y=unbind
+keybind = cmd+y=text:\x01y
 keybind = cmd+p=text:\x01p
 keybind = cmd+shift+d=text:\x01D
 keybind = cmd+s=unbind
@@ -66,9 +65,7 @@ keybind = cmd+physical:six=text:\x016
 keybind = cmd+physical:seven=text:\x017
 keybind = cmd+physical:eight=text:\x018
 keybind = cmd+physical:nine=text:\x019
-keybind = opt+b=text:\x01b
-keybind = cmd+option+tab=text:\x01n
-keybind = cmd+option+shift+tab=text:\x01p
+keybind = cmd+b=text:\x01b
 
 # custom-shader = /Users/raphael/.config/ghostty/shader/space.glsl
 # background-image = /Users/raphael/.config/ghostty/output.jpg

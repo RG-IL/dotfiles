@@ -138,10 +138,10 @@ _fzf_compgen_dir() {
     --exclude '.cargo' --exclude '.venv' --exclude '.direnv' \
     --exclude '.vscode' --exclude '.dotnet' --exclude '.wine' \
     --exclude '.agents' --exclude '.terraform' --exclude '.github' \
-    --exclude '.gem' --exclude '.ServiceHub' --exclude '.cortexkit' \
+    --exclude '.gem' --exclude '.ServiceHub' \
     --exclude '.atuin' --exclude '.copilot' --exclude '.zsh_sessions' \
     --exclude '.hg' --exclude '.svn' \
-    --exclude '.coderabbit' --exclude '.aspnet' --exclude '.npm' \
+    --exclude '.aspnet' --exclude '.npm' \
     --exclude '.trash' --exclude '.rustup' \
     --exclude '.homebrew' --exclude '.zcompcache' --exclude '.nuget' \
     --exclude '.omo' --exclude '.Trash' \
@@ -676,7 +676,6 @@ export OPENCODE_PORT=4096
 alias ocf='OPENCODE_CONFIG=~/.config/opencode/opencode-full.jsonc opencode '
 ZSH_AUTOSUGGEST_COMPLETION_IGNORE="(?|*[| ]|*[| ]?)"
 
-# Added by CodeRabbit CLI installer
 export PATH="/Users/raphael/.local/bin:$PATH"
 
 

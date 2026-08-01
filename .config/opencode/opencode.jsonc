@@ -11,11 +11,4 @@
             "color": "#efc0c0"
         }
     },
-    "plugin": [
-        "@cortexkit/opencode-magic-context@latest"
-    ],
-    "compaction": {
-        "auto": false,
-        "prune": false
-    }
 }

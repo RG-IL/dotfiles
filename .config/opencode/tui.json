@@ -3,7 +3,6 @@
   "theme": "catppuccin-transparent",
   "plugin": [
     "/Users/raphael/.config/opencode/plugins/subagent-statusline-tui.js",
-    "@cortexkit/opencode-magic-context@latest",
     "/Users/raphael/.config/opencode/plugins/context-progress/dist/tui.tsx"
   ]
 }

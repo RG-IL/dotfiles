@@ -185,7 +185,6 @@ vim.keymap.set("n", "<leader><leader>", function()
             ".vscode_shared/",
             ".gem/",
             ".ServiceHub/",
-            ".cortexkit",
             ".atuin/",
             ".copilot/",
             ".codex/",
