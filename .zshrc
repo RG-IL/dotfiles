@@ -28,6 +28,16 @@ export PATH="/Library/Frameworks/Python.framework/Versions/3.14/bin:$PATH"
 export BREW_PREFIX="/opt/homebrew"
 fpath+=(/opt/homebrew/share/zsh/site-functions)
 
+# Fire sketchybar's brew_upgrade event after any `brew upgrade` so the packages
+# widget refreshes immediately instead of waiting for its 5-minute poll.
+function brew() {
+  command brew "$@"
+
+  if [[ $* =~ "upgrade" ]]; then
+    sketchybar -m --trigger brew_upgrade
+  fi
+}
+
 # Autoload functions on first use instead of defining at startup
 fpath=(~/.config/zsh/functions $fpath)
 

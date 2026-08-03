@@ -8,7 +8,14 @@ config-version = 2
 
 # You can use it to add commands that run after AeroSpace startup.
 # Available commands : https://nikitabobko.github.io/AeroSpace/commands
-after-startup-command = []
+after-startup-command = [
+  'exec-and-forget borders active_color=0xffe1e3e4 inactive_color=0xff494d64 width=5.0'
+]
+
+# Notify Sketchybar about workspace change
+exec-on-workspace-change = ['/bin/bash', '-c',
+    'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE'
+]
 
 # Start AeroSpace at login
 start-at-login = true
@@ -57,7 +64,7 @@ persistent-workspaces = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
 # See: https://nikitabobko.github.io/AeroSpace/commands#mode
 on-mode-changed = []
 
-focus-follows-mouse.enabled = true
+focus-follows-mouse.enabled = false
 
 # Possible values: (qwerty|dvorak|colemak)
 # See https://nikitabobko.github.io/AeroSpace/guide#key-mapping
@@ -71,12 +78,12 @@ key-mapping.preset = 'qwerty'
 #                 Monitor pattern is the same as for 'workspace-to-monitor-force-assignment'.
 #                 See:
 #                 https://nikitabobko.github.io/AeroSpace/guide#assign-workspaces-to-monitors
-gaps.inner.horizontal = 10
-gaps.inner.vertical =   10
-gaps.outer.left =       10
-gaps.outer.bottom =     10
+gaps.inner.horizontal = 5
+gaps.inner.vertical =   5
+gaps.outer.left =       5
+gaps.outer.bottom =     5
 gaps.outer.top =        2
-gaps.outer.right =      10
+gaps.outer.right =      5
 
 # Float the termusic popup so AeroSpace doesn't tile/rearrange it
 [[on-window-detected]]
@@ -88,6 +95,9 @@ run = "layout floating"
 if.app-id = "com.apple.finder"
 run = "layout floating"
 
+[[on-window-detected]]
+if.app-id = "net.freemacsoft.AppCleaner"
+run = "layout floating"
 # 'main' binding mode declaration
 # See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
 # 'main' binding mode must be always presented
@@ -147,6 +157,7 @@ run = "layout floating"
     alt-7 = 'workspace 7'
     alt-8 = 'workspace 8'
     alt-9 = 'workspace 9'
+    alt-t = 'workspace T'
 
     # See: https://nikitabobko.github.io/AeroSpace/commands#move-node-to-workspace
     alt-shift-1 = 'move-node-to-workspace 1'
@@ -158,11 +169,10 @@ run = "layout floating"
     alt-shift-7 = 'move-node-to-workspace 7'
     alt-shift-8 = 'move-node-to-workspace 8'
     alt-shift-9 = 'move-node-to-workspace 9'
+    alt-shift-t = 'move-node-to-workspace T'
 
     # See: https://nikitabobko.github.io/AeroSpace/commands#workspace-back-and-forth
-    alt-tab = 'workspace-back-and-forth'
     # See: https://nikitabobko.github.io/AeroSpace/commands#move-workspace-to-monitor
-    alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
 
     # See: https://nikitabobko.github.io/AeroSpace/commands#mode
     alt-shift-semicolon = 'mode service'
@@ -173,28 +183,16 @@ run = "layout floating"
     alt-shift-f = 'exec-and-forget open /System/Library/CoreServices/Finder.app'
     # alt-enter: open Ghostty in workspace 1; if one is already there, open in next empty workspace
     alt-enter = '''exec-and-forget bash -c '
-if aerospace list-windows --workspace 1 2>/dev/null | grep -q Ghostty; then
-    for w in 2 3 4 5 6 7 8 9; do
-        if [ -z "$(aerospace list-windows --workspace "$w" 2>/dev/null)" ]; then
-            aerospace workspace "$w"
-            open -na /Applications/Ghostty.app
-            break
-        fi
-    done
-else
-    aerospace workspace 1
-    open -na /Applications/Ghostty.app
-fi' '''
+            aerospace workspace T
+            open -a /Applications/Ghostty.app
+' '''
 
-    # alt-shift-enter: open Zen Browser on the next workspace without any windows, then move there
+    # alt-shift-enter: if Zen is running, go to its workspace; else open it on the next empty workspace
     alt-shift-enter = '''exec-and-forget bash -c '
-for w in 1 2 3 4 5 6 7 8 9; do
-    if [ -z "$(aerospace list-windows --workspace "$w" 2>/dev/null)" ]; then
-        aerospace workspace "$w"
-        open -na /Applications/zen.app
-        break
-    fi
-done' '''
+            aerospace workspace "2"
+            sleep 0.15
+            open -a "/Applications/Zen.app"
+' '''
 
 # 'service' binding mode declaration.
 # See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes

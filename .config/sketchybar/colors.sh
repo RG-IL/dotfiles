@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+
+RED=0xffe3c790
+ORANGE=0xffe3c790
+YELLOW=0xffe3c790
+WHITE=0xfff5ebe0
+GREEN=0xff8ac35a
+GREY=0xff5a3030
+ACCENT=0xffe3c790
