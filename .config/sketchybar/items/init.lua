@@ -5,15 +5,21 @@ require("items.github")
 require("items.spaces")
 
 -- ──────────────── CENTER — LEFT of notch ──────────────────────
+
+-- Fired by the bluetooth widget when its label width changes, so the media
+-- title can re-measure how much space remains before the notch.
+sbar.add("event", "media_space_changed")
+
 require("items.media")
 
 -- Invisible spacer that covers the MacBook Pro notch.
--- Adjust 'width' if items bleed under the notch:
---   14" MBP default res  → try 200–220
---   16" MBP default res  → try 220–250
+-- Adjust 'width' to match the actual cutout: too wide leaves visible pill
+-- space between the notch and the bluetooth/clock; too narrow and items bleed
+-- under the cutout. On this display (2560x1664 scaled → 1470pt) the cutout is
+-- ~150–175pt.
 sbar.add("item", "center.notch", {
 	position = "center",
-	width = 275,
+	width = 180,
 	icon = { drawing = false },
 	label = { drawing = false },
 	background = { color = colors.transparent },

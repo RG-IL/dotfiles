@@ -175,6 +175,28 @@ local last_play_state = nil
 local SHOW_ARTWORK = true
 local MAX_LABEL_CHARS = SHOW_ARTWORK and 20 or 24
 
+-- Dynamic label budget: the title tracks the bluetooth label width so the
+-- notch item stays fixed over the hardware cutout. A longer bluetooth name
+-- pushes the notch left, so the title grows to push it back (and shrinks when
+-- the bluetooth label shortens). The text is adjusted (truncated/padded), the
+-- notch position is preserved, and SAFETY_PX of headroom is kept before the
+-- left bracket.
+local MIN_LABEL_CHARS = 8
+local MAX_LABEL_LIMIT = 44
+local CHAR_ADV = 7.15 -- px per display column (JetBrainsMono Nerd Font SemiBold 12)
+local SAFETY_PX = 12 -- minimum gap kept between the media pill and bracket.left
+local MEDIA_PAD_PX = 8 -- center.media label padding_left + padding_right
+
+-- Emits "notch_left notch_width playpause_x bracket_right media_width
+-- right_bracket_right": the notch spacer's left edge and width, the play/pause
+-- item's left edge, the right edge of the left bracket pill, the width of the
+-- media title item, and the right edge of the right bracket pill.
+local GEOM_CMD = [[/usr/bin/python3 -c 'import subprocess,json; sb="/opt/homebrew/bin/sketchybar"; q=lambda n:json.loads(subprocess.check_output([sb,"--query",n]))["bounding_rects"]["display-1"]; nt=q("center.notch"); p=q("center.media.playpause"); bl=q("bracket.left"); br=q("bracket.right"); md=q("center.media"); print(nt["origin"][0], nt["size"][0], p["origin"][0], bl["origin"][0]+bl["size"][0], md["size"][0], br["origin"][0]+br["size"][0])']]
+
+-- Right margin of the bar (bar.lua "margin"); the right bracket is anchored this
+-- far from the display's right edge, so display_width = right edge + margin.
+local MARGIN_RIGHT = 64
+
 -- East-Asian "wide" codepoints (CJK, Hiragana/Katakana, Hangul, full-width
 -- forms, …) render at roughly double the advance of a Latin glyph, so budget
 -- the label by display columns rather than raw character count — otherwise a
@@ -325,7 +347,7 @@ local function set_play_icon(playing)
 end
 
 local function set_label(text, faded, animate)
-	text = pad_to(text, MAX_LABEL_CHARS)
+	text = pad_to(truncate(text, MAX_LABEL_CHARS), MAX_LABEL_CHARS)
 	local key = (faded and "f|" or "n|") .. text
 	if key == last_label_state then
 		return
@@ -341,18 +363,89 @@ local function set_label(text, faded, animate)
 	end
 end
 
+-- Last rendered state, so the label can be re-applied when the char budget
+-- changes without re-querying nowplaying.
+local state_idle = true
+local state_title, state_artist = "", ""
+local state_playing = false
+
 local function set_idle()
+	state_idle = true
 	clear_track_info()
 	set_play_icon(false)
 	set_label("It's pretty silent in here...", 0.5, true)
 end
 
 local function set_track(title, artist, playing)
+	state_idle = false
+	state_title, state_artist, state_playing = title, artist, playing
+
 	local display = truncate(title .. (artist ~= "" and (" – " .. artist) or ""), MAX_LABEL_CHARS)
 
 	update_track_info(title, artist)
 	set_play_icon(playing)
 	set_label(display, not playing and 0.5 or false, true)
+end
+
+local function render_state()
+	if state_idle then
+		set_idle()
+	else
+		set_track(state_title, state_artist, state_playing)
+	end
+end
+
+-- Pins the notch spacer over the hardware cutout by growing/shrinking the
+-- title budget: the center block recenters as a whole, so a bluetooth label
+-- change pushes the notch off the cutout, and the title pushes it back by the
+-- same amount (a ΔT label change moves the notch by ΔT/2, hence the ×2).
+-- The budget is also capped so the pill keeps SAFETY_PX before bracket.left.
+local function update_char_budget()
+	-- Let the animated label settle before reading geometry, so the notch
+	-- displacement is measured at its final (not mid-animation) position.
+	sbar.exec("sleep 0.4 && " .. GEOM_CMD, function(out)
+		local nl, nw, px, br, mdw, brr =
+			(out or ""):match("(-?%d+%.?%d*)%s+(-?%d+%.?%d*)%s+(-?%d+%.?%d*)%s+(-?%d+%.?%d*)%s+(-?%d+%.?%d*)%s+(-?%d+%.?%d*)")
+		if not (nl and nw and px and br and mdw and brr) then
+			return
+		end
+		local notch_left = tonumber(nl)
+		local notch_width = tonumber(nw)
+		local playpause_x = tonumber(px)
+		local bracket_right = tonumber(br)
+		local media_width = tonumber(mdw)
+		local right_bracket_right = tonumber(brr)
+
+		-- The hardware cutout is centered on the display; the right bracket is
+		-- anchored MARGIN_RIGHT from the display's right edge.
+		local screen_center = (right_bracket_right + MARGIN_RIGHT) / 2
+		local desired_notch_left = screen_center - notch_width / 2
+		local dN = desired_notch_left - notch_left
+
+		local target_width = media_width - MEDIA_PAD_PX + 2 * dN
+		local target_chars = math.floor(target_width / CHAR_ADV)
+		if target_chars < MIN_LABEL_CHARS then
+			target_chars = MIN_LABEL_CHARS
+		elseif target_chars > MAX_LABEL_LIMIT then
+			target_chars = MAX_LABEL_LIMIT
+		end
+
+		-- Growing the label shifts the whole block left by ΔT/2; cap the
+		-- budget so the pill keeps SAFETY_PX of gap before bracket.left.
+		local max_grow = 2 * (playpause_x - bracket_right - SAFETY_PX)
+		local capped = math.floor((media_width - MEDIA_PAD_PX + max_grow) / CHAR_ADV)
+		if capped < target_chars then
+			target_chars = capped
+		end
+		if target_chars < MIN_LABEL_CHARS then
+			target_chars = MIN_LABEL_CHARS
+		end
+
+		if target_chars ~= MAX_LABEL_CHARS then
+			MAX_LABEL_CHARS = target_chars
+			render_state()
+		end
+	end)
 end
 
 local function poll()
@@ -367,6 +460,7 @@ local function poll()
 		else
 			set_idle()
 		end
+		update_char_budget()
 	end)
 end
 
@@ -383,7 +477,7 @@ local function toggle_popup()
 	media:set({ popup = { drawing = "toggle" } })
 end
 
-media:subscribe({ "routine", "system_woke", "media_change" }, poll)
+media:subscribe({ "routine", "system_woke", "media_change", "media_space_changed" }, poll)
 media:subscribe("mouse.clicked", toggle_popup)
 artwork:subscribe("mouse.clicked", toggle_popup)
 

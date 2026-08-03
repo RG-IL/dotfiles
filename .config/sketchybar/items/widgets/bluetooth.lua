@@ -174,6 +174,10 @@ local function apply_bar(on, devices)
 		icon = { string = glyph, color = color },
 		label = { string = text, drawing = text ~= "" },
 	})
+
+	-- The bluetooth label width can change the center block's recenter, which
+	-- shrinks/grows the room the media title has before the notch.
+	sbar.trigger("media_space_changed")
 end
 
 local function remove_popup_items()

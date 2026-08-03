@@ -7,16 +7,29 @@
 # process that directly spawns brew, sidestepping the shell entirely.
 source "$CONFIG_DIR/colors.sh"
 
+# --formula: default `brew outdated` also evaluates auto-updating casks
+# (input-source-pro, zen, …) via their app bundle version, so a cask that has a
+# newer version available but hasn't self-updated yet shows as a phantom "1"
+# that `brew upgrade` can never clear. Formula-only matches what brew upgrade
+# can actually update. HOMEBREW_NO_AUTO_UPDATE keeps the check fast and
+# deterministic (no mid-update tap state). A failed brew run reports 0 rather
+# than a bogus partial count.
 COUNT="$(/usr/bin/python3 -c '
-import signal, subprocess
+import os, signal, subprocess
 
 signal.signal(signal.SIGCHLD, signal.SIG_DFL)
+env = dict(os.environ)
+env["HOMEBREW_NO_AUTO_UPDATE"] = "1"
 r = subprocess.run(
-    ["/opt/homebrew/bin/brew", "outdated", "--quiet"],
+    ["/opt/homebrew/bin/brew", "outdated", "--formula", "--quiet"],
     capture_output=True,
     text=True,
+    env=env,
 )
-print(len([line for line in r.stdout.splitlines() if line.strip()]))
+if r.returncode != 0:
+    print(0)
+else:
+    print(len([line for line in r.stdout.splitlines() if line.strip()]))
 ')"
 
 COLOR=$RED
