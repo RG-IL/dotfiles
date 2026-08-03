@@ -12,7 +12,7 @@ local playpause = sbar.add("item", "center.media.playpause", {
 		font = {
 			family = settings.font.text,
 			style = settings.font.style_map["Bold"],
-			size = 13,
+			size = 15,
 		},
 		color = colors.with_alpha(colors.accent, 0.45),
 		padding_left = 4,
@@ -191,7 +191,10 @@ local MEDIA_PAD_PX = 8 -- center.media label padding_left + padding_right
 -- right_bracket_right": the notch spacer's left edge and width, the play/pause
 -- item's left edge, the right edge of the left bracket pill, the width of the
 -- media title item, and the right edge of the right bracket pill.
-local GEOM_CMD = [[/usr/bin/python3 -c 'import subprocess,json; sb="/opt/homebrew/bin/sketchybar"; q=lambda n:json.loads(subprocess.check_output([sb,"--query",n]))["bounding_rects"]["display-1"]; nt=q("center.notch"); p=q("center.media.playpause"); bl=q("bracket.left"); br=q("bracket.right"); md=q("center.media"); print(nt["origin"][0], nt["size"][0], p["origin"][0], bl["origin"][0]+bl["size"][0], md["size"][0], br["origin"][0]+br["size"][0])']]
+-- Parsed with a regex (not json.loads) because sketchybar emits unescaped
+-- quotes in label values, which makes the item JSON invalid (e.g. a title
+-- containing a double quote breaks the whole budget update).
+local GEOM_CMD = [[/usr/bin/python3 "$HOME/.config/sketchybar/items/geom.py"]]
 
 -- Right margin of the bar (bar.lua "margin"); the right bracket is anchored this
 -- far from the display's right edge, so display_width = right edge + margin.

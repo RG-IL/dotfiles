@@ -10,7 +10,7 @@ local volume_percent = sbar.add("item", "widgets.volume", {
 	label = {
 		string = "??%",
 		padding_left = -1,
-		font = { family = settings.font.numbers },
+		font = { family = settings.font.numbers, size = 14.0, style = settings.font.style_map["Bold"] },
 	},
 })
 
@@ -101,7 +101,7 @@ local function volume_collapse_details()
 		return
 	end
 	volume_bracket:set({ popup = { drawing = false } })
-	sbar.remove('/volume.device\\.*/')
+	sbar.remove("/volume.device\\.*/")
 end
 
 local current_audio_device = "None"
@@ -118,7 +118,7 @@ local function volume_toggle_details(env)
 			current_audio_device = result:sub(1, -2)
 			sbar.exec("SwitchAudioSource -a -t output", function(available)
 				local devices = {}
-				for device in string.gmatch(available, '[^\r\n]+') do
+				for device in string.gmatch(available, "[^\r\n]+") do
 					devices[#devices + 1] = device
 				end
 
@@ -143,7 +143,12 @@ local function volume_toggle_details(env)
 							border_width = 0,
 						},
 						label = { string = device, color = color },
-						click_script = 'SwitchAudioSource -s "' .. device .. '" && sketchybar --set /volume.device\\.*/ label.color=' .. colors.with_alpha(colors.white, 0.55) .. ' --set $NAME label.color=' .. colors.white,
+						click_script = 'SwitchAudioSource -s "'
+							.. device
+							.. '" && sketchybar --set /volume.device\\.*/ label.color='
+							.. colors.with_alpha(colors.white, 0.55)
+							.. " --set $NAME label.color="
+							.. colors.white,
 					})
 					counter = counter + 1
 				end

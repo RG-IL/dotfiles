@@ -1,7 +1,7 @@
 local colors = require("colors")
 
 -- ──────────────────────────── LEFT ────────────────────────────
-require("items.github")
+require("items.widgets.caffeinate")
 require("items.spaces")
 
 -- ──────────────── CENTER — LEFT of notch ──────────────────────
@@ -42,6 +42,8 @@ sbar.add("item", "center.media.pad_right", {
 require("items.widgets.battery")
 require("items.widgets.volume")
 require("items.widgets.packages")
+require("items.github")
+require("items.widgets.wifi")
 
 -- ══════════════════════════════════════════════════════════════
 -- BRACKETS — drawn after all items are created
@@ -80,8 +82,10 @@ sbar.add("bracket", "bracket.clock", {
 	},
 })
 
--- Right pill: Packages + Volume + Battery
+-- Right pill: Packages + Volume + Battery + Wi-Fi
 sbar.add("bracket", "bracket.right", {
+	"widgets.wifi",
+	"github.bell",
 	"widgets.packages",
 	"widgets.volume.icon",
 	"widgets.volume",

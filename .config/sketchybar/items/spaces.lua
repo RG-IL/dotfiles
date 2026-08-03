@@ -228,7 +228,7 @@ local function ensure_space_items()
 			height = 16,
 			color = colors.white,
 		},
-		padding_left = 3,
+		padding_left = 1,
 		padding_right = 6,
 	})
 
@@ -280,7 +280,7 @@ local function ensure_space_items()
 	-- because bracket members are only resolved at creation time — if the space
 	-- items are built on a later routine tick (WM not up at boot), the bracket
 	-- must be created together with them to pick them up.
-	sbar.add("bracket", "bracket.left", { "github.bell", "spaces.separator", "/space\\..*/", "spaces.right_pad" }, {
+	sbar.add("bracket", "bracket.left", { "widgets.caffeinate", "spaces.separator", "/space\\..*/", "spaces.right_pad" }, {
 		background = {
 			color = colors.bg1,
 			corner_radius = 16,

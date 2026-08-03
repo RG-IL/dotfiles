@@ -88,10 +88,10 @@ local bluetooth = sbar.add("item", BLUETOOTH, {
 		font = {
 			family = settings.font.text,
 			style = settings.font.style_map["Regular"],
-			size = 14.0,
+			size = 15.0,
 		},
 		color = colors.grey,
-		padding_left = 8,
+		padding_left = 11,
 		padding_right = 4,
 	},
 	label = {

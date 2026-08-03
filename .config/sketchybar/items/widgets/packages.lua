@@ -13,7 +13,7 @@ sbar.add("item", "widgets.packages", {
 		font = {
 			family = settings.font.text,
 			style = settings.font.style_map["Regular"],
-			size = 14.0,
+			size = 20.0,
 		},
 		padding_left = 8,
 		padding_right = 4,
@@ -23,7 +23,7 @@ sbar.add("item", "widgets.packages", {
 		font = {
 			family = settings.font.numbers,
 			style = settings.font.style_map["Bold"],
-			size = 12.0,
+			size = 14.0,
 		},
 		padding_right = 8,
 	},
