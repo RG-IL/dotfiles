@@ -27,7 +27,7 @@ sbar.add("item", "widgets.packages", {
 		},
 		padding_right = 8,
 	},
-	update_freq = 300,
+	update_freq = 600,
 })
 
 -- React to `brew upgrade` run in the terminal: a ~/.zshrc brew() wrapper fires

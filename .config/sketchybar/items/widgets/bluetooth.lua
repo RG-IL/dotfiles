@@ -2,8 +2,10 @@ local colors = require("colors")
 local settings = require("settings")
 
 -- Bluetooth widget mirroring ~/.config/tmux/scripts/bluetooth.sh.
--- blueutil 2.13.0's --connected is broken on macOS 14+ (returns empty), so
--- connection state is derived per-device via `blueutil --info` + ", connected".
+-- The raw device state is computed once by the launchd status daemon
+-- (bluetooth_devices.sh → /tmp/status/bt); this widget cats that file instead
+-- of running blueutil itself, so the periodic poll is never attributed to
+-- sketchybar (tccd doesn't re-validate its BluetoothAlways grant).
 -- Icon: device-type glyph of the primary connected device; label = device
 -- name(s) (+ battery). Left-click opens a popup listing paired devices
 -- (click to connect/disconnect) plus power + settings entries.
@@ -11,6 +13,8 @@ local settings = require("settings")
 local BLUETOOTH = "widgets.bluetooth"
 local POPUP_PREFIX = "widgets.bluetooth.popup."
 local POPUP_WIDTH = 250
+
+local BT_FILE = "/tmp/status/bt"
 
 local ICON_OFF = "󰂲"
 local ICON_ON = "󰂯"
@@ -64,21 +68,8 @@ local function detect_type(name)
 	return "generic"
 end
 
--- Per-device connection check (the --connected workaround). Emits one line per
--- unique paired device: addr|name|connected|battery
-local DEVICES_CMD = [[
-blueutil -p 2>/dev/null
-echo '---'
-blueutil --paired 2>/dev/null | grep -oE 'address: [0-9a-fA-F-]+' | awk '{print $2}' | sort -u | while read -r addr; do
-	info=$(blueutil --info "$addr" 2>/dev/null)
-	name=$(printf '%s' "$info" | sed -n 's/.*name: "\([^"]*\)".*/\1/p')
-	[ -z "$name" ] && continue
-	if printf '%s' "$info" | grep -q ', connected'; then conn='1'; else conn='0'; fi
-	bat=$(pmset -g accps 2>/dev/null | grep -F "$name" | grep -oE '[0-9]+%' | head -1 | tr -d '%')
-	[ -n "$bat" ] || bat=$(printf '%s' "$info" | grep -i battery | grep -oE '[0-9]+' | head -1)
-	echo "$addr|$name|$conn|${bat:-}"
-done
-]]
+-- Per-device connection check (the --connected workaround). The daemon emits
+-- one line per unique paired device: addr|name|connected|battery
 
 local bluetooth = sbar.add("item", BLUETOOTH, {
 	position = "center",
@@ -117,11 +108,11 @@ local bluetooth = sbar.add("item", BLUETOOTH, {
 		},
 	},
 	updates = true,
-	update_freq = 10,
+	update_freq = 1,
 })
 
 local function fetch_state(cb)
-	sbar.exec(DEVICES_CMD, function(out)
+	sbar.exec("cat " .. BT_FILE, function(out)
 		local power_line, rest = (out or ""):match("^([01])\n%-%-%-%-?(.*)$")
 		if not power_line then
 			cb(nil, {})

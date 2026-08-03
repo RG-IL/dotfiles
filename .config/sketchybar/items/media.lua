@@ -37,8 +37,9 @@ local artwork = sbar.add("item", "center.media.artwork", {
 	icon = { drawing = false },
 	label = { drawing = false },
 	drawing = false,
-	padding_left = 4,
+	padding_left = 2,
 	padding_right = 2,
+	y_offset = -1,
 })
 
 local media = sbar.add("item", "center.media", {
@@ -172,6 +173,14 @@ local artwork_counter = 0
 local last_label_state = nil
 local last_play_state = nil
 
+-- Geometry only changes when the media label, play state, artwork, the
+-- bluetooth label, or the left bracket (spaces) resize — so the expensive
+-- re-measure (geom.py + several sketchybar queries) runs only on those events,
+-- not on every poll.
+local budget_pending = false
+local budget_running = false
+local schedule_budget
+
 local SHOW_ARTWORK = true
 local MAX_LABEL_CHARS = SHOW_ARTWORK and 20 or 24
 
@@ -271,6 +280,9 @@ local function update_track_info(title, artist)
 	end
 	current_track_key = key
 
+	-- Artwork appears/disappears here, shifting the center block; re-measure.
+	schedule_budget()
+
 	popup_title:set({ label = { string = title or "" } })
 	popup_artist:set({ label = { string = artist or "" } })
 
@@ -304,6 +316,9 @@ local function update_track_info(title, artist)
 			artwork:set({ drawing = false })
 			popup_artwork:set({ drawing = false })
 		end
+		-- The artwork width landed async, after the budget may have measured;
+		-- re-measure so the notch stays pinned.
+		schedule_budget()
 	end)
 end
 
@@ -343,6 +358,8 @@ local function set_play_icon(playing)
 		return
 	end
 	last_play_state = playing
+	-- The play/pause glyph swap can shift the pill by a pixel; re-measure.
+	schedule_budget()
 	local glyph = playing and icons.media.pause or icons.media.play
 	local color = playing and colors.accent or colors.with_alpha(colors.accent, 0.45)
 	playpause:set({ icon = { string = glyph, color = color } })
@@ -356,6 +373,8 @@ local function set_label(text, faded, animate)
 		return
 	end
 	last_label_state = key
+	-- The title width (and thus the recenter) changed; re-measure.
+	schedule_budget()
 	local color = faded and colors.with_alpha(colors.white, faded) or 0xffffffff
 	if animate then
 		sbar.animate("tanh", 10, function()
@@ -407,8 +426,15 @@ local function update_char_budget()
 	-- Let the animated label settle before reading geometry, so the notch
 	-- displacement is measured at its final (not mid-animation) position.
 	sbar.exec("sleep 0.4 && " .. GEOM_CMD, function(out)
-		local nl, nw, px, br, mdw, brr =
-			(out or ""):match("(-?%d+%.?%d*)%s+(-?%d+%.?%d*)%s+(-?%d+%.?%d*)%s+(-?%d+%.?%d*)%s+(-?%d+%.?%d*)%s+(-?%d+%.?%d*)")
+		budget_running = false
+		if budget_pending then
+			budget_pending = false
+			schedule_budget()
+			return
+		end
+		local nl, nw, px, br, mdw, brr = (out or ""):match(
+			"(-?%d+%.?%d*)%s+(-?%d+%.?%d*)%s+(-?%d+%.?%d*)%s+(-?%d+%.?%d*)%s+(-?%d+%.?%d*)%s+(-?%d+%.?%d*)"
+		)
 		if not (nl and nw and px and br and mdw and brr) then
 			return
 		end
@@ -451,19 +477,31 @@ local function update_char_budget()
 	end)
 end
 
+-- Coalesces budget re-measures: starts one if none is in flight, otherwise
+-- marks the change pending so the in-flight measurement re-runs once it lands.
+-- (The render_state→set_label→schedule_budget path also converges: each run
+-- re-measures the settled geometry and only re-schedules while the budget is
+-- still moving.)
+schedule_budget = function()
+	if budget_running then
+		budget_pending = true
+		return
+	end
+	budget_running = true
+	update_char_budget()
+end
+
 local function poll()
-	sbar.exec("nowplaying-cli get playbackRate title artist", function(out)
+	sbar.exec("$HOME/.config/sketchybar/helpers/media_info.sh", function(out)
 		local rate_str, title, artist = out:match("([^\n]*)\n([^\n]*)\n([^\n]*)")
 		local rate = tonumber(rate_str) or 0
 		title = title and title:gsub("^%s*(.-)%s*$", "%1") or ""
 		artist = artist and artist:gsub("^%s*(.-)%s*$", "%1") or ""
-
 		if title ~= "" and title ~= "null" then
 			set_track(title, artist, rate > 0)
 		else
 			set_idle()
 		end
-		update_char_budget()
 	end)
 end
 
@@ -472,6 +510,7 @@ local function poll_after(cmd)
 		poll()
 		sbar.exec("sleep 0.4 && true", function()
 			poll()
+			schedule_budget()
 		end)
 	end)
 end
@@ -480,7 +519,26 @@ local function toggle_popup()
 	media:set({ popup = { drawing = "toggle" } })
 end
 
-media:subscribe({ "routine", "system_woke", "media_change", "media_space_changed" }, poll)
+-- The probe (helpers/media_info.sh) answers in ~20ms whether or not anything
+-- is playing, so we poll on every tick (1s) in both states: while playing it
+-- keeps the title fresh, and while idle it spots a new session within 1s
+-- without burning CPU. (nowplaying-cli itself blocks ~2.7s when idle, so the
+-- widget must not call it directly on the timer — the probe is nowplaying-cli's
+-- own mediaremote-mini helper, which queries the macOS 15.4+ daemon directly.)
+media:subscribe("routine", poll)
+media:subscribe("media_change", poll)
+media:subscribe("system_woke", function()
+	schedule_budget()
+	poll()
+end)
+-- The bluetooth label width recenters the whole center block; re-measure so
+-- the title budget pushes the notch back over the cutout.
+media:subscribe("media_space_changed", function()
+	schedule_budget()
+	poll()
+end)
+-- The left bracket resizes as spaces/apps change; re-measure the safety cap.
+media:subscribe("aerospace_workspace_change", schedule_budget)
 media:subscribe("mouse.clicked", toggle_popup)
 artwork:subscribe("mouse.clicked", toggle_popup)
 

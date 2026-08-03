@@ -22,36 +22,43 @@ local battery = sbar.add("item", "widgets.battery", {
 		color = colors.white,
 		padding_right = 10,
 	},
-	update_freq = 30,
+	update_freq = 5,
 })
 
+-- Only (re)start the charging pulse animation on the AC↔battery transition
+-- instead of every poll — the property persists, so one sketchybar call per
+-- charge session is enough.
+local prev_charging = false
+
 battery:subscribe({ "routine", "power_source_change", "system_woke", "brightness_change" }, function()
-	sbar.exec("pmset -g batt", function(batt_info)
+	-- Raw state comes from the shared file (/tmp/status/batt: charging|pct|status)
+	-- written by the launchd status daemon, instead of running pmset from sketchybar.
+	sbar.exec("cat /tmp/status/batt", function(out)
 		local icon = "!"
 		local label = "?"
+		local charging = false
 
-		local found, _, charge = batt_info:find("(%d+)%%")
-		if found then
+		local c, charge, status = (out or ""):match("^(%d)|(%d+)|([^|]*)$")
+		if c then
+			charging = c == "1"
 			charge = tonumber(charge)
 			label = charge .. "%"
 		end
-
-		local charging = batt_info:find("AC Power")
 
 		local color
 		if charging then
 			icon = icons.battery.charging
 			color = colors.accent
-		elseif found and charge > 60 then
+		elseif c and charge > 60 then
 			icon = icons.battery._100
 			color = colors.accent
-		elseif found and charge > 40 then
+		elseif c and charge > 40 then
 			icon = icons.battery._75
 			color = colors.gold
-		elseif found and charge > 20 then
+		elseif c and charge > 20 then
 			icon = icons.battery._50
 			color = colors.orange
-		elseif found and charge > 10 then
+		elseif c and charge > 10 then
 			icon = icons.battery._25
 			color = colors.orange
 		else
@@ -59,15 +66,16 @@ battery:subscribe({ "routine", "power_source_change", "system_woke", "brightness
 			color = colors.love
 		end
 
-		local lead = (found and charge < 10) and "0" or ""
+		local lead = (c and charge < 10) and "0" or ""
 
 		battery:set({
 			icon = { string = icon, color = color },
 			label = { string = lead .. label },
 		})
 
-		if charging then
+		if charging and not prev_charging then
 			sbar.exec("sketchybar --set " .. battery.name .. " icon.symbol_anim=pulse")
 		end
+		prev_charging = charging
 	end)
 end)

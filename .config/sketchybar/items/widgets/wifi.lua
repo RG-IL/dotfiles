@@ -8,6 +8,7 @@ local settings = require("settings")
 -- transmit rate from the CoreWLAN helper.
 
 local WIFI = "widgets.wifi"
+local WIFI_FILE = "/tmp/status/wifi"
 
 local wifi = sbar.add("item", WIFI, {
 	position = "right",
@@ -34,7 +35,7 @@ local wifi = sbar.add("item", WIFI, {
 		},
 	},
 	updates = true,
-	update_freq = 5,
+	update_freq = 1,
 })
 
 local details = sbar.add("item", "wifi.details", {
@@ -56,9 +57,12 @@ local details = sbar.add("item", "wifi.details", {
 })
 
 local function update()
-	sbar.exec("$HOME/.config/sketchybar/helpers/wifi_txrate", function(out)
-		local rate = (out or ""):match("%s*([0-9]+)")
-		if rate then
+	-- Transmit rate comes from the shared raw state (/tmp/status/wifi field 3:
+	-- ssid|signal|rate) written by the launchd status daemon, instead of
+	-- running the CoreWLAN helper from sketchybar.
+	sbar.exec("cat " .. WIFI_FILE, function(out)
+		local rate = (out or ""):match("^[^|]*|[^|]*|([0-9]*)")
+		if rate and rate ~= "" then
 			details:set({
 				label = { string = "Connected · " .. rate .. " Mbps" },
 			})

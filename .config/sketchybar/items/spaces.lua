@@ -294,7 +294,7 @@ end
 local observer = sbar.add("item", {
 	drawing = false,
 	updates = true,
-	update_freq = 5,
+	update_freq = 10,
 })
 
 -- routine fires every update_freq seconds — backstop against window manager

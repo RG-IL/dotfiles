@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
 # Bluetooth status for tmux status bar (macOS)
+# Reads the shared raw state from /tmp/status/bt (written by the launchd
+# status daemon from bluetooth_devices.sh) instead of running blueutil, so
+# tccd never re-validates this app chain for the periodic poll.
 # Output:
 #   --icon:    nerd font icon (󰂲 off, 󰂰 no devices, or device icon)
 #   --display: device text (empty when off/no devices)
 #   --module:  icon + text combined (no trailing space when empty)
 #   (no args): "type|display text" (backward compat)
 
-_pmset_battery() {
-    local name="$1" pmset_out="$2"
-    [[ -z "$pmset_out" ]] && return
-    echo "$pmset_out" | grep -F "$name" | grep -oE '[0-9]+%' | head -1 | tr -d '%'
-}
+BT_FILE="/tmp/status/bt"
 
 _detect_type() {
     local name="$1"
@@ -45,44 +44,28 @@ _icon_for_type() {
 main() {
     local mode="${1:-}"
 
-    # Fast power check
-    if command -v blueutil &>/dev/null; then
-        [[ "$(blueutil -p 2>/dev/null)" == "1" ]] || {
-            [[ "$mode" == "--icon" || "$mode" == "--module" ]] && echo "󰂲"
-            return
-        }
-    else
+    local data power
+    data=$(cat "$BT_FILE" 2>/dev/null)
+    power=$(printf '%s\n' "$data" | head -1)
+    [[ "$power" == "1" ]] || {
         [[ "$mode" == "--icon" || "$mode" == "--module" ]] && echo "󰂲"
         return
-    fi
+    }
 
-    # blueutil 2.13.0 --connected is buggy on macOS 14+ (returns empty).
-    # Workaround: iterate paired devices and check each via --info.
-    local names=() macs=()
-    local paired_lines
-    paired_lines=$(blueutil --paired 2>/dev/null | sort -u)
-    while IFS= read -r line; do
-        [[ -z "$line" ]] && continue
-        local mac=""
-        [[ "$line" =~ address:\ ([0-9a-fA-F-]+) ]] && mac="${BASH_REMATCH[1]}"
-        [[ -z "$mac" ]] && continue
-        local info
-        info=$(blueutil --info "$mac" 2>/dev/null)
-        if echo "$info" | grep -q ", connected"; then
-            local name=""
-            [[ "$info" =~ name:\ \"([^\"]+)\" ]] && name="${BASH_REMATCH[1]}"
-            [[ -z "$name" ]] && continue
-            names+=("$name")
-            macs+=("$mac")
-        fi
-    done <<<"$paired_lines"
+    # Parse the shared device lines (addr|name|connected|battery); only
+    # connected devices are displayed, in the file's address order.
+    local names=() macs=() bats=()
+    while IFS='|' read -r mac name conn bat; do
+        [[ -n "$mac" && -n "$name" && "$conn" == "1" ]] || continue
+        names+=("$name")
+        macs+=("$mac")
+        bats+=("$bat")
+    done <<<"$(printf '%s\n' "$data" | tail -n +2 | grep -v '^---$' | grep -v '^$')"
     [[ ${#names[@]} -eq 0 ]] && {
         [[ "$mode" == "--icon" || "$mode" == "--module" ]] && echo ""
         return
     }
 
-    local pmset_out
-    pmset_out=$(pmset -g accps 2>/dev/null)
     local primary_type
     primary_type=$(_detect_type "${names[0]}")
     primary_type=$(echo "$primary_type" | tr '[:upper:]' '[:lower:]' | sed 's/ /_/g')
@@ -105,11 +88,7 @@ main() {
             parts+=("${name}")
             ;;
         *)
-            local bat=""
-            bat=$(_pmset_battery "$name" "$pmset_out")
-            if [[ -z "$bat" && -n "${macs[$i]}" ]]; then
-                bat=$(blueutil --info "${macs[$i]}" 2>/dev/null | grep -i battery | grep -oE '[0-9]+' | head -1)
-            fi
+            local bat="${bats[$i]}"
             if [[ -n "$bat" ]]; then
                 parts+=("${name} (${bat}%)")
             else

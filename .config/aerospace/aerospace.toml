@@ -190,7 +190,7 @@ run = "layout floating"
     # alt-shift-enter: if Zen is running, go to its workspace; else open it on the next empty workspace
     alt-shift-enter = '''exec-and-forget bash -c '
             aerospace workspace "2"
-            sleep 0.15
+            sleep 0.2
             open -a "/Applications/Zen.app"
 ' '''
 

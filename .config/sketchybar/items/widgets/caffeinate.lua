@@ -3,7 +3,9 @@ local settings = require("settings")
 
 -- Caffeine/Amphetamine toggle: keeps the system awake via `caffeinate -id`.
 -- Click toggles it; the icon reflects whether a caffeinate assertion is active.
--- The assertion shows up in `pmset -g assertions`, whose line yields the PID.
+-- The periodic assertion check reads the shared raw state (/tmp/status/
+-- caffeinate, PID written by the launchd status daemon). The click handler
+-- still queries pmset directly for an accurate toggle.
 
 local ICON_INIT = utf8.char(0xF410)
 local ICON_IDLE = utf8.char(0xEC15)
@@ -13,7 +15,7 @@ local GET_ID = "pmset -g assertions | grep caffeinate | awk '{print $2}' | cut -
 
 local caffeinate = sbar.add("item", "widgets.caffeinate", {
 	position = "left",
-	update_freq = 10,
+	update_freq = 30,
 	icon = {
 		string = ICON_INIT,
 		font = {
@@ -30,7 +32,7 @@ local caffeinate = sbar.add("item", "widgets.caffeinate", {
 })
 
 local function refresh()
-	sbar.exec(GET_ID, function(out)
+	sbar.exec("cat /tmp/status/caffeinate", function(out)
 		local active = (out or ""):match("[0-9]+") ~= nil
 		caffeinate:set({ icon = { string = active and ICON_ACTIVE or ICON_IDLE } })
 	end)
