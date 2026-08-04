@@ -29,6 +29,10 @@ wifi_file="$STATUS_DIR/wifi"
 batt_file="$STATUS_DIR/batt"
 caffeinate_file="$STATUS_DIR/caffeinate"
 packages_file="$STATUS_DIR/packages"
+packages_list_file="$STATUS_DIR/packages_list"
+refresh_running="$STATUS_DIR/packages_refresh_running"
+upgrade_requested="$STATUS_DIR/upgrade_requested"
+upgrade_running="$STATUS_DIR/upgrade_running"
 
 cycle=0
 while true; do
@@ -48,7 +52,15 @@ while true; do
     "$SCRIPTS/caffeinate_info.sh" > "$caffeinate_file.tmp" 2>/dev/null && mv "$caffeinate_file.tmp" "$caffeinate_file"
   fi
   if ((cycle % 600 == 0)); then
-    "$SCRIPTS/packages_info.sh" > "$packages_file.tmp" 2>/dev/null && mv "$packages_file.tmp" "$packages_file"
+    if [[ ! -f "$refresh_running" ]]; then
+      touch "$refresh_running"
+      nohup "$SCRIPTS/refresh_packages.sh" >/dev/null 2>&1 &
+    fi
+  fi
+
+  if [[ -f "$upgrade_requested" && ! -f "$upgrade_running" ]]; then
+    mv "$upgrade_requested" "$upgrade_running"
+    nohup "$SCRIPTS/upgrade_packages.sh" >/dev/null 2>&1 &
   fi
 
   if tmux has-session 2>/dev/null; then
