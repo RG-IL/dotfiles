@@ -274,9 +274,9 @@ interface NotificationRuntime {
 	cmuxCommand?: string
 }
 
-const QUESTION_DEDUPE_WINDOW_MS = 1500
+const NEEDS_INPUT_DEDUPE_WINDOW_MS = 1500
 const READY_DEDUPE_WINDOW_MS = 1500
-const PERMISSION_DEDUPE_WINDOW_MS = 1500
+const READY_SUPPRESS_AFTER_NEEDS_INPUT_WINDOW_MS = 5000
 const CMUX_SESSION_STATUS_KEY_PREFIX = "opencode.session"
 const CMUX_BUSY_ANIMATION_INTERVAL_MS = 80
 const CMUX_BUSY_ANIMATION_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"] as const
@@ -358,38 +358,11 @@ function shouldSendDedupedNotification(
 	return true
 }
 
-function buildQuestionToolDedupeKey(sessionID: unknown, callID: unknown): string | null {
+function buildNeedsInputDedupeKey(sessionID: unknown): string | null {
 	const normalizedSessionID = toNonEmptyString(sessionID)
 	if (!normalizedSessionID) return null
 
-	const normalizedCallID = toNonEmptyString(callID)
-	if (!normalizedCallID) return null
-
-	return `question:${normalizedSessionID}:${normalizedCallID}`
-}
-
-function buildQuestionEventDedupeKey(properties: unknown): string | null {
-	if (!properties || typeof properties !== "object") return null
-
-	const record = properties as Record<string, unknown>
-	const normalizedSessionID = toNonEmptyString(record.sessionID)
-	if (!normalizedSessionID) return null
-
-	const toolInfo =
-		record.tool && typeof record.tool === "object"
-			? (record.tool as Record<string, unknown>)
-			: undefined
-	const normalizedCallID = toNonEmptyString(toolInfo?.callID)
-	if (normalizedCallID) {
-		return `question:${normalizedSessionID}:${normalizedCallID}`
-	}
-
-	const normalizedRequestID = toNonEmptyString(record.id)
-	if (normalizedRequestID) {
-		return `question:${normalizedSessionID}:request:${normalizedRequestID}`
-	}
-
-	return null
+	return `needs-input:${normalizedSessionID}`
 }
 
 function buildSessionReadyDedupeKey(sessionID: unknown): string | null {
@@ -397,16 +370,6 @@ function buildSessionReadyDedupeKey(sessionID: unknown): string | null {
 	if (!normalizedSessionID) return null
 
 	return `session-ready:${normalizedSessionID}`
-}
-
-function buildPermissionEventDedupeKey(properties: unknown): string | null {
-	if (!properties || typeof properties !== "object") return null
-
-	const record = properties as Record<string, unknown>
-	const normalizedRequestID = toNonEmptyString(record.id)
-	if (!normalizedRequestID) return null
-
-	return `permission:request:${normalizedRequestID}`
 }
 
 async function sendDesktopNotification(options: NotificationOptions): Promise<void> {
@@ -542,15 +505,49 @@ async function handleSessionIdle(
 	await doSend()
 }
 
+interface SessionErrorInfo {
+	message: string
+	isInterruption: boolean
+}
+
+function extractSessionError(error: unknown): SessionErrorInfo | null {
+	if (error === undefined || error === null) return null
+
+	const record = typeof error === "object" ? (error as Record<string, unknown>) : undefined
+	const errorName = record ? toNonEmptyString(record.name) : null
+	const errorData = record ? record.data : undefined
+	const dataMessage =
+		errorData && typeof errorData === "object"
+			? toNonEmptyString((errorData as Record<string, unknown>).message)
+			: null
+	const directMessage = record ? toNonEmptyString(record.message) : null
+	const rawMessage = typeof error === "string" ? toNonEmptyString(error) : null
+
+	const message = dataMessage ?? directMessage ?? rawMessage
+
+	const isInterruption =
+		errorName === "MessageAbortedError" ||
+		(errorName !== null && /abort|interrupt/i.test(errorName)) ||
+		(message !== null && /aborted|interrupted/i.test(message))
+
+	return {
+		message: message ?? "Something went wrong",
+		isInterruption,
+	}
+}
+
 async function handleSessionError(
 	client: OpencodeClient,
 	sessionID: string,
-	error: string | undefined,
+	error: unknown,
 	config: NotifyConfig,
 	terminalInfo: TerminalInfo,
 	notificationRuntime: NotificationRuntime,
 	ourTmuxWindowId: string | null,
 ): Promise<void> {
+	const sessionErrorInfo = extractSessionError(error)
+	if (!sessionErrorInfo || sessionErrorInfo.isInterruption) return
+
 	// Check if we should notify for this session
 	if (!config.notifyChildSessions) {
 		const isParent = await isParentSession(client, sessionID)
@@ -565,7 +562,7 @@ async function handleSessionError(
 		return
 	}
 
-	const errorMessage = error?.slice(0, 100) || "Something went wrong"
+	const errorMessage = sessionErrorInfo.message.slice(0, 100)
 
 	await sendNotification(
 		{
@@ -670,9 +667,8 @@ async function handleQuestionAsked(
 	}
 	const oscTitleContext = parseOscTitleContext()
 	const shouldSuppressCmuxSessionStatusWrites = oscTitleContext?.mayWriteOscTitle === true
-	const recentQuestionNotifications: RecentNotifications = new Map()
+	const recentNeedsInputNotifications: RecentNotifications = new Map()
 	const recentReadyNotifications: RecentNotifications = new Map()
-	const recentPermissionNotifications: RecentNotifications = new Map()
 	const titleSessionLogicalStates: TitleSessionLogicalStateBySessionID = new Map()
 	const titleBusySessionIDs = new Set<string>()
 	let titleBusySpinnerFrameIndex = 0
@@ -996,15 +992,34 @@ async function handleQuestionAsked(
 		applyCmuxSessionStatusTransition(transition)
 	}
 
-	const notifyQuestionIfNeeded = async (dedupeKey: string | null): Promise<void> => {
-		if (
-			dedupeKey &&
-			!shouldSendDedupedNotification(
-				recentQuestionNotifications,
-				dedupeKey,
-				QUESTION_DEDUPE_WINDOW_MS,
-			)
-		) {
+	const shouldSendNeedsInputNotification = (sessionID: unknown): boolean => {
+		const dedupeKey = buildNeedsInputDedupeKey(sessionID)
+		if (!dedupeKey) return true
+
+		return shouldSendDedupedNotification(
+			recentNeedsInputNotifications,
+			dedupeKey,
+			NEEDS_INPUT_DEDUPE_WINDOW_MS,
+		)
+	}
+
+	const wasRecentlyNeedsInput = (sessionID: unknown): boolean => {
+		const dedupeKey = buildNeedsInputDedupeKey(sessionID)
+		if (!dedupeKey) return false
+
+		const lastSentAt = recentNeedsInputNotifications.get(dedupeKey)
+		if (lastSentAt === undefined) return false
+
+		if (Date.now() - lastSentAt < READY_SUPPRESS_AFTER_NEEDS_INPUT_WINDOW_MS) {
+			return true
+		}
+
+		recentNeedsInputNotifications.delete(dedupeKey)
+		return false
+	}
+
+	const notifyQuestionIfNeeded = async (sessionID: unknown): Promise<void> => {
+		if (!shouldSendNeedsInputNotification(sessionID)) {
 			return
 		}
 
@@ -1014,6 +1029,13 @@ async function handleQuestionAsked(
 	const notifySessionReadyIfNeeded = async (sessionID: unknown): Promise<void> => {
 		const normalizedSessionID = toNonEmptyString(sessionID)
 		if (!normalizedSessionID) {
+			return
+		}
+
+		// The session went idle because it's waiting for input (question or
+		// permission). The needs-input notification already covered this, so
+		// don't double-notify with a "ready for review".
+		if (wasRecentlyNeedsInput(normalizedSessionID)) {
 			return
 		}
 
@@ -1036,17 +1058,8 @@ async function handleQuestionAsked(
 		)
 	}
 
-	const notifyPermissionIfNeeded = async (properties: unknown): Promise<void> => {
-		const dedupeKey = buildPermissionEventDedupeKey(properties)
-
-		if (
-			dedupeKey &&
-			!shouldSendDedupedNotification(
-				recentPermissionNotifications,
-				dedupeKey,
-				PERMISSION_DEDUPE_WINDOW_MS,
-			)
-		) {
+	const notifyPermissionIfNeeded = async (sessionID: unknown): Promise<void> => {
+		if (!shouldSendNeedsInputNotification(sessionID)) {
 			return
 		}
 
@@ -1059,7 +1072,7 @@ async function handleQuestionAsked(
 				applyRuntimeSessionStatusTransition(
 					buildCmuxSessionStatusTransitionForQuestionTool(input.sessionID),
 				)
-				await notifyQuestionIfNeeded(buildQuestionToolDedupeKey(input.sessionID, input.callID))
+				await notifyQuestionIfNeeded(input.sessionID)
 			}
 		},
 		event: async ({ event }: { event: Event }): Promise<void> => {
@@ -1080,13 +1093,11 @@ async function handleQuestionAsked(
 				}
 				case "session.error": {
 					const sessionID = toNonEmptyString(runtimeEvent.properties.sessionID)
-					const error = runtimeEvent.properties.error
-					const errorMessage = typeof error === "string" ? error : error ? String(error) : undefined
 					if (sessionID) {
 						await handleSessionError(
 							client as OpencodeClient,
 							sessionID,
-							errorMessage,
+							runtimeEvent.properties.error,
 							config,
 							terminalInfo,
 							notificationRuntime,
@@ -1098,12 +1109,11 @@ async function handleQuestionAsked(
 
 				case "permission.updated":
 				case "permission.asked": {
-					await notifyPermissionIfNeeded(runtimeEvent.properties)
+					await notifyPermissionIfNeeded(runtimeEvent.properties.sessionID)
 					break
 				}
 				case "question.asked": {
-					const dedupeKey = buildQuestionEventDedupeKey(runtimeEvent.properties)
-					await notifyQuestionIfNeeded(dedupeKey)
+					await notifyQuestionIfNeeded(runtimeEvent.properties.sessionID)
 					break
 				}
 			}

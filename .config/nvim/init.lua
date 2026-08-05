@@ -11,14 +11,5 @@ vim.api.nvim_create_autocmd("FileType", {
         vim.opt_local.expandtab = true
     end,
 })
-vim.api.nvim_create_autocmd("VimEnter", {
-    callback = function()
-        vim.defer_fn(function()
-            vim.cmd("syntax off")
-            vim.cmd("syntax on")
-            vim.cmd("colorscheme catppuccin")
-        end, 30)
-    end,
-})
 vim.env.PATH = "/opt/homebrew/bin:" .. vim.fn.stdpath("data") .. "/mason/bin:" .. vim.env.PATH
 vim.opt.fixendofline = false
