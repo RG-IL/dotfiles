@@ -10,9 +10,13 @@
 # Cadence: cpu/mem/temp/wifi every tick; bluetooth/battery every 5 ticks;
 # caffeinate every 30; brew packages every 600. (Wifi uses a ~10ms CoreWLAN
 # helper; blueutil / pmset / brew are the expensive slow-changing reads.)
+# The tmux push spawns 8 metric subprocesses, so it runs every TMUX_EVERY
+# ticks instead of every tick — the status bar only refreshes on its own
+# status-interval anyway, so the pushed options can be seconds stale.
 INTERVAL="${1:-1}"
 FAST_EVERY="${2:-1}"
 SLOW_EVERY="${3:-5}"
+TMUX_EVERY="${4:-5}"
 
 CFG="$HOME/.config/tmux"
 SYSTAT="$CFG/plugins/tmux-plugin-sysstat/scripts"
@@ -44,6 +48,17 @@ while true; do
 
   # Wi-Fi uses a ~10ms CoreWLAN helper, so it refreshes every tick (1s).
   "$SCRIPTS/wifi_info.sh" > "$wifi_file.tmp" 2>/dev/null && mv "$wifi_file.tmp" "$wifi_file"
+  # Push a sketchybar event only when the link actually transitions
+  # (connected↔disconnected). The daemon samples every tick for tmux anyway,
+  # so sketchybar's wifi widget stays fully event-driven instead of polling.
+  # Connected = the rate field (last | field) is non-empty.
+  wifi_line="$(cat "$wifi_file" 2>/dev/null)"
+  wifi_new=0
+  [[ -n "${wifi_line##*|}" ]] && wifi_new=1
+  if [[ -n "${wifi_conn:-}" && "$wifi_new" != "$wifi_conn" ]]; then
+    sketchybar --trigger wifi_status 2>/dev/null
+  fi
+  wifi_conn="$wifi_new"
   if ((cycle % SLOW_EVERY == 0)); then
     "$SCRIPTS/bluetooth_devices.sh" > "$bt_file.tmp" 2>/dev/null && mv "$bt_file.tmp" "$bt_file"
     "$SCRIPTS/battery_info.sh" > "$batt_file.tmp" 2>/dev/null && mv "$batt_file.tmp" "$batt_file"
@@ -63,7 +78,7 @@ while true; do
     nohup "$SCRIPTS/upgrade_packages.sh" >/dev/null 2>&1 &
   fi
 
-  if tmux has-session 2>/dev/null; then
+  if ((cycle % TMUX_EVERY == 0)) && tmux has-session 2>/dev/null; then
     tmux set-option -g @bubble_cpu_val "$("$SYSTAT/cpu.sh")" \
       \; set-option -g @bubble_mem_val "$("$SYSTAT/mem.sh")" \
       \; set-option -g @bubble_temp_val "$("$TMUXCPU/cpu_temp.sh")" \

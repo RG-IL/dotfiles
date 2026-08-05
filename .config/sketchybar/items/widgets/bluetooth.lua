@@ -3,7 +3,7 @@ local settings = require("settings")
 
 -- Bluetooth widget mirroring ~/.config/tmux/scripts/bluetooth.sh.
 -- The raw device state is computed once by the launchd status daemon
--- (bluetooth_devices.sh → /tmp/status/bt); this widget cats that file instead
+-- (bluetooth_devices.sh → /tmp/status/bt); this widget reads that file instead
 -- of running blueutil itself, so the periodic poll is never attributed to
 -- sketchybar (tccd doesn't re-validate its BluetoothAlways grant).
 -- Icon: device-type glyph of the primary connected device; label = device
@@ -108,30 +108,32 @@ local bluetooth = sbar.add("item", BLUETOOTH, {
 		},
 	},
 	updates = true,
-	update_freq = 1,
+	-- The daemon recomputes the raw state every 5 ticks, so polling faster
+	-- only re-reads an unchanged file. Instant connect/disconnect is covered
+	-- by the bluetooth_status event below.
+	update_freq = 5,
 })
 
 local function fetch_state(cb)
-	sbar.exec("cat " .. BT_FILE, function(out)
-		local power_line, rest = (out or ""):match("^([01])\n%-%-%-%-?(.*)$")
-		if not power_line then
-			cb(nil, {})
-			return
+	local out = read_file(BT_FILE) or ""
+	local power_line, rest = out:match("^([01])\n%-%-%-%-?(.*)$")
+	if not power_line then
+		cb(nil, {})
+		return
+	end
+	local devices = {}
+	for line in (rest or ""):gmatch("[^\r\n]+") do
+		local addr, name, conn, bat = line:match("^([^|]+)|([^|]*)|([01])|([^|]*)$")
+		if addr and name and name ~= "" then
+			devices[#devices + 1] = {
+				addr = addr,
+				name = name,
+				connected = conn == "1",
+				battery = bat,
+			}
 		end
-		local devices = {}
-		for line in (rest or ""):gmatch("[^\r\n]+") do
-			local addr, name, conn, bat = line:match("^([^|]+)|([^|]*)|([01])|([^|]*)$")
-			if addr and name and name ~= "" then
-				devices[#devices + 1] = {
-					addr = addr,
-					name = name,
-					connected = conn == "1",
-					battery = bat,
-				}
-			end
-		end
-		cb(power_line == "1", devices)
-	end)
+	end
+	cb(power_line == "1", devices)
 end
 
 local function apply_bar(on, devices)

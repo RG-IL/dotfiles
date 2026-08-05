@@ -6,6 +6,12 @@ local settings = require("settings")
 -- glyph (not a Control Center alias) so it renders without Screen Recording
 -- permission. SSID is redacted on macOS 26+, so the popup only reports the
 -- transmit rate from the CoreWLAN helper.
+--
+-- Event-driven: the icon flips on connect/disconnect via the wifi_status
+-- event, which the launchd status daemon triggers when it samples a link
+-- transition (it polls every second for tmux anyway, so sketchybar never has
+-- to). The tx rate is only read when the popup is open; a slow routine poll
+-- stays as a backstop in case the daemon misses a state change.
 
 local WIFI = "widgets.wifi"
 local WIFI_FILE = "/tmp/status/wifi"
@@ -35,7 +41,7 @@ local wifi = sbar.add("item", WIFI, {
 		},
 	},
 	updates = true,
-	update_freq = 1,
+	update_freq = 60,
 })
 
 local details = sbar.add("item", "wifi.details", {
@@ -60,25 +66,31 @@ local function update()
 	-- Transmit rate comes from the shared raw state (/tmp/status/wifi field 3:
 	-- ssid|signal|rate) written by the launchd status daemon, instead of
 	-- running the CoreWLAN helper from sketchybar.
-	sbar.exec("cat " .. WIFI_FILE, function(out)
-		local rate = (out or ""):match("^[^|]*|[^|]*|([0-9]*)")
-		if rate and rate ~= "" then
-			details:set({
-				label = { string = "Connected · " .. rate .. " Mbps" },
-			})
-			wifi:set({
-				icon = { string = icons.wifi.connected, color = colors.accent },
-			})
-		else
-			details:set({ label = { string = "N/A" } })
-			wifi:set({
-				icon = { string = icons.wifi.disconnected, color = colors.grey },
-			})
-		end
-	end)
+	local out = read_file(WIFI_FILE) or ""
+	local rate = out:match("^[^|]*|[^|]*|([0-9]*)")
+	if rate and rate ~= "" then
+		details:set({
+			label = { string = "Connected · " .. rate .. " Mbps" },
+		})
+		wifi:set({
+			icon = { string = icons.wifi.connected, color = colors.accent },
+		})
+	else
+		details:set({ label = { string = "N/A" } })
+		wifi:set({
+			icon = { string = icons.wifi.disconnected, color = colors.grey },
+		})
+	end
 end
 
-wifi:subscribe({ "routine", "forced" }, update)
+-- Fired by the launchd status daemon on wifi link transitions (connected ↔
+-- disconnected). Sketchybar's native wifi_change event is broken since Sonoma,
+-- and the network_change distributed notification doesn't fire on macOS 26,
+-- so the daemon — which samples every second for tmux anyway — is the event
+-- source. `--add event` is idempotent, so re-running on reload is safe.
+sbar.add("event", "wifi_status")
+
+wifi:subscribe({ "routine", "wifi_status", "system_woke", "forced" }, update)
 
 wifi:subscribe("mouse.entered", function()
 	update()

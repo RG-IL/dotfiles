@@ -10,6 +10,14 @@ local backend = require("items.spaces_aerospace")
 
 sbar.add("event", "aerospace_workspace_change")
 
+-- Drive push updates from helpers/aerospace_subscribe.sh: it keeps an
+-- `aerospace subscribe` socket open (~0% CPU) and fires this event on
+-- focus/workspace/monitor/window-detected changes, replacing the old
+-- exec-on-workspace-change callback in aerospace.toml. `--add event` is
+-- idempotent, so re-running on reload is safe; the watcher guards itself
+-- against duplicate spawns.
+sbar.exec("nohup $CONFIG_DIR/helpers/aerospace_subscribe.sh >/dev/null 2>&1 &")
+
 -- Horizontal padding (in px) on each side of a space pill. Tweak to change pill widths.
 local pill_padding = {
 	inactive = 6, -- not focused (no background, just number + icons)
@@ -294,13 +302,15 @@ end
 local observer = sbar.add("item", {
 	drawing = false,
 	updates = true,
-	update_freq = 10,
+	update_freq = 60,
 })
 
--- routine fires every update_freq seconds — backstop against window manager
--- state changes (move-window, window close on inactive workspace, etc.) that
--- don't trigger one of the push events the backend lists. Also re-arms the
--- space items if they couldn't be created at boot (WM not up yet).
+-- routine fires every update_freq seconds — backstop against the one state
+-- change that emits no aerospace event (window moved to an inactive workspace
+-- without focus following). Window-close, focus moves, and workspace switches
+-- are covered instantly by the subscribe watcher + front_app_switched. Also
+-- re-arms the space items if they couldn't be created at boot (WM not up yet)
+-- or if the watcher is ever dead.
 local subscribed_events = { "routine" }
 for _, ev in ipairs(backend.events) do
 	subscribed_events[#subscribed_events + 1] = ev

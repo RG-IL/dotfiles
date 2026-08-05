@@ -12,4 +12,4 @@
 # @raycast.author RaphaelGrumbach
 # @raycast.authorURL https://raycast.com/RaphaelG
 
-termusic cycle-loop 2>/dev/null | cut -d' ' -f2-
+termusic playlist cycle-loop 2>/dev/null | cut -d' ' -f2-

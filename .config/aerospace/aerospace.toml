@@ -13,9 +13,9 @@ after-startup-command = [
 ]
 
 # Notify Sketchybar about workspace change
-exec-on-workspace-change = ['/bin/bash', '-c',
-    'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE'
-]
+# Replaced by helpers/aerospace_subscribe.sh (an `aerospace subscribe` socket in
+# sketchybar) which covers workspace/focus/monitor/window-detected changes in one
+# event source. Kept off to avoid double triggers.
 
 # Start AeroSpace at login
 start-at-login = true

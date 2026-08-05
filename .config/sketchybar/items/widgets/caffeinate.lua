@@ -32,10 +32,9 @@ local caffeinate = sbar.add("item", "widgets.caffeinate", {
 })
 
 local function refresh()
-	sbar.exec("cat /tmp/status/caffeinate", function(out)
-		local active = (out or ""):match("[0-9]+") ~= nil
-		caffeinate:set({ icon = { string = active and ICON_ACTIVE or ICON_IDLE } })
-	end)
+	local out = read_file("/tmp/status/caffeinate") or ""
+	local active = out:match("[0-9]+") ~= nil
+	caffeinate:set({ icon = { string = active and ICON_ACTIVE or ICON_IDLE } })
 end
 
 caffeinate:subscribe({ "routine", "forced" }, refresh)

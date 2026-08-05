@@ -69,7 +69,7 @@ local media = sbar.add("item", "center.media", {
 			height = 56,
 		},
 	},
-	update_freq = 1,
+	update_freq = 30,
 	updates = true,
 })
 
@@ -491,51 +491,41 @@ schedule_budget = function()
 	update_char_budget()
 end
 
-local function poll()
-	sbar.exec("$HOME/.config/sketchybar/helpers/media_info.sh", function(out)
-		local rate_str, title, artist = out:match("([^\n]*)\n([^\n]*)\n([^\n]*)")
-		local rate = tonumber(rate_str) or 0
-		title = title and title:gsub("^%s*(.-)%s*$", "%1") or ""
-		artist = artist and artist:gsub("^%s*(.-)%s*$", "%1") or ""
-		if title ~= "" and title ~= "null" then
-			set_track(title, artist, rate > 0)
-		else
-			set_idle()
-		end
-	end)
-end
-
-local function poll_after(cmd)
-	sbar.exec(cmd, function()
-		poll()
-		sbar.exec("sleep 0.4 && true", function()
-			poll()
-			schedule_budget()
-		end)
-	end)
-end
-
 local function toggle_popup()
 	media:set({ popup = { drawing = "toggle" } })
 end
 
--- The probe (helpers/media_info.sh) answers in ~20ms whether or not anything
--- is playing, so we poll on every tick (1s) in both states: while playing it
--- keeps the title fresh, and while idle it spots a new session within 1s
--- without burning CPU. (nowplaying-cli itself blocks ~2.7s when idle, so the
--- widget must not call it directly on the timer — the probe is nowplaying-cli's
--- own mediaremote-mini helper, which queries the macOS 15.4+ daemon directly.)
-media:subscribe("routine", poll)
-media:subscribe("media_change", poll)
+-- On macOS 15.4+ the native `media_change` event no longer fires (Apple locked
+-- MediaRemote), so helpers/media_watch.sh drives updates via the custom
+-- media_update event: it runs `media-control stream`, merges the payload into
+-- /tmp/status/media (<playing:0|1>|<title>|<artist>), and triggers. The stream
+-- is the authoritative state — it fires ~60-150ms after a change, whereas
+-- re-querying the daemon (nowplaying-cli) returns STALE state for ~1s after a
+-- pause. The widget renders ONLY from this file. `update_freq` re-reads the
+-- file on a slow cadence as a free watchdog in case the watcher ever dies; it
+-- never touches the daemon, so it can't be stale and costs ~0 CPU.
+local function render_from_state()
+	local text = (read_file("/tmp/status/media") or ""):gsub("%s+$", "")
+	local playing, title, artist = text:match("^([^|]+)|([^|]*)|([^|]*)$")
+	local is_playing = playing == "1" or playing == "true"
+	if title and title ~= "" then
+		set_track(title, artist or "", is_playing)
+	else
+		set_idle()
+	end
+end
+
+media:subscribe("routine", render_from_state)
+media:subscribe("media_update", render_from_state)
 media:subscribe("system_woke", function()
 	schedule_budget()
-	poll()
+	render_from_state()
 end)
 -- The bluetooth label width recenters the whole center block; re-measure so
 -- the title budget pushes the notch back over the cutout.
 media:subscribe("media_space_changed", function()
 	schedule_budget()
-	poll()
+	render_from_state()
 end)
 -- The left bracket resizes as spaces/apps change; re-measure the safety cap.
 media:subscribe("aerospace_workspace_change", schedule_budget)
@@ -543,6 +533,8 @@ media:subscribe("mouse.clicked", toggle_popup)
 artwork:subscribe("mouse.clicked", toggle_popup)
 
 local function optimistic_toggle()
+	-- Flip the glyph immediately; the watcher's media_update confirms and
+	-- corrects within ~100ms if the media-control stream line disagrees.
 	if last_play_state ~= nil then
 		local now_playing = not last_play_state
 		set_play_icon(now_playing)
@@ -552,20 +544,28 @@ local function optimistic_toggle()
 			set_label(text, not now_playing and 0.45 or false, false)
 		end
 	end
-	poll_after("nowplaying-cli togglePlayPause")
+	sbar.exec("nowplaying-cli togglePlayPause")
 end
 
 playpause:subscribe("mouse.clicked", optimistic_toggle)
 popup_playpause:subscribe("mouse.clicked", optimistic_toggle)
+-- prev/next just run the command; the media_update event re-renders the new
+-- track when the stream emits it.
 popup_prev:subscribe("mouse.clicked", function()
-	poll_after("nowplaying-cli previous")
+	sbar.exec("nowplaying-cli previous")
 end)
 popup_next:subscribe("mouse.clicked", function()
-	poll_after("nowplaying-cli next")
+	sbar.exec("nowplaying-cli next")
 end)
 
 media:subscribe("mouse.exited.global", function()
 	media:set({ popup = { drawing = false } })
 end)
 
-poll()
+-- Drive instant updates from helpers/media_watch.sh (macOS 15.4+ killed the
+-- native media_change event). `--add event` is idempotent, so re-running on
+-- reload is safe; the watcher guards itself against duplicate spawns.
+sbar.add("event", "media_update")
+sbar.exec("nohup $CONFIG_DIR/helpers/media_watch.sh >/dev/null 2>&1 &")
+
+render_from_state()

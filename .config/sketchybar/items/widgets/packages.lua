@@ -110,42 +110,39 @@ local more = sbar.add("item", POPUP_PREFIX .. "more", {
 })
 
 local function refresh_popup()
-	sbar.exec("cat " .. LIST_FILE, function(out)
-		local entries = {}
-		for line in (out or ""):gmatch("[^\r\n]+") do
-			local name, installed, latest = line:match("^([^|]+)|([^|]*)|([^|]*)$")
-			if name then
-				entries[#entries + 1] = { name = name, installed = installed, latest = latest }
-			end
+	local out = read_file(LIST_FILE) or ""
+	local entries = {}
+	for line in out:gmatch("[^\r\n]+") do
+		local name, installed, latest = line:match("^([^|]+)|([^|]*)|([^|]*)$")
+		if name then
+			entries[#entries + 1] = { name = name, installed = installed, latest = latest }
 		end
-		local shown = math.min(#entries, MAX_ROWS)
-		for i = 1, MAX_ROWS do
-			if i <= shown then
-				local e = entries[i]
-				rows[i]:set({
-					drawing = true,
-					label = { string = e.name .. "  " .. e.installed .. " → " .. e.latest },
-				})
-			else
-				rows[i]:set({ drawing = false })
-			end
+	end
+	local shown = math.min(#entries, MAX_ROWS)
+	for i = 1, MAX_ROWS do
+		if i <= shown then
+			local e = entries[i]
+			rows[i]:set({
+				drawing = true,
+				label = { string = e.name .. "  " .. e.installed .. " → " .. e.latest },
+			})
+		else
+			rows[i]:set({ drawing = false })
 		end
-		more:set({
-			drawing = #entries > MAX_ROWS,
-			label = { string = "… " .. (#entries - MAX_ROWS) .. " more" },
-		})
-		packages:set({ popup = { drawing = #entries > 0 } })
-	end)
+	end
+	more:set({
+		drawing = #entries > MAX_ROWS,
+		label = { string = "… " .. (#entries - MAX_ROWS) .. " more" },
+	})
+	packages:set({ popup = { drawing = #entries > 0 } })
 end
 
 packages:subscribe("mouse.entered", function()
-	sbar.exec("test -f " .. RUNNING_FILE .. " && echo 1 || echo 0", function(run)
-		if (run or ""):find("1") then
-			packages:set({ popup = { drawing = false } })
-			return
-		end
-		refresh_popup()
-	end)
+	if read_file(RUNNING_FILE) then
+		packages:set({ popup = { drawing = false } })
+		return
+	end
+	refresh_popup()
 end)
 
 packages:subscribe({ "mouse.exited", "mouse.exited.global" }, function()
@@ -154,16 +151,17 @@ end)
 
 packages:subscribe("mouse.clicked", function(env)
 	if env.BUTTON == "left" then
-		sbar.exec("test -f " .. RUNNING_FILE .. " && echo 1 || echo 0", function(run)
-			if (run or ""):find("1") then
-				return
-			end
-			sbar.exec("touch " .. REQUEST_FILE)
-			packages:set({
-				icon = { color = colors.grey },
-				label = { string = "…", color = colors.grey },
-			})
-		end)
+		if read_file(RUNNING_FILE) then
+			return
+		end
+		local touch = io.open(REQUEST_FILE, "a")
+		if touch then
+			touch:close()
+		end
+		packages:set({
+			icon = { color = colors.grey },
+			label = { string = "…", color = colors.grey },
+		})
 	end
 end)
 
