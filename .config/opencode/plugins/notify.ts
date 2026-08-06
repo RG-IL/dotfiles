@@ -191,6 +191,54 @@ async function isTerminalFocused(terminalInfo: TerminalInfo): Promise<boolean> {
 	return frontmost.toLowerCase() === terminalInfo.processName.toLowerCase()
 }
 
+async function captureOurTmuxWindowId(): Promise<string | null> {
+	try {
+		const ourPid = String(process.pid)
+
+		// Our process is usually a direct child of the tmux pane's shell.
+		const ppidProc = Bun.spawn(["ps", "-o", "ppid=", "-p", ourPid], {
+			stdout: "pipe",
+			stderr: "pipe",
+		})
+		const ourParentPid = (await new Response(ppidProc.stdout).text()).trim()
+		if (ourParentPid) {
+			const panesProc = Bun.spawn(
+				["tmux", "list-panes", "-a", "-F", "#{pane_pid} #{window_id}"],
+				{ stdout: "pipe", stderr: "pipe" },
+			)
+			const panes = (await new Response(panesProc.stdout).text())
+				.trim().split("\n").filter(Boolean)
+			for (const row of panes) {
+				const [panePid, windowId] = row.trim().split(/\s+/)
+				if (panePid === ourParentPid) return windowId
+			}
+		}
+
+		// Fallback: match by our controlling tty (robust to wrapper processes).
+		const ttyProc = Bun.spawn(["ps", "-o", "tty=", "-p", ourPid], {
+			stdout: "pipe",
+			stderr: "pipe",
+		})
+		const ourTty = (await new Response(ttyProc.stdout).text()).trim()
+		if (ourTty && ourTty !== "??") {
+			const panesProc = Bun.spawn(
+				["tmux", "list-panes", "-a", "-F", "#{pane_tty} #{window_id}"],
+				{ stdout: "pipe", stderr: "pipe" },
+			)
+			const panes = (await new Response(panesProc.stdout).text())
+				.trim().split("\n").filter(Boolean)
+			for (const row of panes) {
+				const [paneTty, windowId] = row.trim().split(/\s+/)
+				if (paneTty === `/dev/${ourTty}`) return windowId
+			}
+		}
+	} catch {
+		// Not in tmux
+	}
+
+	return null
+}
+
 // ==========================================
 // TMUX WINDOW FOCUS CHECK
 // ==========================================
@@ -274,7 +322,7 @@ interface NotificationRuntime {
 	cmuxCommand?: string
 }
 
-const NEEDS_INPUT_DEDUPE_WINDOW_MS = 1500
+const NEEDS_INPUT_STATE_STALE_MS = 10 * 60 * 1000
 const READY_DEDUPE_WINDOW_MS = 1500
 const READY_SUPPRESS_AFTER_NEEDS_INPUT_WINDOW_MS = 5000
 const CMUX_SESSION_STATUS_KEY_PREFIX = "opencode.session"
@@ -358,11 +406,8 @@ function shouldSendDedupedNotification(
 	return true
 }
 
-function buildNeedsInputDedupeKey(sessionID: unknown): string | null {
-	const normalizedSessionID = toNonEmptyString(sessionID)
-	if (!normalizedSessionID) return null
-
-	return `needs-input:${normalizedSessionID}`
+function buildNeedsInputDedupeKey(sessionID: string): string {
+	return `needs-input:${sessionID}`
 }
 
 function buildSessionReadyDedupeKey(sessionID: unknown): string | null {
@@ -643,17 +688,9 @@ async function handleQuestionAsked(
 	const NotifyPlugin: Plugin = async (ctx) => {
 		const { client } = ctx
 
-		// Capture our tmux window ID at startup (context is correct here)
-		let ourTmuxWindowId: string | null = null
-		try {
-			const p = Bun.spawn(["tmux", "display-message", "-p", "#{window_id}"], {
-				stdout: "pipe",
-				stderr: "pipe",
-			})
-			ourTmuxWindowId = (await new Response(p.stdout).text()).trim() || null
-		} catch {
-			// Not in tmux
-		}
+		// Capture our own tmux window ID at startup (not the session's active
+		// window, which can belong to a different opencode tab)
+		const ourTmuxWindowId = await captureOurTmuxWindowId()
 
 	// Load config once at startup
 	const config = await loadConfig()
@@ -667,6 +704,7 @@ async function handleQuestionAsked(
 	}
 	const oscTitleContext = parseOscTitleContext()
 	const shouldSuppressCmuxSessionStatusWrites = oscTitleContext?.mayWriteOscTitle === true
+	const notifiedNeedsInputSessions = new Set<string>()
 	const recentNeedsInputNotifications: RecentNotifications = new Map()
 	const recentReadyNotifications: RecentNotifications = new Map()
 	const titleSessionLogicalStates: TitleSessionLogicalStateBySessionID = new Map()
@@ -992,29 +1030,63 @@ async function handleQuestionAsked(
 		applyCmuxSessionStatusTransition(transition)
 	}
 
-	const shouldSendNeedsInputNotification = (sessionID: unknown): boolean => {
-		const dedupeKey = buildNeedsInputDedupeKey(sessionID)
-		if (!dedupeKey) return true
+	const isNeedsInputStateStale = (sessionID: string): boolean => {
+		const lastSentAt = recentNeedsInputNotifications.get(buildNeedsInputDedupeKey(sessionID))
+		if (lastSentAt === undefined) return true
 
-		return shouldSendDedupedNotification(
-			recentNeedsInputNotifications,
-			dedupeKey,
-			NEEDS_INPUT_DEDUPE_WINDOW_MS,
-		)
+		return Date.now() - lastSentAt >= NEEDS_INPUT_STATE_STALE_MS
+	}
+
+	const shouldSendNeedsInputNotification = (sessionID: unknown): boolean => {
+		const normalizedSessionID = toNonEmptyString(sessionID)
+		if (!normalizedSessionID) return true
+
+		// Only notify once per pending question/permission. The set is cleared
+		// when the input is resolved (replied/rejected) so the next question
+		// in the same session notifies again.
+		if (
+			notifiedNeedsInputSessions.has(normalizedSessionID) &&
+			!isNeedsInputStateStale(normalizedSessionID)
+		) {
+			return false
+		}
+
+		notifiedNeedsInputSessions.add(normalizedSessionID)
+		recentNeedsInputNotifications.set(buildNeedsInputDedupeKey(normalizedSessionID), Date.now())
+		return true
+	}
+
+	const markNeedsInputResolved = (sessionID: unknown): void => {
+		const normalizedSessionID = toNonEmptyString(sessionID)
+		if (!normalizedSessionID) return
+
+		notifiedNeedsInputSessions.delete(normalizedSessionID)
+		recentNeedsInputNotifications.delete(buildNeedsInputDedupeKey(normalizedSessionID))
 	}
 
 	const wasRecentlyNeedsInput = (sessionID: unknown): boolean => {
-		const dedupeKey = buildNeedsInputDedupeKey(sessionID)
-		if (!dedupeKey) return false
+		const normalizedSessionID = toNonEmptyString(sessionID)
+		if (!normalizedSessionID) return false
 
-		const lastSentAt = recentNeedsInputNotifications.get(dedupeKey)
+		// Sticky while a question/permission is pending: the idle that follows
+		// a pending question must not also fire "ready for review".
+		if (
+			notifiedNeedsInputSessions.has(normalizedSessionID) &&
+			!isNeedsInputStateStale(normalizedSessionID)
+		) {
+			return true
+		}
+
+		// Fallback window for ordering races where the idle event arrives just
+		// after a needs-input notification was sent.
+		const lastSentAt = recentNeedsInputNotifications.get(buildNeedsInputDedupeKey(normalizedSessionID))
 		if (lastSentAt === undefined) return false
 
 		if (Date.now() - lastSentAt < READY_SUPPRESS_AFTER_NEEDS_INPUT_WINDOW_MS) {
 			return true
 		}
 
-		recentNeedsInputNotifications.delete(dedupeKey)
+		recentNeedsInputNotifications.delete(buildNeedsInputDedupeKey(normalizedSessionID))
 		return false
 	}
 
@@ -1108,12 +1180,23 @@ async function handleQuestionAsked(
 				}
 
 				case "permission.updated":
-				case "permission.asked": {
+				case "permission.asked":
+				case "permission.v2.asked": {
 					await notifyPermissionIfNeeded(runtimeEvent.properties.sessionID)
 					break
 				}
-				case "question.asked": {
+				case "question.asked":
+				case "question.v2.asked": {
 					await notifyQuestionIfNeeded(runtimeEvent.properties.sessionID)
+					break
+				}
+				case "question.replied":
+				case "question.rejected":
+				case "question.v2.replied":
+				case "question.v2.rejected":
+				case "permission.replied":
+				case "permission.v2.replied": {
+					markNeedsInputResolved(runtimeEvent.properties.sessionID)
 					break
 				}
 			}
