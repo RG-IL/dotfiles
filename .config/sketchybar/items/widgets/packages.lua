@@ -132,7 +132,7 @@ local function refresh_popup()
 	end
 	more:set({
 		drawing = #entries > MAX_ROWS,
-		label = { string = "… " .. (#entries - MAX_ROWS) .. " more" },
+		label = { string = "" .. (#entries - MAX_ROWS) .. " more" },
 	})
 	packages:set({ popup = { drawing = #entries > 0 } })
 end
@@ -159,8 +159,8 @@ packages:subscribe("mouse.clicked", function(env)
 			touch:close()
 		end
 		packages:set({
-			icon = { color = colors.grey },
-			label = { string = "…", color = colors.grey },
+			icon = { string = "󰁡", color = colors.grey },
+			label = { string = "", color = colors.grey, padding_right = 0 },
 		})
 	end
 end)

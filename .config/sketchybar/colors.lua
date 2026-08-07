@@ -199,7 +199,7 @@ local themes = {
 		yellow = 0xffe3c790,
 		orange = 0xffe3c790,
 		magenta = 0xffe3c790,
-		grey = 0xff5a3030,
+		grey = 0xff838ba7,
 		transparent = 0x00000000,
 		accent = 0xffe3c790,
 

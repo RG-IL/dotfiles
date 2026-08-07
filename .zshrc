@@ -258,6 +258,7 @@ export BW_SESSION="tkBGDkMDkTSG8vck2o09kecMbBDrc8GpULijN6wPPFvyPfMyuOaq6XipV5tGf
 # Insert mode = bar, Normal mode = block (vim-like)
 
 alias cd="z"
+alias n="nvim"
 if [[ ! -f ~/.cache/zsh/zx-init.zsh ]]; then
   zoxide init zsh > ~/.cache/zsh/zx-init.zsh
 fi
