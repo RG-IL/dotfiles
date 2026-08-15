@@ -25,9 +25,5 @@
             "color": "#efc0c0"
         }
     },
-    "plugin": [
-        "superpowers@git+https://github.com/obra/superpowers.git",
-        "file:///Users/raphael/.config/opencode/plugins/notify.ts",
-        "opencode-history-search"
-    ]
+    "plugin": []
 }

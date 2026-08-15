@@ -109,7 +109,8 @@ return {
             local codelldb_pkg = mason_registry.get_package("codelldb")
             local extension_path = codelldb_pkg:get_install_path() .. "/extension/"
             local codelldb_path = extension_path .. "adapter/codelldb"
-            local liblldb_path = extension_path .. "lldb/lib/liblldb.dylib"
+            local libname = vim.loop.os_uname().sysname == "Darwin" and "liblldb.dylib" or "liblldb.so"
+            local liblldb_path = extension_path .. "lldb/lib/" .. libname
 
             dap.adapters.codelldb = {
                 type = "server",

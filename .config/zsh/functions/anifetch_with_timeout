@@ -1,3 +1,0 @@
-anifetch_with_timeout() {
-  play_anifetch_frames
-}

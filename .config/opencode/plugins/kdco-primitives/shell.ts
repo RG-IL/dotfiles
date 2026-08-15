@@ -56,9 +56,9 @@ export function assertShellSafe(value: string, context: string): void {
  *
  * @example
  * ```ts
- * const path = '/home/user/my "project"'
+ * const path = '/home/Raphael/my "project"'
  * const cmd = `cd "${escapeBash(path)}"`
- * // Result: cd "/home/user/my \"project\""
+ * // Result: cd "/home/Raphael/my \"project\""
  *
  * const var = '$HOME/file'
  * const cmd = `echo "${escapeBash(var)}"`

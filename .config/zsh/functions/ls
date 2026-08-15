@@ -21,13 +21,6 @@ function ls() {
     if [[ $show_all -eq 1 ]]; then
         eza "${eza_args[@]}" -A "$@"
     else
-        local mac_hidden=$(command ls -lO | grep 'hidden' | awk '{print $NF}' | tr '\n' '|')
-        mac_hidden=${mac_hidden%|}
-
-        if [[ -n "$mac_hidden" ]]; then
-            eza "${eza_args[@]}" --ignore-glob="$mac_hidden" "$@"
-        else
-            eza "${eza_args[@]}" "$@"
-        fi
+        eza "${eza_args[@]}" "$@"
     fi
 }

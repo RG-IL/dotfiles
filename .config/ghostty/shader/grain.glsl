@@ -8,7 +8,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     float noise = fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
 
     // ADJUST GRAIN STRENGTH HERE (0.15 is strong but readable)
-    float grainStrength = 0.03; 
+    float grainStrength = 0.0075; 
 
     // Mix the grain into the color channels
     terminalColor.rgb += (noise - 0.5) * grainStrength;

@@ -9,8 +9,11 @@ return {
                     before_init = function(_, config)
                         config.settings = config.settings or {}
                         config.settings.python = config.settings.python or {}
-                        config.settings.python.pythonPath =
-                            "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3"
+                        local python = vim.fn.exepath("python3")
+                        if python == "" then
+                            python = "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3"
+                        end
+                        config.settings.python.pythonPath = python
                     end,
                     settings = {
                         python = {
