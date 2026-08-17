@@ -1,62 +1,17 @@
-# Auto-attach to latest tmux session (only with a real TTY, not in VSCode/Terminal.app)
-if [[ -n "$NVIM_QUICK_ACTION" ]] && command -v tmux >/dev/null 2>&1; then
-  local file="$NVIM_QUICK_FILE"
-  unset NVIM_QUICK_ACTION NVIM_QUICK_FILE
-
-  if [[ -S /tmp/nvim-editor.sock ]]; then
-    /opt/homebrew/bin/nvim --server /tmp/nvim-editor.sock --remote "$file"
-  elif tmux has-session -t editor 2>/dev/null; then
-    tmux send-keys -t "editor" " /opt/homebrew/bin/nvim --listen /tmp/nvim-editor.sock \"$file\"" Enter
-    exec tmux attach-session -t editor
-  else
-    exec tmux new-session -s editor "/opt/homebrew/bin/nvim --listen /tmp/nvim-editor.sock \"$file\"; exec /bin/zsh -l"
-  fi
-fi
-
-if [[ $- == *i* ]] && [[ -z "$TMUX" ]] && [[ -t 0 ]] && [[ "$TERM_PROGRAM" != "vscode" ]] && [[ "$TERM_PROGRAM" != "Apple_Terminal" ]] && command -v tmux >/dev/null 2>&1; then
-  last_session=$(tmux ls -F '#{session_name}' 2>/dev/null | grep -v '^scratch$' | tail -1)
-  if [[ -n "$last_session" ]]; then
-    exec tmux attach-session -t "$last_session"
-  fi
-  # No reachable sessions — clean up stale socket if present, then start fresh
-  local socket="${TMUX_TMPDIR:-/private/tmp}/tmux-$(id -u)/default"
-  [[ -S "$socket" ]] && rm -f "$socket"
-  exec tmux new-session -s main 2>/dev/null
-fi
-
-export PATH="/Library/Frameworks/Python.framework/Versions/3.14/bin:$PATH"
-export BREW_PREFIX="/opt/homebrew"
-fpath+=(/opt/homebrew/share/zsh/site-functions)
-
-# Fire sketchybar's brew_upgrade event after any `brew upgrade` so the packages
-# widget refreshes immediately instead of waiting for its 5-minute poll.
-function brew() {
-  command brew "$@"
-
-  if [[ $* =~ "upgrade" ]]; then
-    sketchybar -m --trigger brew_upgrade
-  fi
-}
-
+export PATH="$HOME/.local/bin:$PATH"
 # Autoload functions on first use instead of defining at startup
 fpath=(~/.config/zsh/functions $fpath)
 
 # Generated native zsh completions (replaces fzf-based atuin completions)
-if [[ ! -f ~/.config/zsh/functions/_atuin ]] && [[ -x ~/.atuin/bin/atuin ]]; then
-  ~/.atuin/bin/atuin gen-completions --shell zsh --out-dir ~/.config/zsh/functions
+if [[ ! -f ~/.config/zsh/functions/_atuin ]] && [[ -x /usr/bin/atuin ]]; then
+  /usr/bin/atuin gen-completions --shell zsh --out-dir ~/.config/zsh/functions
 fi
 
-autoload -Uz ai coddy csc iv ls rs רד spl y _atuin_ai_from_buffer
+autoload -Uz ai iv ls y _atuin_ai_from_buffer
 autoload -Uz compinit && compinit -C -d ~/.cache/zsh/completion.dump
-
-# Show animated system info early (compiled C — instant startup)
-if [[ -z "$MANIM_PANE" ]] && { ! [[ -n "$TMUX" ]] || ! grep -A2 "name = \"$(tmux display-message -p '#{session_name}' 2>/dev/null)\"" ~/.config/sesh/sesh.toml 2>/dev/null | grep -q "startup_command"; }; then
-  ~/.config/zsh/ghost
-fi
 
 [[ -d ~/.cache/zsh ]] || mkdir -p ~/.cache/zsh
 setopt SHARE_HISTORY
-
 
 
 
@@ -64,8 +19,6 @@ if [[ ! -f ~/.cache/zsh/omp-init.zsh || ~/.ZSHThemes.json -nt ~/.cache/zsh/omp-i
   oh-my-posh init zsh --config ~/.ZSHThemes.json > ~/.cache/zsh/omp-init.zsh
 fi
 source ~/.cache/zsh/omp-init.zsh
-
-export TERM=xterm-256color
 
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#f2d3b7"
 
@@ -251,9 +204,9 @@ zle -C native-complete complete-word _main_complete
 bindkey '^T' native-complete
 LISTMAX=0
 bindkey '^[' fzf-completion
-bindkey '^[^L' forward-word
+bindkey '^[[108;8u' forward-word
 
-source "$BREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+source "$BREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh" || source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 # Insert mode = bar, Normal mode = block (vim-like)
 
 alias cd="z"
@@ -269,9 +222,8 @@ alias oc='opencode'
 # Defer slow plugins to first prompt
 typeset -a _zsh_defer_plugins
 _zsh_defer_plugins=(
-  "$HOME/.atuin/bin/env"
   "$HOME/.cache/zsh/at-init.zsh"
-  "$BREW_PREFIX/opt/zsh-fast-syntax-highlighting/share/zsh-fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh"
+  "$HOME/.local/share/zsh-fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh"
 )
 _load_deferred_plugins() {
   local p
@@ -313,7 +265,7 @@ __fzf_flags() {
 
 _fzf_complete_git() {
   local lookup="${TMPDIR:-/tmp}/git-desc-$$"
-  local gitcomp="/usr/share/zsh/5.9/functions/_git"
+  local gitcomp="/usr/share/zsh/functions/Completion/Unix/_git"
   _fzf_complete --height=40% --layout=reverse --prompt=" > " \
     --preview-window 'right:50%:wrap' \
     --preview "grep -m1 '^{}:' $lookup 2>/dev/null | cut -d: -f2-" \
@@ -412,7 +364,7 @@ _fzf_complete_brew() {
 
 _fzf_complete_tmux() {
   local lookup="${TMPDIR:-/tmp}/tmux-desc-$$"
-  local tmuxcomp="/usr/share/zsh/5.9/functions/_tmux"
+  local tmuxcomp="/usr/share/zsh/functions/Completion/Unix/_tmux"
   _fzf_complete --height=40% --layout=reverse --prompt=" > " \
     --preview-window 'right:50%:wrap' \
     --preview "grep -m1 '^{}:' $lookup 2>/dev/null | cut -d: -f2-" \
@@ -561,7 +513,7 @@ _fzf_complete_ocf(){
 
 _fzf_complete_fd() {
   local lookup="${TMPDIR:-/tmp}/fd-desc-$$"
-  local fdcomp="/opt/homebrew/share/zsh/site-functions/_fd"
+  local fdcomp="/usr/share/zsh/site-functions/_fd"
   _fzf_complete --height=40% --layout=reverse --prompt=" > " \
     --preview-window 'right:50%:wrap' \
     --preview "grep -m1 '^{}:' $lookup 2>/dev/null | cut -d: -f2-" \
@@ -580,7 +532,7 @@ _fzf_complete_fd() {
 
 _fzf_complete_rg() {
   local lookup="${TMPDIR:-/tmp}/rg-desc-$$"
-  local rgcomp="/opt/homebrew/share/zsh/site-functions/_rg"
+  local rgcomp="/usr/share/zsh/site-functions/_rg"
   _fzf_complete --height=40% --layout=reverse --prompt=" > " \
     --preview-window 'right:50%:wrap' \
     --preview "grep -m1 '^{}:' $lookup 2>/dev/null | cut -d: -f2-" \
@@ -595,7 +547,7 @@ _fzf_complete_rg() {
 
 _fzf_complete_bat() {
   local lookup="${TMPDIR:-/tmp}/bat-desc-$$"
-  local batcomp="/opt/homebrew/share/zsh/site-functions/_bat"
+  local batcomp="/usr/share/zsh/site-functions/_bat"
   _fzf_complete --height=40% --layout=reverse --prompt=" > " \
     --preview-window 'right:50%:wrap' \
     --preview "grep -m1 '^{}:' $lookup 2>/dev/null | cut -d: -f2-" \
@@ -619,7 +571,7 @@ _fzf_complete_delta() {
 
 _fzf_complete_eza() {
   local lookup="${TMPDIR:-/tmp}/eza-desc-$$"
-  local ezacomp="/opt/homebrew/share/zsh/site-functions/_eza"
+  local ezacomp="/usr/share/zsh/site-functions/_eza"
   _fzf_complete --height=40% --layout=reverse --prompt=" > " \
     --preview-window 'right:50%:wrap' \
     --preview "grep -m1 '^{}:' $lookup 2>/dev/null | cut -d: -f2-" \
@@ -643,7 +595,7 @@ _fzf_complete_mpv() {
 
 _fzf_complete_yazi() {
   local lookup="${TMPDIR:-/tmp}/yazi-desc-$$"
-  local yazicomp="/opt/homebrew/share/zsh/site-functions/_yazi"
+  local yazicomp="/usr/share/zsh/site-functions/_yazi"
   _fzf_complete --height=40% --layout=reverse --prompt=" > " \
     --preview-window 'right:50%:wrap' \
     --preview "grep -m1 '^{}:' $lookup 2>/dev/null | cut -d: -f2-" \
@@ -666,25 +618,19 @@ _fzf_complete_yt-dlp() {
 
 
 alias cat="bat"
-# csc - watches clipboard, saves each copy, auto-creates .cs files when
-#       filenames (ending with " X" or " x") are detected
-CSC_DIR=~/.cache/csc
-
 # Reset cursor to steady bar on every prompt (fixes block cursor after exiting nvim)
 _reset_cursor() { printf '\033[6 q' >/dev/tty }
 precmd_functions+=(_reset_cursor)
 
-function cool { ~/.config/zsh/ghost }
-
 # opencode
-export PATH=/Users/raphael/.opencode/bin:$PATH
+export PATH=/Users/raphael/.opencode/bin:$PATH || export PATH=/home/Raphael/.opencode/bin:$PATH
 
 export OPENCODE_PORT=4096
 
 alias ocf='OPENCODE_CONFIG=~/.config/opencode/opencode-full.jsonc opencode '
 ZSH_AUTOSUGGEST_COMPLETION_IGNORE="(?|*[| ]|*[| ]?)"
 
-export PATH="/Users/raphael/.local/bin:$PATH"
+export PATH="/home/Raphael/.local/bin:$PATH"
 
 
 

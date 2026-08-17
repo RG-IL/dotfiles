@@ -11,5 +11,5 @@ vim.api.nvim_create_autocmd("FileType", {
         vim.opt_local.expandtab = true
     end,
 })
-vim.env.PATH = "/opt/homebrew/bin:" .. vim.fn.stdpath("data") .. "/mason/bin:" .. vim.env.PATH
+vim.env.PATH = vim.fn.stdpath("data") .. "/mason/bin:" .. vim.env.PATH
 vim.opt.fixendofline = false

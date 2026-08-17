@@ -375,6 +375,7 @@ name = "catppuccin-frappe-flamingo"
 ## Make directory expand instead of command:
 [ai]
 enabled = true
+model = "max"
 [ai.opening]
 send_cwd = true
 send_last_command = true
