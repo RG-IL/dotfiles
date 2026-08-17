@@ -254,7 +254,6 @@ bindkey '^[' fzf-completion
 bindkey '^[^L' forward-word
 
 source "$BREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
-export BW_SESSION="tkBGDkMDkTSG8vck2o09kecMbBDrc8GpULijN6wPPFvyPfMyuOaq6XipV5tGfbDedZJPS1SERTto+anWoIc1EQ=="
 # Insert mode = bar, Normal mode = block (vim-like)
 
 alias cd="z"
@@ -679,8 +678,6 @@ function cool { ~/.config/zsh/ghost }
 
 # opencode
 export PATH=/Users/raphael/.opencode/bin:$PATH
-
-export OPENCODE_API_KEY="sk-DFCMr4xSDRG37qeo5hoKDL5xgzOfOPXDfcIW0IZ45rIAgcYolt3mw9Up6DMDMrPy"
 
 export OPENCODE_PORT=4096
 
