@@ -207,7 +207,7 @@ LISTMAX=0
 bindkey '^[' fzf-completion
 bindkey '^[[108;8u' forward-word
 
-source "$BREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh" || source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 # Insert mode = bar, Normal mode = block (vim-like)
 
 alias cd="z"
