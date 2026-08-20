@@ -624,7 +624,7 @@ _reset_cursor() { printf '\033[6 q' >/dev/tty }
 precmd_functions+=(_reset_cursor)
 
 # opencode
-export PATH=/Users/raphael/.opencode/bin:$PATH || export PATH=/home/Raphael/.opencode/bin:$PATH
+export PATH=/home/Raphael/.opencode/bin:$PATH
 
 export OPENCODE_PORT=4096
 
