@@ -224,7 +224,7 @@ alias oc='opencode'
 typeset -a _zsh_defer_plugins
 _zsh_defer_plugins=(
   "$HOME/.cache/zsh/at-init.zsh"
-  "$HOME/.local/share/zsh-fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh"
+  "/usr/share/zsh/plugins/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh"
 )
 _load_deferred_plugins() {
   local p
@@ -624,7 +624,7 @@ _reset_cursor() { printf '\033[6 q' >/dev/tty }
 precmd_functions+=(_reset_cursor)
 
 # opencode
-export PATH=/home/Raphael/.opencode/bin:$PATH
+export PATH=$HOME/.opencode/bin:$PATH
 
 export OPENCODE_PORT=4096
 
@@ -634,7 +634,7 @@ ZSH_AUTOSUGGEST_COMPLETION_IGNORE="(?|*[| ]|*[| ]?)"
 music() {
     termusic --layout-4
 }
-export PATH="/home/Raphael/.local/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 
 
 
