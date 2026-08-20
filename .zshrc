@@ -207,7 +207,7 @@ LISTMAX=0
 bindkey '^[' fzf-completion
 bindkey '^[[108;8u' forward-word
 
-source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+source "$BREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh" || source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 # Insert mode = bar, Normal mode = block (vim-like)
 
 alias cd="z"
@@ -624,7 +624,7 @@ _reset_cursor() { printf '\033[6 q' >/dev/tty }
 precmd_functions+=(_reset_cursor)
 
 # opencode
-export PATH=/home/Raphael/.opencode/bin:$PATH
+export PATH=/Users/raphael/.opencode/bin:$PATH || export PATH=/home/Raphael/.opencode/bin:$PATH
 
 export OPENCODE_PORT=4096
 
