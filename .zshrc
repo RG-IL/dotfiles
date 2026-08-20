@@ -1,4 +1,5 @@
 export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/.cargo/bin:$HOME/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin:$PATH"
 # Autoload functions on first use instead of defining at startup
 fpath=(~/.config/zsh/functions $fpath)
 
@@ -630,6 +631,9 @@ export OPENCODE_PORT=4096
 alias ocf='OPENCODE_CONFIG=~/.config/opencode/opencode-full.jsonc opencode '
 ZSH_AUTOSUGGEST_COMPLETION_IGNORE="(?|*[| ]|*[| ]?)"
 
+music() {
+    termusic --layout-4
+}
 export PATH="/home/Raphael/.local/bin:$PATH"
 
 
