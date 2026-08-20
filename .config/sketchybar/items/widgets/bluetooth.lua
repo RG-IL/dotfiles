@@ -159,7 +159,11 @@ local function apply_bar(on, devices)
 				text = text .. " (" .. primary.battery .. "%)"
 			end
 		else
-			text = primary.name .. " +" .. (#connected - 1)
+			text = primary.name
+			if primary.battery and primary.battery ~= "" then
+				text = text .. " (" .. primary.battery .. "%)"
+			end
+			text = text .. " +" .. (#connected - 1)
 		end
 	end
 

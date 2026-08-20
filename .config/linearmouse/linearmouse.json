@@ -1,5 +1,5 @@
 {
-  "$schema" : "https:\/\/schema.linearmouse.app\/0.11.2",
+  "$schema" : "https:\/\/schema.linearmouse.app\/0.11.3",
   "schemes" : [
     {
       "buttons" : {
@@ -119,12 +119,12 @@
         },
         "smoothed" : {
           "vertical" : {
-            "acceleration" : 1.1,
+            "acceleration" : 0,
             "bouncing" : true,
             "enabled" : true,
             "inertia" : 0.74,
             "preset" : "easeInOut",
-            "response" : 0.68,
+            "response" : 1.02,
             "speed" : 0.31
           }
         },

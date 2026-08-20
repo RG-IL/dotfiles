@@ -2,7 +2,6 @@ local colors = require("colors")
 
 -- ──────────────────────────── LEFT ────────────────────────────
 require("items.widgets.caffeinate")
-require("items.spaces")
 
 -- ──────────────── CENTER — LEFT of notch ──────────────────────
 
@@ -42,7 +41,6 @@ sbar.add("item", "center.media.pad_right", {
 require("items.widgets.battery")
 require("items.widgets.volume")
 require("items.widgets.packages")
-require("items.github")
 require("items.widgets.wifi")
 
 -- ══════════════════════════════════════════════════════════════
@@ -50,6 +48,18 @@ require("items.widgets.wifi")
 -- ══════════════════════════════════════════════════════════════
 
 CORNER_RADIUS = 16
+
+-- Left pill: caffeinate toggle
+sbar.add("bracket", "bracket.left", {
+	"widgets.caffeinate",
+}, {
+	background = {
+		color = colors.bg1,
+		corner_radius = CORNER_RADIUS,
+		height = 28,
+		border_width = 0,
+	},
+})
 
 -- Center notch pill: media — [notch] — bluetooth + clock
 -- The pill background spans both halves; the notch hardware creates the visual gap.
@@ -85,7 +95,6 @@ sbar.add("bracket", "bracket.clock", {
 -- Right pill: Packages + Volume + Battery + Wi-Fi
 sbar.add("bracket", "bracket.right", {
 	"widgets.wifi",
-	"github.bell",
 	"widgets.packages",
 	"widgets.volume.icon",
 	"widgets.volume",

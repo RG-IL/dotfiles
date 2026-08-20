@@ -80,22 +80,12 @@ main() {
     local parts=()
     for i in "${!names[@]}"; do
         local name="${names[$i]}"
-        local dev_type
-        dev_type=$(_detect_type "$name")
-        # Skip battery for devices with physical batteries (mice, keyboards, etc.)
-        case "$dev_type" in
-        mouse | keyboard | trackpad)
+        local bat="${bats[$i]}"
+        if [[ -n "$bat" ]]; then
+            parts+=("${name} (${bat}%)")
+        else
             parts+=("${name}")
-            ;;
-        *)
-            local bat="${bats[$i]}"
-            if [[ -n "$bat" ]]; then
-                parts+=("${name} (${bat}%)")
-            else
-                parts+=("${name}")
-            fi
-            ;;
-        esac
+        fi
     done
     local display_text
     if [[ ${#parts[@]} -eq 1 ]]; then
@@ -115,7 +105,7 @@ main() {
         local icon
         icon=$(_icon_for_type "$primary_type")
         if [[ -n "$display_text" ]]; then
-            echo "${icon} ${display_text}"
+            echo "${icon}  ${display_text}"
         else
             echo "$icon"
         fi

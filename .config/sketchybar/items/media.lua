@@ -527,8 +527,6 @@ media:subscribe("media_space_changed", function()
 	schedule_budget()
 	render_from_state()
 end)
--- The left bracket resizes as spaces/apps change; re-measure the safety cap.
-media:subscribe("aerospace_workspace_change", schedule_budget)
 media:subscribe("mouse.clicked", toggle_popup)
 artwork:subscribe("mouse.clicked", toggle_popup)
 

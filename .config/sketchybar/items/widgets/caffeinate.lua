@@ -25,7 +25,7 @@ local caffeinate = sbar.add("item", "widgets.caffeinate", {
 		},
 		color = colors.white,
 		padding_left = 9,
-		padding_right = 3,
+		padding_right = 7,
 		y_offset = 1.5,
 	},
 	label = { drawing = false },
