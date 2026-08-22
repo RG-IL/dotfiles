@@ -1,0 +1,20 @@
+{
+    "appearance": {
+        "transparency": {
+            "enabled": true
+        }
+    },
+    "general": {
+        "apps": {
+            "terminal": [
+                "/usr/bin/ghostty",
+                "--gtk-single-instance=true"
+            ]
+        }
+    },
+    "services": {
+        "useFahrenheit": false,
+        "useTwelveHourClock": false,
+        "visualiserBars": 120
+    }
+}
