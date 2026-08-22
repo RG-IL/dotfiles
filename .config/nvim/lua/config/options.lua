@@ -14,6 +14,18 @@ vim.g.lazygit_config = false
 vim.opt.spell = true
 vim.opt.spelllang = { "en_us" }
 
+vim.g.clipboard = {
+  name = "wl-clipboard",
+  copy = {
+    ["+"] = { "wl-copy" },
+    ["*"] = { "wl-copy" },
+  },
+  paste = {
+    ["+"] = { "sh", "-c", "wl-paste --no-newline 2>/dev/null || true" },
+    ["*"] = { "sh", "-c", "wl-paste --no-newline --primary 2>/dev/null || true" },
+  },
+}
+
 vim.api.nvim_create_autocmd("VimLeave", {
   callback = function()
     io.write("\027[6 q")
