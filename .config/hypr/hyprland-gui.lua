@@ -25,3 +25,11 @@ hl.unbind("SUPER + W")
 hl.bind("SUPER + SHIFT + Return", hl.dsp.exec_cmd("firefox"))
 hl.unbind("SUPER + CTRL + V")
 hl.bind("SUPER + CTRL + V", hl.dsp.exec_cmd("pkill fuzzel || caelestia clipboard"))
+hl.unbind("ALT + TAB")
+hl.bind("SUPER + Tab", hl.dsp.window.cycle_next(), {
+    repeating = true,
+})
+hl.unbind("SHIFT + ALT + TAB")
+hl.bind("SUPER + SHIFT + Tab", hl.dsp.window.cycle_next(), {
+    repeating = true,
+})

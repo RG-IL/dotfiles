@@ -61,13 +61,15 @@ return {
     -- Modifier only, the actual binds will be mod + 0-9. These should be strings and not arrays.
     kbGoToWs                   = "SUPER",
     kbGoToWsGroup              = "CTRL + SUPER",
-    kbMoveWinToWs              = "SUPER + ALT",
+    kbMoveWinToWs              = "SUPER + SHIFT",
+    kbMoveWinToWsSilent        = "SUPER + SHIFT + ALT",
     kbMoveWinToWsGroup         = "CTRL + SUPER + ALT",
 
     -- All the following binds can be either an array of binds to bind multiple keys, or a single string.
 
     -- Workspaces
-    kbMoveWinToWsSpecial       = { "SUPER + ALT + S", "CTRL + SUPER + SHIFT + Up" },
+    kbMoveWinToWsSpecial       = { "SUPER + SHIFT + S", "CTRL + SUPER + SHIFT + Up" },
+    kbMoveWinToWsSilentSpecial = "SUPER + SHIFT + ALT + S",
     kbMoveWinFromWsSpecial     = "CTRL + SUPER + SHIFT + Down",
     kbMoveWinToWsNext          = { "SUPER + ALT + mouse_down", "SUPER + ALT + Page_Down", "CTRL + SUPER + SHIFT + Right" },
     kbMoveWinToWsPrev          = { "SUPER + ALT + mouse_up", "SUPER + ALT + Page_Up", "CTRL + SUPER + SHIFT + Left" },
@@ -118,8 +120,8 @@ return {
 
     -- Utilities
     kbScreenshot               = "Print",
-    kbScreenshotFreeze         = "SUPER + SHIFT + S",
-    kbScreenshotRegion         = "SUPER + SHIFT + ALT + S",
+    kbScreenshotFreeze         = "ALT + SHIFT + S",
+    kbScreenshotRegion         = "CTRL + ALT + SHIFT + S",
     kbRecord                   = "CTRL + ALT + R",
     kbRecordSound              = "SUPER + ALT + R",
     kbRecordRegion             = "SUPER + SHIFT + ALT + R",

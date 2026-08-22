@@ -31,7 +31,7 @@
 	path = /Users/raphael/.config/delta/catppuccin.gitconfig
 [credential "https://github.com"]
 	helper = 
-	helper = !/home/raphael/.local/share/mise/installs/gh/2.97.0/gh_2.97.0_linux_amd64/bin/gh auth git-credential
+	helper = !/usr/bin/gh auth git-credential
 [credential "https://gist.github.com"]
 	helper = 
-	helper = !/home/raphael/.local/share/mise/installs/gh/2.97.0/gh_2.97.0_linux_amd64/bin/gh auth git-credential
+	helper = !/usr/bin/gh auth git-credential

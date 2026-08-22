@@ -84,6 +84,7 @@ for i = 1, 10 do
     local key = i % 10 -- 10 maps to key 0
     create_bind(extend_keybind(vars.kbGoToWs, key), fn.wsaction("focus", "", i))
     create_bind(extend_keybind(vars.kbMoveWinToWs, key), fn.wsaction("move", "", i))
+    create_bind(extend_keybind(vars.kbMoveWinToWsSilent, key), fn.wsaction("move", "", i, false))
     create_bind(extend_keybind(vars.kbGoToWsGroup, key), fn.wsaction("focus", "group", i))
     create_bind(extend_keybind(vars.kbMoveWinToWsGroup, key), fn.wsaction("move", "group", i))
 end
@@ -102,6 +103,7 @@ create_bind(vars.kbMoveWinToWsPrev, hl.dsp.window.move({ workspace = "-1" }), re
 
 -- Move window to/from special workspace
 create_bind(vars.kbMoveWinToWsSpecial, hl.dsp.window.move({ workspace = "special:special" }))
+create_bind(vars.kbMoveWinToWsSilentSpecial, hl.dsp.window.move({ workspace = "special:special", follow = false }))
 create_bind(vars.kbMoveWinFromWsSpecial, hl.dsp.window.move({ workspace = "e+0" }))
 
 -- Window groups

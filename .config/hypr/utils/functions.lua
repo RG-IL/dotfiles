@@ -1,4 +1,4 @@
-local function wsaction(action, range, i)
+local function wsaction(action, range, i, follow)
     return function()
         local activews = hl.get_active_workspace()
         if activews then
@@ -8,7 +8,7 @@ local function wsaction(action, range, i)
             local z  = (range == "group") and s or t
 
             if action == "move" then
-                return hl.dispatch(hl.dsp.window.move({ workspace = z }))
+                return hl.dispatch(hl.dsp.window.move({ workspace = z, follow = follow ~= false }))
             else
                 return hl.dispatch(hl.dsp.focus({ workspace = z }))
             end
