@@ -684,7 +684,10 @@ export OPENCODE_PORT=4096
 alias ocf='OPENCODE_CONFIG=~/.config/opencode/opencode-full.jsonc opencode '
 ZSH_AUTOSUGGEST_COMPLETION_IGNORE="(?|*[| ]|*[| ]?)"
 
-export PATH="/Users/raphael/.local/bin:$PATH"
+music() {
+    termusic --layout-4
+}
+export PATH="$HOME/.local/bin:$PATH"
 
 
 
