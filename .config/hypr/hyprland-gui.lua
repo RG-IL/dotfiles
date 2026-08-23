@@ -14,7 +14,7 @@ hl.config({
     general = {
         extend_border_grab_area = 3,
         gaps_in = 4,
-        gaps_out = 5,
+        gaps_out = 6,
         hover_icon_on_border = false,
         resize_on_border = true,
     },
@@ -22,16 +22,19 @@ hl.config({
 
 -- Monitors
 hl.monitor({
-    output = "DP-1",
+    output = "HDMI-A-1",
     disabled = false,
-    mode = "2560x1440@59.95Hz",
-    position = "4652x-420",
+    mode = "1920x1080@60.00Hz",
+    position = "1360x-60",
     scale = 1,
     cm = "srgb",
 })
 hl.monitor({
     output = "eDP-1",
-    disabled = true,
+    disabled = false,
+    mode = "1366x768@60.01Hz",
+    position = "3286x260",
+    scale = 1,
 })
 
 -- Keybinds
