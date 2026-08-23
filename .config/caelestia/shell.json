@@ -25,7 +25,8 @@
             "avahi-discover",
             "bvnc",
             "bssh",
-            "xfce4-about"
+            "xfce4-about",
+            "com.rtosta.zapzap.nogpu"
         ]
     },
     "services": {
