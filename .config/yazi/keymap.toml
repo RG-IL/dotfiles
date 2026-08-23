@@ -25,12 +25,12 @@ desc = "Zoom out hovered file"
 
 [[mgr.prepend_keymap]]
 on   = "S"
-run  = "shell '~/.config/yazi/blip-send.sh \"$@\"'"
+run  = "shell '~/.config/yazi/blip-send.sh %s'"
 desc = "Send files via Blip to Samsung"
 
 [[mgr.prepend_keymap]]
 on   = "W"
-run  = "shell '~/.config/yazi/blip-send-windows.sh \"$@\"'"
+run  = "shell '~/.config/yazi/blip-send-windows.sh %s'"
 desc = "Send files via Blip to Windows PC"
 
 [[mgr.prepend_keymap]]

@@ -13,13 +13,13 @@ image_quality = 90
 
 [opener]
 edit = [
-    { run = '/usr/bin/env -u NVIM_APPNAME -u XDG_CONFIG_HOME -u XDG_DATA_HOME -u XDG_STATE_HOME -u XDG_CACHE_HOME nvim -u /Users/raphael/.config/nvim/init.lua "$@"', desc = "nvim", block = true, for = "unix" },
+    { run = 'nvim "%s"', desc = "nvim", block = true, for = "unix" },
 ]
 open = [
-    { run = 'open "$@"', desc = "Open", for = "macos" },
+    { run = 'open %s', desc = "Open", for = "macos" },
 ]
 play = [
-    { run = 'open -a "QuickTime Player" "$@"', desc = "play", for = "unix" },
+    { run = 'open -a "QuickTime Player" %s', desc = "play", for = "unix" },
 ]
 
 [open]
