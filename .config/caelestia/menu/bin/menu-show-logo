@@ -3,6 +3,15 @@
 # Adapted from omarchy-show-logo: prints a banner before menu commands.
 
 clear
-printf '\n'
-printf '\033[35m\033[1m  \033[0m\n'
-printf '\033[35m\033[1m  Caelestia Menu\033[0m\n\n'
+printf '\x1b[38;5;16m'
+echo '     ______           __          __  _       '
+echo '    / ____/___ ____  / /__  _____/ /_(_)___ _ '
+echo '   / /   / __ `/ _ \/ / _ \/ ___/ __/ / __ `/ '
+echo '  / /___/ /_/ /  __/ /  __(__  ) /_/ / /_/ /  '
+echo '  \____/\__,_/\___/_/\___/____/\__/_/\__,_/   '
+printf '\x1b[0m\n'
+
+if command -v fastfetch >/dev/null 2>&1 &&
+  [[ -f $HOME/.config/caelestia/menu/cael-ff.jsonc ]]; then
+  fastfetch --config "$HOME/.config/caelestia/menu/cael-ff.jsonc"
+fi

@@ -636,17 +636,5 @@ music() {
 }
 export PATH="$HOME/.local/bin:$PATH"
 
-# caelestia-menu banner on new terminals
-if [[ -o interactive && -z $TMUX ]] && command -v fastfetch >/dev/null 2>&1; then
-  printf '\x1b[38;5;16m'
-  echo '     ______           __          __  _       '
-  echo '    / ____/___ ____  / /__  _____/ /_(_)___ _ '
-  echo '   / /   / __ `/ _ \/ / _ \/ ___/ __/ / __ `/ '
-  echo '  / /___/ /_/ /  __/ /  __(__  ) /_/ / /_/ /  '
-  echo '  \____/\__,_/\___/_/\___/____/\__/_/\__,_/   '
-  printf '\x1b[0m\n'
-  fastfetch --config ~/.config/fastfetch/cael-ff.jsonc
-fi
-
 
 
