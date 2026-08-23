@@ -13,13 +13,13 @@ image_quality = 90
 
 [opener]
 edit = [
-    { run = 'nvim "$@"', desc = "nvim", block = true, for = "unix" },
+    { run = '''env > /tmp/opencode/env-from-yazi.log; nvim -c "lua local ok,err = pcall(function() local f = io.open('/tmp/opencode/nvim-state.log','w'); f:write(table.concat({(package.loaded['lazy'] ~= nil) and 'LAZY=yes' or 'LAZY=no', vim.fn.stdpath('config'), vim.env.NVIM_APPNAME or '-', table.concat(vim.v.argv,' ')}, ' | ')); f:close() end); if not ok then local f = io.open('/tmp/opencode/nvim-state.log','w'); f:write('ERR: '..tostring(err)); f:close() end" %s''', desc = "nvim", block = true, for = "unix" },
 ]
 open = [
-    { run = 'open "$@"', desc = "Open", for = "macos" },
+    { run = 'open %s', desc = "Open", for = "macos" },
 ]
 play = [
-    { run = 'open -a "QuickTime Player" "$@"', desc = "play", for = "unix" },
+    { run = 'open -a "QuickTime Player" %s', desc = "play", for = "unix" },
 ]
 
 [open]
