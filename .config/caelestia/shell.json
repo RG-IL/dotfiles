@@ -12,6 +12,22 @@
             ]
         }
     },
+    "launcher": {
+        "favouriteApps": [
+        ],
+        "hiddenApps": [
+            "qv4l2",
+            "thunar-settings",
+            "micro",
+            "lstopo",
+            "cmake-gui",
+            "thunar-bulk-rename",
+            "avahi-discover",
+            "bvnc",
+            "bssh",
+            "xfce4-about"
+        ]
+    },
     "services": {
         "useFahrenheit": false,
         "useTwelveHourClock": false,
