@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# Adapted from omarchy-cmd-present: true when a command exists.
+
+command -v "$1" >/dev/null 2>&1

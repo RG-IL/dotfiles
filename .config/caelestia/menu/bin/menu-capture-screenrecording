@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# Adapted from omarchy-capture-screenrecording, trimmed to the audio variants
+# Caelestia's own recorder does not cover (microphone). Desktop-only recording
+# goes through `caelestia record` in the menu; this script drives
+# gpu-screen-recorder directly for desktop+mic.
+# Args: [--with-desktop-audio] [--with-microphone-audio] [--stop-recording]
+
+DESKTOP_AUDIO=false
+MICROPHONE_AUDIO=false
+STOP_RECORDING=false
+
+for arg in "$@"; do
+  case $arg in
+    --with-desktop-audio) DESKTOP_AUDIO=true ;;
+    --with-microphone-audio) MICROPHONE_AUDIO=true ;;
+    --stop-recording) STOP_RECORDING=true ;;
+  esac
+done
+
+if $STOP_RECORDING || pidof gpu-screen-recorder >/dev/null 2>&1 && [[ $# -eq 0 ]]; then
+  pkill -INT -f '^gpu-screen-recorder' # SIGINT required to save video properly
+  exit 0
+fi
+
+set -e
+
+recordings_dir="${XDG_VIDEOS_DIR:-$HOME/Videos}/Screenrecord"
+mkdir -p "$recordings_dir"
+filename="$recordings_dir/Recording from $(date '+%Y-%m-%d %H-%M-%S').mp4"
+
+monitor=$(hyprctl monitors -j | jq -r '.[] | select(.focused == true) | "\(.name) \(.refreshRate)"')
+read -r mon_name mon_rr <<<"$monitor"
+[[ -n $mon_name ]] || { notify-send -u critical "Screenrecording" "No focused monitor"; exit 1; }
+
+args=(-w "$mon_name" -f "${mon_rr%.*}" -k auto -fm cfr --fallback-cpu-encoding yes -o "$filename")
+$DESKTOP_AUDIO && args+=(-a default_output)
+$MICROPHONE_AUDIO && args+=(-a default_input)
+
+gpu-screen-recorder "${args[@]}" >/dev/null 2>&1 &
+sleep 1
+if ! pgrep -f '^gpu-screen-recorder' >/dev/null; then
+  notify-send -u critical "Screenrecording" "Failed to start gpu-screen-recorder"
+  exit 1
+fi
+
+notify-send -p "Recording started" "Recording..." > /tmp/caelestia-menu-recording-notif

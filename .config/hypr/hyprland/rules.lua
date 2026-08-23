@@ -130,6 +130,21 @@ tagged_rule(xwl_popup_tag, {
 })
 
 
+--------------------------
+---- Caelestia menu ------
+--------------------------
+
+-- Floating terminal windows spawned by the menu (config editors, helpers)
+tagged_rule(float_60_70_tag, { "org.caelestia.menu.terminal" }, "class")
+-- Config editor (micro in a floating ghostty)
+tagged_rule(float_60_70_tag, { "org.caelestia.menu.editor" }, "class")
+-- About window
+tagged_rule(float_tag, { "org.caelestia.about" }, "class")
+-- TUI apps installed via the menu: floating or tiled variants
+hl.window_rule({ match = { class = "TUI.float" }, float = true })
+hl.window_rule({ match = { class = "TUI.tile" }, float = false })
+
+
 -- Special workspaces
 tagged_rule(system_monitor_tag, { "btop" }, "class")
 tagged_rule(music_player_tag, {

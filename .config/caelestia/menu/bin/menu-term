@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Adapted from omarchy-launch-floating-terminal-with-presentation.
+# Launch a floating, centered 875x600 terminal running the given command,
+# wrapped in the show-logo / show-done presentation. The dedicated app-id
+# keeps the float rule from ever catching normal terminals.
+
+APP_ID="org.caelestia.menu.terminal"
+
+cmd="$*"
+presentation_script="menu-show-logo; $cmd; if (( \$? != 130 )); then menu-show-done; fi"
+
+exec setsid ghostty --class="$APP_ID" --title="Caelestia Menu" -e bash -c "$presentation_script"

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Adapted from omarchy-show-logo: prints a banner before menu commands.
+
+clear
+printf '\n'
+printf '\033[35m\033[1m  \033[0m\n'
+printf '\033[35m\033[1m  Caelestia Menu\033[0m\n\n'

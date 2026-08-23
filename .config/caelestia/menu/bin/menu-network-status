@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# Print "<kind>\t<name>" for the primary connection: wifi SSID or ethernet device.
+# Kind is empty when there is no connection.
+
+wifi_path="/org/freedesktop/NetworkManager/ActiveConnection/"
+ssid=$(nmcli -t -f TYPE,STATE,CONNECTION device status 2>/dev/null | awk -F: '$1=="wifi" && $2=="connected" { print $3; exit }')
+if [[ -n $ssid ]]; then
+    # nmcli CONNECTION is the profile name; prefer the actual SSID
+    real_ssid=$(nmcli -t -f ACTIVE,SSID dev wifi list 2>/dev/null | awk -F: '$1=="yes" { print $2; exit }')
+    printf 'wifi\t%s\n' "${real_ssid:-$ssid}"
+    exit 0
+fi
+
+dev=$(nmcli -t -f TYPE,STATE,DEVICE device status 2>/dev/null | awk -F: '$1=="ethernet" && $2=="connected" { print $3; exit }')
+if [[ -n $dev ]]; then
+    printf 'ethernet\t%s\n' "$dev"
+    exit 0
+fi
+
+exit 0

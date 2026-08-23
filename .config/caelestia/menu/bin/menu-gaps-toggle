@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Toggle Hyprland window gaps between 0 and the configured default.
+# The checked condition in the menu greps gaps_in for a non-zero value.
+
+set -e
+current=$(hyprctl getoption general:gaps_in 2>/dev/null | awk '/^int:/ { print $2 }')
+[[ -n $current ]] || exit 1
+
+if (( current > 0 )); then
+    printf '%s' "$current" > "${XDG_STATE_HOME:-$HOME/.local/state}/caelestia-menu/gaps-prev" 2>/dev/null || {
+        mkdir -p "${XDG_STATE_HOME:-$HOME/.local/state}/caelestia-menu"
+        printf '%s' "$current" > "${XDG_STATE_HOME:-$HOME/.local/state}/caelestia-menu/gaps-prev"
+    }
+    hyprctl keyword general:gaps_in 0 >/dev/null
+else
+    prev=$(cat "${XDG_STATE_HOME:-$HOME/.local/state}/caelestia-menu/gaps-prev" 2>/dev/null)
+    [[ $prev =~ ^[0-9]+$ ]] || prev=4
+    hyprctl keyword general:gaps_in "$prev" >/dev/null
+fi

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Open config files in the floating menu editor window.
+# Editor resolution order: menu.conf (MENU_EDITOR) -> $EDITOR -> nvim.
+
+CONF="$HOME/.config/caelestia/menu/menu.conf"
+[[ -f $CONF ]] && source "$CONF"
+
+if (( $# == 0 )); then
+  echo "Usage: menu-edit <file> [file...]" >&2
+  exit 1
+fi
+
+if [[ -n ${MENU_EDITOR:-} ]]; then
+  read -ra editor_cmd <<<"$MENU_EDITOR"
+elif [[ -n ${EDITOR:-} ]]; then
+  read -ra editor_cmd <<<"$EDITOR"
+else
+  editor_cmd=(nvim)
+fi
+
+exec setsid ghostty --class="org.caelestia.menu.editor" --title="Caelestia Menu Editor" -e "${editor_cmd[@]}" "$@"

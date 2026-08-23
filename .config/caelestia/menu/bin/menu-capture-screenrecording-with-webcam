@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# Adapted from omarchy-capture-screenrecording-with-webcam: open a small mpv
+# webcam overlay window, wait for it to map and settle, then record the whole
+# screen (webcam included) with desktop + microphone audio.
+
+set -e
+
+WEBCAM_DEVICE=$(ls /sys/class/video4linux/video* -d 2>/dev/null | head -1)
+[[ -n $WEBCAM_DEVICE ]] || { notify-send -u critical "Screenrecord" "No webcam found"; exit 1; }
+DEV="/dev/$(basename "$WEBCAM_DEVICE")"
+
+capture_options="framerate=30"
+available_formats=$(v4l2-ctl --list-formats-ext -d "$DEV" 2>/dev/null)
+for resolution in 640x360 1280x720 1920x1080; do
+  if echo "$available_formats" | grep -q "$resolution"; then
+    capture_options="video_size=$resolution,$capture_options"
+    break
+  fi
+done
+
+mpv "av://v4l2:$DEV" \
+  --profile=low-latency --untimed --no-cache \
+  --demuxer-lavf-o="$capture_options" \
+  '--vf=lavfi=[crop=ih*8/9:ih]' \
+  --title="WebcamOverlay" \
+  --no-border --no-audio --no-osc --osd-level=0 \
+  --really-quiet &>/dev/null &
+
+waited=0
+while ((waited < 40)) && ! hyprctl clients -j | jq -e 'any(.[]; .title == "WebcamOverlay")' >/dev/null 2>&1; do
+  sleep 0.05
+  ((waited++))
+done
+
+# Park the overlay in the bottom-right corner at a PiP-ish size.
+hyprctl dispatch movetoorientation r >/dev/null 2>&1 || hyprctl dispatch moveoutofgroup "" >/dev/null 2>&1
+addr=$(hyprctl clients -j | jq -r '.[] | select(.title == "WebcamOverlay") | .address' | head -1)
+if [[ -n $addr ]]; then
+  hyprctl dispatch resizewindowpixel "exact 240 135,address:$addr" >/dev/null 2>&1
+  hyprctl dispatch movewindowpixel "exact 100%-(w+20) 100%-(h+20),address:$addr" >/dev/null 2>&1
+fi
+hyprctl dispatch pin float,address:$addr >/dev/null 2>&1
+
+sleep 0.6
+
+menu-capture-screenrecording --with-desktop-audio --with-microphone-audio &
+REC_PID=$!
+
+# When the recording ends, take the webcam window down too.
+(
+  while pgrep -f '^gpu-screen-recorder' >/dev/null; do sleep 1; done
+  pkill -f 'WebcamOverlay' 2>/dev/null
+) &
+disown

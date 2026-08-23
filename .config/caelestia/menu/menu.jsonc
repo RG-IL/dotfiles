@@ -1,0 +1,104 @@
+{
+  // Caelestia menu definition — Omarchy menu tree (quattro) pruned to the
+  // approved inventory and adapted to Caelestia + Hyprland-Lua.
+  // JSONC is used for Neovim-friendly highlighting, comments, and trailing commas.
+  // IDs are object keys. Dotted IDs imply hierarchy: trigger.share.file belongs
+  // under trigger.share.
+  // Kind is inferred: action -> action, provider -> dynamic submenu,
+  // internal -> in-launcher view/overlay, otherwise submenu.
+  //
+  // Optional fields:
+  //   aliases   alternate `open <route>` names; also searchable
+  //   title     header text shown when the submenu is open; defaults to label
+  //   when      shell condition; hide row when it fails
+  //   checked   shell condition; append ✓ when it succeeds
+  //   disabled  shell condition; row stays listed but goes dim, takes a ✓ and
+  //             can no longer be selected (Install rows)
+  //   enabled   set false to switch a row off without deleting it
+  //
+  // Actions run through bash -c with this dir's bin/ on PATH as $MENU_BIN.
+
+  // Root Menu
+  "apps": {"icon":"󰀻","label":"Apps","aliases":["app","applications"],"provider":"apps"},
+  "learn": {"icon":"󰧑","label":"Learn"},
+  "trigger": {"icon":"󱓞","label":"Trigger"},
+  "style": {"icon":"","label":"Style"},
+  "setup": {"icon":"","label":"Setup","aliases":["settings"]},
+  "install": {"icon":"󰉉","label":"Install"},
+  "remove": {"icon":"󰭌","label":"Remove","aliases":["uninstall"]},
+  "update": {"icon":"","label":"Update","aliases":["restart","refresh"]},
+  "about": {"icon":"","label":"About","internal":"about"},
+  "system": {"icon":"","label":"System","aliases":["power-menu"]},
+
+  // Learn
+  "learn.keybindings": {"icon":"","label":"Keybindings","internal":"keybindings"},
+  "learn.hyprland": {"icon":"","label":"Hyprland","action":"xdg-open 'https://wiki.hypr.land/'"},
+  "learn.arch": {"icon":"󰣇","label":"Arch","action":"xdg-open 'https://wiki.archlinux.org/title/Main_page'"},
+  "learn.neovim": {"icon":"","label":"Neovim","action":"xdg-open 'https://www.lazyvim.org/keymaps'"},
+  "learn.bash": {"icon":"󱆃","label":"Bash","action":"xdg-open 'https://devhints.io/bash'"},
+
+  // Trigger
+  "trigger.reminder": {"icon":"󰢌","label":"Reminder","aliases":["reminder"]},
+  "trigger.emoji": {"icon":"󰞅","label":"Emoji","aliases":["emoji-picker","emote","smiley"],"internal":"emoji"},
+  "trigger.reminder.set": {"icon":"󰢌","label":"Set one…","aliases":["reminder-set","remind"]},
+  "trigger.reminder.show": {"icon":"󰢌","label":"Show all","action":"menu-reminder show"},
+  "trigger.reminder.clear": {"icon":"󰢌","label":"Clear all","action":"menu-reminder clear"},
+  "trigger.capture": {"icon":"","label":"Capture","aliases":["capture","screenshot","screenrecord","screen-recording","screenrecording"]},
+  "trigger.capture.screenshot": {"icon":"","label":"Screenshot","action":"caelestia screenshot -r"},
+  "trigger.capture.screenrecord.stop": {"icon":"","label":"Stop Screenrecording","when":"pgrep -f '^gpu-screen-recorder'","action":"pkill -INT -f gpu-screen-recorder"},
+  "trigger.capture.screenrecord": {"icon":"","label":"Screenrecord"},
+  "trigger.capture.screenrecord.fullscreen": {"icon":"","label":"Record fullscreen","action":"caelestia record"},
+  "trigger.capture.screenrecord.region": {"icon":"","label":"Record region","action":"caelestia record -r"},
+  "trigger.capture.screenrecord.fullscreen-sound": {"icon":"","label":"Record fullscreen with sound","action":"caelestia record -s"},
+  "trigger.capture.screenrecord.region-sound": {"icon":"","label":"Record region with sound","action":"caelestia record -r -s"},
+  "trigger.capture.text": {"icon":"󰴑","label":"Text","action":"menu-capture-text"},
+  "trigger.capture.color": {"icon":"󰃉","label":"Color","action":"pkill hyprpicker || hyprpicker -a"},
+  "trigger.toggle": {"icon":"󰔎","label":"Toggle","aliases":["toggle","toggles"]},
+  "trigger.toggle.idle-lock": {"icon":"󰅶","label":"Stay Awake","checked":"[[ $(qs -c caelestia ipc call idleInhibitor isEnabled 2>/dev/null) == true ]]","action":"qs -c caelestia ipc call idleInhibitor toggle"},
+  "trigger.toggle.notifications": {"icon":"󰂛","label":"Notifications","checked":"[[ $(qs -c caelestia ipc call notifs isDndEnabled 2>/dev/null) != true ]]","action":"qs -c caelestia ipc call notifs toggleDnd"},
+  "trigger.tests": {"icon":"󰓅","label":"Speed Test"},
+  "trigger.tests.network-speedtest": {"icon":"󰓅","label":"Network Speed Test","internal":"speedtest-network"},
+  "trigger.tests.disk-speedtest": {"icon":"󰋊","label":"Disk Speed Test","internal":"speedtest-disk"},
+
+  // Style
+  "style.theme": {"icon":"󰸌","label":"Theme","aliases":["theme","themes"],"provider":"schemes"},
+  "style.background": {"icon":"","label":"Background","aliases":["background","wallpaper"],"provider":"wallpapers"},
+  "style.hyprland": {"icon":"","label":"Hyprland","action":"command -v hyprmod >/dev/null 2>&1 && exec hyprmod || exec menu-edit \"$HOME/.config/hypr/hyprland.lua\""},
+
+  // Setup
+  "setup.monitors": {"icon":"󰍹","label":"Monitors","action":"menu-edit \"$HOME/.config/hypr/hyprland-gui.lua\""},
+  "setup.keybindings": {"icon":"","label":"Keybindings","when":"[[ -f $HOME/.config/hypr/hyprland/keybinds.lua ]]","action":"menu-edit \"$HOME/.config/hypr/hyprland/keybinds.lua\""},
+  "setup.input": {"icon":"","label":"Input","when":"[[ -f $HOME/.config/hypr/hyprland/input.lua ]]","action":"menu-edit \"$HOME/.config/hypr/hyprland/input.lua\""},
+  "setup.network": {"icon":"󰛳","label":"Network","aliases":["network"]},
+  "setup.network.qr": {"icon":"󰐲","label":"QR Code","aliases":["wifi-qr"],"when":"nmcli -t -f TYPE,STATE device status 2>/dev/null | grep -q '^wifi:connected'","internal":"wifiqr"},
+  "setup.security": {"icon":"","label":"Security"},
+  "setup.security.fingerprint": {"icon":"󰈷","label":"Fingerprint","when":"lsusb 2>/dev/null | grep -qi fingerprint","action":"menu-term menu-security-fingerprint-setup"},
+  "setup.security.passwordless-sudo": {"icon":"󰟵","label":"Passwordless Sudo","action":"menu-term menu-sudo-passwordless"},
+  "setup.config": {"icon":"","label":"Config"},
+  "setup.config.hyprland": {"icon":"","label":"Hyprland","action":"command -v hyprmod >/dev/null 2>&1 && exec hyprmod || exec menu-edit \"$HOME/.config/hypr/hyprland.lua\""},
+  "setup.direct-boot": {"icon":"","label":"Direct Boot","when":"[[ -d /sys/firmware/efi ]]","action":"menu-term menu-direct-boot"},
+
+  // Install
+  "install.package": {"icon":"󰣇","label":"Package","action":"menu-term menu-pkg-install"},
+  "install.aur": {"icon":"󰣇","label":"AUR","action":"menu-term menu-pkg-aur-install"},
+  "install.webapp": {"icon":"","label":"Web App","action":"menu-term menu-webapp-install"},
+  "install.tui": {"icon":"","label":"TUI","action":"menu-term menu-tui-install"},
+
+  // Remove
+  "remove.package": {"icon":"󰣇","label":"Package","action":"menu-term menu-pkg-remove"},
+  "remove.webapp": {"icon": "", "label": "Web App", "when": "grep -qs '^Exec=.*menu-launch-webapp' \"$HOME\"/.local/share/applications/*.desktop", "action": "menu-term menu-webapp-remove"},
+  "remove.tui": {"icon": "", "label": "TUI", "when": "grep -qsE '^Exec=.*ghostty --class=TUI\\.' \"$HOME\"/.local/share/applications/*.desktop", "action": "menu-term menu-tui-remove"},
+  "remove.security": {"icon":"","label":"Security"},
+  "remove.security.fingerprint": {"icon":"󰈷","label":"Fingerprint","when":"pacman -Qq fprintd &>/dev/null","action":"menu-term menu-security-fingerprint-remove"},
+
+  // Update
+  "update.caelestia": {"icon":"","label":"Caelestia","action":"menu-term caelestia update"},
+
+  // System
+  "system.lock": {"icon":"","label":"Lock","action":"qs -c caelestia ipc call lock lock"},
+  "system.suspend": {"icon":"󰒲","label":"Suspend","when":"[[ $(systemctl is-enabled systemd-suspend.service 2>/dev/null) != masked ]]","action":"systemctl suspend"},
+  "system.hibernate": {"icon":"󰤁","label":"Hibernate","when":"swapon --show --noheadings 2>/dev/null | grep -q .","action":"systemctl hibernate"},
+  "system.logout": {"icon":"󰍃","label":"Logout","action":"hyprctl dispatch exit"},
+  "system.reboot": {"icon":"󰜉","label":"Reboot","action":"systemctl reboot"},
+  "system.shutdown": {"icon":"󰐥","label":"Shutdown","action":"systemctl poweroff"}
+}

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# Simple system info window (About).
+
+exec setsid ghostty --class="org.caelestia.about" --title="About" --window-height=34 --window-width=110 -e bash -c 'menu-show-logo; fastfetch; echo; echo -n "Press any key to close..."; read -n 1 -s; menu-show-done'
