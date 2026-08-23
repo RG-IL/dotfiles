@@ -28,7 +28,7 @@
 	features = catppuccin-mocha
 	side-by-side = true
 [include]
-	path = /Users/raphael/.config/delta/catppuccin.gitconfig
+	path = ~/.config/delta/catppuccin.gitconfig
 [credential "https://github.com"]
 	helper = 
 	helper = !/usr/bin/gh auth git-credential

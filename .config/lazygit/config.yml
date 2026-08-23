@@ -17,3 +17,7 @@ gui:
       - "#8caaee"
     unstagedChangesColor:
       - "#e78284"
+git:
+  diffRenderers:
+    - colorArg: always
+      command: delta --paging=never
