@@ -22,16 +22,6 @@
         }
     },
     "modules": [
-        "break",
-        "break",
-        "break",
-        "break",
-        "break",
-        "break",
-        "break",
-        "break",
-        "break",
-        "break",
         {
             "type": "custom",
             "format": "┌{$1}{$1}┐",

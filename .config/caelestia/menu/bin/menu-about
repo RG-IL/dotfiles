@@ -1,19 +1,5 @@
 #!/bin/bash
 
-# Simple system info window (About). Uses the menu's ASCII art but not the
-# cael-ff banner box — that one is for menu terminals.
+# Simple system info window (About). No menu branding here — just system info.
 
-exec setsid ghostty --class="org.caelestia.about" --title="About" --window-height=34 --window-width=110 -e bash -c '
-clear
-printf "\x1b[38;5;16m"
-echo "     ______           __          __  _       "
-echo "    / ____/___ ____  / /__  _____/ /_(_)___ _ "
-echo "   / /   / __ `/ _ \/ / _ \/ ___/ __/ / __ `/ "
-echo "  / /___/ /_/ /  __/ /  __(__  ) /_/ / /_/ /  "
-echo "  \____/\__,_/\___/_/\___/____/\__/_/\__,_/   "
-printf "\x1b[0m\n"
-fastfetch
-echo
-echo -n "Press any key to close..."
-read -n 1 -s
-menu-show-done'
+exec setsid ghostty --class="org.caelestia.about" --title="About" --window-height=34 --window-width=110 -e bash -c 'clear; fastfetch; echo; echo -n "Press any key to close..."; read -n 1 -s; menu-show-done'
