@@ -2,5 +2,31 @@
 
 # caelestia-menu:summary=Display a "Done!" message with a spinner and wait for user to press any key.
 
+# Omarchy's one-liner assumes gum 0.x. On gum >= 2.0 (bubbletea v2 rewrite)
+# two things break it: the spun command no longer inherits usable stdin, and
+# gum's terminal-mode handshake queues delayed ESC-prefixed ACK bytes that a
+# plain `read` mistakes for the keypress. So we spin in the background and run
+# our own reader that ignores escape-sequence noise until a real key lands.
 echo
-gum spin --spinner "globe" --title "Done! Press any key to close..." -- bash -c 'read -n 1 -s'
+tty_state=$(stty -g 2>/dev/null)
+gum spin --spinner "globe" --title "Done! Press any key to close..." -- sleep infinity &
+spin_pid=$!
+# gum >= 2.0 leaves echo+icanon on, so its delayed handshake replies get
+# echoed by the tty driver the moment they land. Silence them ourselves.
+stty -echo -icanon 2>/dev/null
+while :; do
+    key=""
+    # Block until a byte arrives; bail out on long inactivity/EOF.
+    IFS= read -r -s -n 1 key && [ -n "$key" ] || break
+    if [ "$key" != $'\x1b' ]; then
+        break
+    fi
+    # ESC: drain the rest of the sequence so it doesn't re-trigger.
+    while IFS= read -r -s -t 0.05 -n 1 _ 2>/dev/null; do :; done
+done
+kill "$spin_pid" 2>/dev/null
+pkill -P "$spin_pid" 2>/dev/null
+# One sweep while echo is still off, then hand the terminal back.
+stty flushi 2>/dev/null
+[ -n "$tty_state" ] && stty "$tty_state" 2>/dev/null
+printf '\033[2K\n'
