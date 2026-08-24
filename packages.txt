@@ -45,6 +45,7 @@ pipewire-pulse
 polkit-gnome
 proton-vpn-gtk-app
 qrencode
+qt6-svg
 qt6-virtualkeyboard
 ripgrep
 sddm

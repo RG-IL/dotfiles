@@ -20,6 +20,8 @@ order of operations (with -p):
      installed, and install ONLY what is still missing
   4. delete whatever conflicts with this repo
   5. stow this repo over the target directory
+  6. set up sddm: enable service, restore /etc/sddm.conf.d configs,
+     install sddm-astronaut-theme, set zsh as default shell
 
 options:
   -p, --packages       do steps 1-5 (otherwise only cleanup and stow)
@@ -256,13 +258,60 @@ run_stow() {
   )
 }
 
+setup_sddm() {
+  ((UNSTOW)) && return 0
+  command -v systemctl >/dev/null 2>&1 || return 0
+  if ! have_pkg sddm; then
+    printf ':: !! sddm not installed, skipping sddm setup\n'
+    return 0
+  fi
+  if ! systemctl is-enabled --quiet sddm 2>/dev/null; then
+    if confirm "enable the sddm service?"; then
+      sudo systemctl enable sddm
+    fi
+  fi
+  local conf name
+  for conf in "$DOTFILES"/etc-sddm/*.conf; do
+    [[ -e $conf ]] || continue
+    name=$(basename "$conf")
+    if diff -q -- "$conf" "/etc/sddm.conf.d/$name" >/dev/null 2>&1; then
+      continue
+    fi
+    if confirm "install $name into /etc/sddm.conf.d/? (sets the active theme and keyboard config)"; then
+      sudo install -Dm644 -- "$conf" "/etc/sddm.conf.d/$name"
+    fi
+  done
+  if confirm "install sddm-astronaut-theme? (clones to ~/sddm-astronaut-theme, its own installer asks questions)"; then
+    if [[ ! -d $HOME/sddm-astronaut-theme ]]; then
+      git clone https://github.com/Keyitdev/sddm-astronaut-theme.git "$HOME/sddm-astronaut-theme"
+    fi
+    bash "$HOME/sddm-astronaut-theme/setup.sh"
+  fi
+}
+
+setup_shell() {
+  ((UNSTOW)) && return 0
+  if ! have_pkg zsh; then
+    printf ':: !! zsh not installed, skipping default shell setup\n'
+    return 0
+  fi
+  local user="${USER:-$(id -un)}"
+  local current
+  current=$(getent passwd "$user" | cut -d: -f7)
+  if [[ $current == */zsh ]]; then
+    printf ':: default shell is already zsh\n'
+    return 0
+  fi
+  if confirm "set zsh as your default shell? (chsh will ask for your password)"; then
+    chsh -s "$(command -v zsh)" "$user"
+  fi
+}
+
 post_notes() {
   cat <<'EOF'
 
 done. remaining manual steps:
   - restore personal data (Documents, Projects, Videos, ...) from your backup
-  - clone sddm-astronaut-theme if you use it: https://github.com/keyitdev/sddm-astronaut-theme
-  - enable services if needed: sudo systemctl enable sddm NetworkManager
 EOF
   if [[ -x .config/caelestia/menu/install.sh && -t 0 ]]; then
     local answer=''
@@ -292,5 +341,9 @@ else
   mkdir -p "$TARGET/.config"
   clear_conflicts
   run_stow
+  if ((DO_PACKAGES)); then
+    setup_sddm
+    setup_shell
+  fi
   post_notes
 fi
