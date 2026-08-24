@@ -92,6 +92,9 @@ fzf-completion() {
   fi
 }
 
+# Register as a proper ZLE widget so fast-syntax-highlighting can wrap it
+zle -N fzf-completion
+
 bindkey '^I'      autosuggest-accept
 
 # Override fzf dir completion to show hidden directories
