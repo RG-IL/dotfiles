@@ -3,7 +3,7 @@
     "lsp": true,
     "small_model": "opencode/big-pickle",
     "instructions": [
-        "~/.config/opencode/skills/favorite-theme/SKILL.md"
+        "~/.config/opencode/skills/unslop/SKILL.md"
     ],
     "permission": "allow",
     "mcp": {
