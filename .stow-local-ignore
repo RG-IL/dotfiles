@@ -1,0 +1,8 @@
+# never linked into the target directory
+\.git
+^/setup\.sh$
+^/packages\.txt$
+^/aur-packages\.txt$
+^/README.*
+\.stow-local-ignore
+pre-stow
