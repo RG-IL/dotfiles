@@ -153,6 +153,9 @@ Item {
                         // Reopened before the deferred reset fired: flush the
                         // stale state now so every open starts at the root.
                         MenuService.flushRootReset();
+                        // Conditions may have changed while closed (toggles
+                        // from the panel or keybinds); refresh checkmarks.
+                        MenuService.evalConds();
                     }
                 }
 

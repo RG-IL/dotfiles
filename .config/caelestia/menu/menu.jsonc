@@ -14,6 +14,8 @@
   //   checked   shell condition; append ✓ when it succeeds
   //   disabled  shell condition; row stays listed but goes dim, takes a ✓ and
   //             can no longer be selected (Install rows)
+  //   toggle    mark row as an on/off switch; always shows a checkbox,
+  //             󰄲 when its checked condition passes, 󰄱 when it does not
   //   enabled   set false to switch a row off without deleting it
   //
   // Actions run through bash -c with this dir's bin/ on PATH as $MENU_BIN.
@@ -54,8 +56,8 @@
   "trigger.capture.text": {"icon":"󰴑","label":"Text","action":"menu-capture-text"},
   "trigger.capture.color": {"icon":"󰃉","label":"Color","action":"pkill hyprpicker || hyprpicker -a"},
   "trigger.toggle": {"icon":"󰔎","label":"Toggle","aliases":["toggle","toggles"]},
-  "trigger.toggle.idle-lock": {"icon":"󰅶","label":"Stay Awake","checked":"[[ $(qs -c caelestia ipc call idleInhibitor isEnabled 2>/dev/null) == true ]]","action":"qs -c caelestia ipc call idleInhibitor toggle"},
-  "trigger.toggle.notifications": {"icon":"󰂛","label":"Notifications","checked":"[[ $(qs -c caelestia ipc call notifs isDndEnabled 2>/dev/null) != true ]]","action":"qs -c caelestia ipc call notifs toggleDnd"},
+  "trigger.toggle.idle-lock": {"icon":"󰅶","label":"Stay Awake","toggle":true,"checked":"[[ $(qs -c caelestia ipc call idleInhibitor isEnabled 2>/dev/null) == true ]]","action":"qs -c caelestia ipc call idleInhibitor toggle"},
+  "trigger.toggle.notifications": {"icon":"󰂛","label":"Notifications","aliases":["dnd","do-not-disturb"],"toggle":true,"checked":"[[ $(qs -c caelestia ipc call notifs isDndEnabled 2>/dev/null) != true ]]","action":"qs -c caelestia ipc call notifs toggleDnd"},
   "trigger.tests": {"icon":"󰓅","label":"Speed Test"},
   "trigger.tests.network-speedtest": {"icon":"󰓅","label":"Network Speed Test","internal":"speedtest-network"},
   "trigger.tests.disk-speedtest": {"icon":"󰋊","label":"Disk Speed Test","internal":"speedtest-disk"},

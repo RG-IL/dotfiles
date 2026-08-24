@@ -107,13 +107,20 @@ Item {
             }
         }
 
-        // Trailing indicator: check for checked items, chevron for submenus
+        // Trailing indicator: checkbox for toggles (filled when on), legacy
+        // check mark for plain checked rows, chevron for submenus.
         Text {
             id: trailing
 
-            visible: root.modelData?.checked || root.modelData?.type === "submenu"
-            text: root.modelData?.checked ? "󰄵" : "󰅂"
-            color: Colours.palette.m3onSurfaceVariant
+            visible: root.modelData?.checked || root.modelData?.toggle || root.modelData?.type === "submenu"
+            text: {
+                if (root.modelData?.type === "submenu")
+                    return "󰅂";
+                if (!root.modelData?.toggle)
+                    return "󰄵";
+                return root.modelData?.checked ? "󰄲" : "󰄱";
+            }
+            color: root.modelData?.checked && root.modelData?.type !== "submenu" ? Colours.palette.m3primary : Colours.palette.m3onSurfaceVariant
             font.family: "JetBrainsMono Nerd Font"
             font.pixelSize: Math.round(Tokens.sizes.launcher.itemHeight * 0.3)
 

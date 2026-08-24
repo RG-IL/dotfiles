@@ -36,6 +36,17 @@ Singleton {
         onTriggered: root.doRootReset()
     }
 
+    // Re-runs when/checked/disabled conditions shortly after an action fires,
+    // so toggles flip their own checkmark without closing the launcher.
+    property Timer _condRefreshTimer: Timer {
+        interval: 300
+        onTriggered: root.evalConds()
+    }
+
+    function scheduleCondRefresh(): void {
+        _condRefreshTimer.restart();
+    }
+
     function scheduleRootReset(): void {
         _rootResetTimer.restart();
     }
@@ -217,6 +228,7 @@ Singleton {
                     icon: node.icon ?? "",
                     action: node.action ?? "",
                     checked: root.isChecked(node),
+                    toggle: !!node.toggle,
                     disabled: root.isDisabled(node),
                     id: node.id
                 }];
@@ -399,6 +411,7 @@ Singleton {
                     icon: n.icon ?? "",
                     action: n.action ?? "",
                     checked: root.isChecked(n),
+                    toggle: !!n.toggle,
                     disabled: root.isDisabled(n),
                     id: n.id
                 };
@@ -492,8 +505,10 @@ Singleton {
             root.runInternal(row.internal);
             break;
         case "item":
-            if (!row.disabled)
+            if (!row.disabled) {
                 root.runAction(row.action);
+                root.scheduleCondRefresh();
+            }
             break;
         case "app":
             Apps.launch(row.entry);
@@ -631,6 +646,9 @@ Singleton {
             return;
 
         const script = conds.map((c, i) => `if ${c} >/dev/null 2>&1; then printf '%s\\t%s\\n' "${i}" true; else printf '%s\\t%s\\n' "${i}" false; fi`).join("\n");
+        // Stop any in-flight batch first; a stale result must not overwrite
+        // a fresher one when evalConds is called repeatedly.
+        condProc.running = false;
         condProc.command = ["bash", "-c", script];
         condProc.condList = conds;
         condProc.running = true;
