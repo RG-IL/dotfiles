@@ -58,5 +58,7 @@ fi
 HYPR_CONF="$HOME/.config/hypr/hyprland.lua"
 [[ -f $HYPR_CONF ]] || echo "note: $HYPR_CONF not found; Hyprland entries will fall back to an error until it exists"
 
+../../quickshell/caelestia/sync_upstream.sh
+
 echo
 echo "done. restart the shell with: caelestia shell -d (or your usual method)"
