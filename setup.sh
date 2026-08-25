@@ -24,8 +24,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/keyitdev/sddm-astronaut-
 sudo systemctl enable sddm
 sudo systemctl enable --now bluetooth
 sudo systemctl enable --now NetworkManager
-chsh -s $(which zsh)
-sleep 5
+sudo usermod --shell $(which zsh) $(whoami)
 sudo mkdir -p /etc/keyd
 sudo tee /etc/keyd/default.conf <<'EOF'
 [ids]
