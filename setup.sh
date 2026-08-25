@@ -21,7 +21,7 @@ rm -rf ~/.config/hypr/
 cd dotfiles
 stow .
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/keyitdev/sddm-astronaut-theme/master/setup.sh)"
-sudo systemctl enable sddm
+sudo systemctl enable --now sddm
 sudo systemctl enable --now bluetooth
 sudo systemctl enable --now NetworkManager
 sudo usermod --shell $(which zsh) $(whoami)
