@@ -1,16 +1,13 @@
-caelestia-cli
-caelestia-shell
 darkly-bin
 helium-browser-bin
 libcava
 oh-my-posh-bin
 papirus-folders
-paru
 pwvucontrol
 python-materialyoucolor
 qtengine
 quickshell-git
 spotify
 ttf-rubik-vf
-zapzap
 zsh-fast-syntax-highlighting
+hyprmod

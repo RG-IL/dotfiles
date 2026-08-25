@@ -61,7 +61,6 @@ esac
 install_selections() {
   source menu-sudo-keepalive
   $AUR -S --needed --noconfirm $*
-  menu-show-done
 }
 
 if [[ $AUR == yay ]]; then
@@ -78,7 +77,7 @@ if [[ $AUR == yay ]]; then
     --color 'pointer:green,marker:green'
   )
   pkg_names=$(yay -Slqa | fzf "${fzf_args[@]}")
-  [[ -z $pkg_names ]] && { menu-show-done; exit 0; }
+  [[ -z $pkg_names ]] && exit 0
   pkgs=$(echo "$pkg_names" | sed 's/^/aur\//' | tr '\n' ' ')
   install_selections $pkgs
   exit 0
@@ -107,6 +106,6 @@ pkg_names=$(
     --color 'pointer:green,marker:green' <"$LIST"
 )
 
-[[ -z $pkg_names ]] && { menu-show-done; exit 0; }
+[[ -z $pkg_names ]] && exit 0
 pkgs=$(tr '\n' ' ' <<<"$pkg_names")
 install_selections $pkgs

@@ -13,6 +13,7 @@ dotnet-runtime
 efibootmgr
 eza
 fastfetch
+opencode
 fd
 fzf
 ghostty

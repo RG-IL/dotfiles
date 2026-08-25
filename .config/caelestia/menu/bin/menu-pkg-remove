@@ -36,7 +36,6 @@ pkg_lines=$(
 )
 
 if [[ -z $pkg_lines ]]; then
-  menu-show-done
   exit 0
 fi
 
@@ -66,9 +65,7 @@ elif ((${#aur_pkgs[@]})); then
   sudo pacman -Rns --noconfirm "${aur_pkgs[@]}" && removed_any=true
 fi
 
-if [[ $removed_any == true ]]; then
-  menu-show-done
-else
+if [[ $removed_any != true ]]; then
   echo "Nothing was removed."
   read -n 1 -s
 fi
