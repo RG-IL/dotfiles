@@ -25,6 +25,7 @@ sudo systemctl enable sddm
 sudo systemctl enable --now bluetooth
 sudo systemctl enable --now NetworkManager
 chsh -s $(which zsh)
+sleep 5
 sudo mkdir -p /etc/keyd
 sudo tee /etc/keyd/default.conf <<'EOF'
 [ids]
@@ -36,5 +37,5 @@ capslock = overload(capsmod,esc)
 [capsmod:C-A-S]
 EOF
 
-sudo systemctl restart keyd
+sudo systemctl enable --now keyd
 reboot
