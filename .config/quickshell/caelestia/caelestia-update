@@ -1,0 +1,28 @@
+#!/bin/bash
+set -euo pipefail
+
+old_ver=$(paru -Qi caelestia-shell 2>/dev/null | awk '/^Version/{print $3}')
+
+bindir=$(mktemp -d)
+cat > "$bindir/paru" << 'SCRIPT'
+#!/bin/bash
+args=()
+for arg in "$@"; do
+    args+=("$arg")
+    [[ "$arg" == "-Syu" ]] && args+=("--ignore" "quickshell-git")
+done
+exec /usr/bin/paru "${args[@]}"
+SCRIPT
+chmod +x "$bindir/paru"
+export PATH="$bindir:$PATH"
+
+caelestia update
+
+export PATH="${PATH#$bindir:}"
+rm -rf "$bindir"
+
+new_ver=$(paru -Qi caelestia-shell 2>/dev/null | awk '/^Version/{print $3}')
+if [[ "$old_ver" != "$new_ver" ]]; then
+  paru -S quickshell-git --noconfirm
+  ~/.config/quickshell/caelestia/sync-upstream.sh
+fi

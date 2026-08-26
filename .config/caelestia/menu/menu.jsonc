@@ -94,7 +94,7 @@
   "remove.security.fingerprint": {"icon":"󰈷","label":"Fingerprint","when":"pacman -Qq fprintd &>/dev/null","action":"menu-term menu-security-fingerprint-remove"},
 
   // Update
-  "update.caelestia": {"icon":"","label":"Caelestia","action":"menu-term caelestia update"},
+  "update.caelestia": {"icon":"","label":"Caelestia","action":"menu-term ~/.config/quickshell/caelestia/caelestia-update"},
 
   // System
   "system.lock": {"icon":"","label":"Lock","action":"qs -c caelestia ipc call lock lock"},
