@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Adapted from omarchy-capture-screenrecording, trimmed to the audio variants
 # Caelestia's own recorder does not cover (microphone). Desktop-only recording

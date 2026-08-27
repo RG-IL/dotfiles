@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # caelestia-menu:summary=Display Hyprland keybindings defined in your configuration using an interactive search menu.
 

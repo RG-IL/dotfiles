@@ -4,7 +4,7 @@
 # webcam overlay window, wait for it to map and settle, then record the whole
 # screen (webcam included) with desktop + microphone audio.
 
-set -e
+set -euo pipefail
 
 WEBCAM_DEVICE=$(ls /sys/class/video4linux/video* -d 2>/dev/null | head -1)
 [[ -n $WEBCAM_DEVICE ]] || { notify-send -u critical "Screenrecord" "No webcam found"; exit 1; }

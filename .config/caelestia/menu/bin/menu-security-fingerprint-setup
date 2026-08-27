@@ -3,7 +3,7 @@
 # caelestia-menu:summary=Set up fingerprint authentication for sudo, polkit, and lock screen
 # caelestia-menu:requires-sudo=true
 
-set -e
+set -euo pipefail
 
 
 setup_pam_config() {
@@ -50,7 +50,7 @@ if pacman -Q libfprint-git &>/dev/null; then
   sudo pacman -Rdd --noconfirm libfprint-git
 fi
 
-menu-pkg-add libfprint fprintd usbutils
+menu-pkg add libfprint fprintd usbutils
 
 # Enroll first fingerprint
 echo -e "\e[32m\nLet's setup your right index finger as the first fingerprint.\e[0m"

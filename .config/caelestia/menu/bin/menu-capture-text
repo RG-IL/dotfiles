@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # caelestia-menu:summary=Extract text from a screenshot region with OCR
 # caelestia-menu:group=capture

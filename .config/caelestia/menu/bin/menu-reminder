@@ -6,6 +6,8 @@
 
 set -euo pipefail
 
+reminder_dir="${XDG_RUNTIME_DIR:-/tmp}/caelestia-menu-reminders"
+
 format_remaining() {
   local seconds=$1
   local minutes=$((seconds / 60))
@@ -20,18 +22,26 @@ format_remaining() {
   fi
 }
 
-active_reminder_timers() {
+# Live reminders are plain state files, one per reminder: <id>.meta (fire
+# epoch, minutes, fire time) from the setter, <id>.message with the text, and
+# <id>.pid tracking the detached sleeper that fires the notification. No
+# systemd involved: each reminder is just a background `sleep` that fires and
+# removes its own files. Out of the box a fired or cleared reminder leaves no
+# trace, so we only ever see ones still to come.
+active_reminders() {
   local now=${1:-$(date +%s)}
-  local timer next
+  local file id fire minutes at_time
 
-  while IFS=$'\t' read -r timer next; do
-    [[ -z $timer || -z $next ]] && continue
+  [[ -d $reminder_dir ]] || return 0
 
-    next=$((next / 1000000))
-    ((next <= now)) && continue
-
-    printf "%s\t%s\n" "$timer" "$next"
-  done < <(systemctl --user list-timers --all --output=json "caelestia-menu-reminder-*.timer" 2>/dev/null | jq -r '.[] | [.unit, .next] | @tsv')
+  for file in "$reminder_dir"/*.meta; do
+    [[ -e $file ]] || continue
+    id=${file%.meta}
+    id=${id##*/}
+    read -r fire minutes at_time <"$file" 2>/dev/null || continue
+    ((fire <= now)) && continue
+    printf "%s\t%s\t%s\t%s\n" "$id" "$fire" "$minutes" "$at_time"
+  done
 }
 
 refresh_indicator() {
@@ -43,25 +53,22 @@ open_interactive() {
 }
 
 show_reminders() {
-  local timer next remaining reminder reminder_minutes body=""
-  local reminder_dir="${XDG_RUNTIME_DIR:-/tmp}/caelestia-menu-reminders"
-  local reminder_message=""
+  local id fire minutes at_time remaining reminder_minutes reminder_message body=""
   local now=$(date +%s)
 
-  while IFS=$'\t' read -r timer next; do
-    remaining=$((next - now))
-    reminder=${timer%.timer}
-    reminder=${reminder#caelestia-menu-reminder-}
-    reminder_minutes=${reminder%%m-*}
+  while IFS=$'\t' read -r id fire minutes at_time; do
+    [[ -z $id || -z $fire ]] && continue
+    remaining=$((fire - now))
+    reminder_minutes=$minutes
     reminder_message=""
-    [[ -f $reminder_dir/${timer%.timer}.message ]] && reminder_message=$(<"$reminder_dir/${timer%.timer}.message")
+    [[ -f $reminder_dir/$id.message ]] && reminder_message=$(<"$reminder_dir/$id.message")
 
     if [[ -n $reminder_message ]]; then
-      body+="$reminder_message in $(format_remaining $remaining) ($(date -d "@$next" +%-H:%M))"$'\n'
+      body+="$reminder_message in $(format_remaining $remaining) ($at_time)"$'\n'
     else
-      body+="${reminder_minutes}-min reminder in $(format_remaining $remaining) ($(date -d "@$next" +%-H:%M))"$'\n'
+      body+="${reminder_minutes}-min reminder in $(format_remaining $remaining) ($at_time)"$'\n'
     fi
-  done < <(active_reminder_timers "$now")
+  done < <(active_reminders "$now")
 
   if [[ -z $body ]]; then
     notify-send "Upcoming reminders" "No outstanding reminders"
@@ -71,22 +78,21 @@ show_reminders() {
 }
 
 show_json() {
-  local timer next remaining reminder reminder_minutes unit reminder_message label item_json reminders_json="[]"
-  local reminder_dir="${XDG_RUNTIME_DIR:-/tmp}/caelestia-menu-reminders"
+  local id fire minutes at_time remaining reminder_minutes unit reminder_message label item_json reminders_json="[]"
   local now=$(date +%s)
   local count=0
   local tooltip="Set Reminder"
 
-  while IFS=$'\t' read -r timer next; do
+  while IFS=$'\t' read -r id fire minutes at_time; do
+    [[ -z $id || -z $fire ]] && continue
     count=$((count + 1))
 
-    unit=${timer%.timer}
-    reminder=${unit#caelestia-menu-reminder-}
-    reminder_minutes=${reminder%%m-*}
+    unit=$id
+    reminder_minutes=$minutes
     [[ ! $reminder_minutes =~ ^[0-9]+$ ]] && reminder_minutes=0
-    remaining=$((next - now))
+    remaining=$((fire - now))
     reminder_message=""
-    [[ -f $reminder_dir/$unit.message ]] && reminder_message=$(<"$reminder_dir/$unit.message")
+    [[ -f $reminder_dir/$id.message ]] && reminder_message=$(<"$reminder_dir/$id.message")
 
     if [[ -n $reminder_message ]]; then
       label=$reminder_message
@@ -96,17 +102,17 @@ show_json() {
 
     item_json=$(jq -cn \
       --arg unit "$unit" \
-      --arg timer "$timer" \
+      --arg timer "$unit.timer" \
       --arg label "$label" \
       --arg message "$reminder_message" \
       --arg remaining "$(format_remaining "$remaining")" \
-      --arg atTime "$(date -d "@$next" +%-H:%M)" \
+      --arg atTime "$at_time" \
       --argjson minutes "$reminder_minutes" \
-      --argjson at "$next" \
+      --argjson at "$fire" \
       --argjson remainingSeconds "$remaining" \
       '{unit:$unit,timer:$timer,minutes:$minutes,message:$message,label:$label,remaining:$remaining,remainingSeconds:$remainingSeconds,at:$at,atTime:$atTime}')
     reminders_json=$(jq -cn --argjson reminders "$reminders_json" --argjson item "$item_json" '$reminders + [$item]')
-  done < <(active_reminder_timers "$now")
+  done < <(active_reminders "$now")
 
   if ((count == 1)); then
     tooltip="1 reminder"
@@ -118,21 +124,18 @@ show_json() {
 }
 
 clear_reminders() {
-  local timer next reminder reminder_minutes reminder_message unit at
-  local reminder_dir="${XDG_RUNTIME_DIR:-/tmp}/caelestia-menu-reminders"
+  local id fire minutes at_time reminder_minutes reminder_message unit at pid
   local units="" body="" count=0
 
-  while IFS=$'\t' read -r timer next; do
-    [[ -z $timer || -z $next ]] && continue
-    unit=${timer%.timer}
-    units+="$unit.timer "
+  while IFS=$'\t' read -r id fire minutes at_time; do
+    [[ -z $id || -z $fire ]] && continue
+    units+="$id "
 
-    reminder=${unit#caelestia-menu-reminder-}
-    reminder_minutes=${reminder%%m-*}
+    reminder_minutes=$minutes
     [[ ! $reminder_minutes =~ ^[0-9]+$ ]] && reminder_minutes=0
     reminder_message=""
-    [[ -f $reminder_dir/$unit.message ]] && reminder_message=$(<"$reminder_dir/$unit.message")
-    at=$(date -d "@$((next / 1000000))" +%-H:%M 2>/dev/null || date -d "@$next" +%-H:%M)
+    [[ -f $reminder_dir/$id.message ]] && reminder_message=$(<"$reminder_dir/$id.message")
+    at=$at_time
 
     if [[ -n $reminder_message ]]; then
       body+="• $reminder_message ($at)"$'\n'
@@ -140,13 +143,16 @@ clear_reminders() {
       body+="• ${reminder_minutes}-min reminder ($at)"$'\n'
     fi
     count=$((count + 1))
-  done < <(active_reminder_timers "$(date +%s)")
+  done < <(active_reminders "$(date +%s)")
 
-  if [[ -n $units ]]; then
-    xargs -r systemctl --user stop <<<"${units% }" || true
-  fi
+  for id in $units; do
+    if [[ -f $reminder_dir/$id.pid ]]; then
+      pid=$(<"$reminder_dir/$id.pid")
+      [[ $pid =~ ^[0-9]+$ ]] && kill -- "$pid" 2>/dev/null || true
+    fi
+    rm -f "$reminder_dir/$id.meta" "$reminder_dir/$id.message" "$reminder_dir/$id.pid" 2>/dev/null || true
+  done
 
-  rm -f "$reminder_dir"/caelestia-menu-reminder-*.message 2>/dev/null || true
   refresh_indicator
 
   if ((count == 0)); then
@@ -204,10 +210,14 @@ if [[ -z $message ]]; then
 fi
 
 set_at=$(date +%s)
-remind_at=$(date -d "+${minutes} minutes" +%H:%M)
-unit="caelestia-menu-reminder-${minutes}m-$set_at"
-reminder_dir="${XDG_RUNTIME_DIR:-/tmp}/caelestia-menu-reminders"
-message_file="$reminder_dir/$unit.message"
+fire=$((set_at + minutes * 60))
+remind_at=$(date -d "@$fire" +%H:%M)
+id="caelestia-menu-reminder-${minutes}m-$set_at"
+message_file="$reminder_dir/$id.message"
+pid_file="$reminder_dir/$id.pid"
+meta_file="$reminder_dir/$id.meta"
+delay=$((fire - $(date +%s)))
+((delay < 0)) && delay=0
 confirmation="You'll be reminded at $remind_at"
 confirmation_title="Reminder set for ${minutes} minutes"
 
@@ -218,8 +228,18 @@ if [[ -n $custom_message ]]; then
   confirmation_title="$custom_message in ${minutes} minutes"
 fi
 
-systemd-run --user --quiet --collect --on-active="${minutes}m" --unit="$unit" \
-  bash -c 'notify-send "Reminder" "$1"; rm -f "$2"' bash "$message" "$message_file"
+printf "%s\t%s\t%s\n" "$fire" "$minutes" "$remind_at" >"$meta_file"
+
+# One detached sleep per reminder. On fire it notifies and cleans up its own
+# state files; cleared reminders are killed before they reach that point.
+nohup bash -c '
+  sleep "$1"
+  if [[ -f "$2" ]]; then
+    notify-send "Reminder" "$3"
+    rm -f "$2" "$4" "$5"
+  fi
+' _ "$delay" "$meta_file" "$message" "$message_file" "$pid_file" >/dev/null 2>&1 &
+echo $! >"$pid_file"
 
 refresh_indicator
 notify-send "$confirmation_title" "$confirmation"

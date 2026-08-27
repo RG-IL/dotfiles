@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Simple system info window (About). No menu branding here — just system info.
 

@@ -6,7 +6,7 @@
 # Omarchy's original flow needs yay's local AUR list. On paru-only systems we
 # fall back to a daily-refreshed name cache from aur.archlinux.org with live
 # RPC previews — same UX, no local AUR database required.
-set -uo pipefail
+set -euo pipefail
 
 export PATH="$HOME/.config/caelestia/menu/bin:$PATH"
 SELF="$(readlink -f "$0")"

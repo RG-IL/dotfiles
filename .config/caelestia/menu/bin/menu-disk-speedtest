@@ -3,7 +3,7 @@
 # caelestia-menu:summary=Measure live disk read and write speed
 # caelestia-menu:args=[target-dir]
 
-set -e
+set -euo pipefail
 
 if [[ -n ${1:-} && ! -d $1 ]]; then
   echo "Usage: menu-disk-speedtest [target-dir]" >&2

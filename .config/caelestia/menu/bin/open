@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Open a menu route directly, e.g.: open style.scheme
 # Requires the shell running with its menu module (IpcHandler target "menu").

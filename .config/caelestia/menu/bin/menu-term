@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Adapted from omarchy-launch-floating-terminal-with-presentation.
 # Launch a floating, centered 875x600 terminal running the given command,

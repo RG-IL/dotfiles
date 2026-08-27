@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # caelestia-menu:summary=Display a "Done!" message with a spinner and wait for user to press any key.
 

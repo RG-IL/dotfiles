@@ -3,7 +3,7 @@
 # caelestia-menu:summary=Create a desktop launcher for a web app
 # caelestia-menu:args=[name url icon-url-or-name [custom-exec] [mime-types]]
 
-set -e
+set -euo pipefail
 
 ICON_DIR="$HOME/.local/share/icons/hicolor/256x256/apps"
 
@@ -131,7 +131,7 @@ fi
 # Use custom exec if provided, otherwise default behavior.
 # Absolute helper path: app launchers don't share this script's PATH.
 BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-EXEC_COMMAND="${CUSTOM_EXEC:-$BIN_DIR/menu-launch-webapp $APP_URL}"
+EXEC_COMMAND="${CUSTOM_EXEC:-$BIN_DIR/menu-launch webapp $APP_URL}"
 
 # Create application .desktop file
 DESKTOP_FILE="$HOME/.local/share/applications/$APP_NAME.desktop"
@@ -156,6 +156,9 @@ fi
 
 chmod +x "$DESKTOP_FILE"
 
+# Refresh the menu's Remove conditions so the new app shows up immediately.
+qs -c caelestia ipc call menu refresh &>/dev/null || true
+
 if [[ $INTERACTIVE_MODE == "true" ]]; then
-  echo -e "You can now find $APP_NAME using the app launcher (SUPER + SPACE)\n"
+  echo -e "You can now find $APP_NAME using the app launcher (SUPER)\n"
 fi

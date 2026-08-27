@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Open config files in the floating menu editor window.
 # Editor resolution order: menu.conf (MENU_EDITOR) -> $EDITOR -> nvim.

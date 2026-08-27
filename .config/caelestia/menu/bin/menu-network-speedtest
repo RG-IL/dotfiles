@@ -4,7 +4,7 @@
 # caelestia-menu:group=network
 # caelestia-menu:args=[down|up]
 
-set -e
+set -euo pipefail
 
 # Resolve sibling helpers regardless of the caller's PATH.
 BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

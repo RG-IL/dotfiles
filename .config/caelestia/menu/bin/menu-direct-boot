@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # caelestia-menu:summary=Add or remove an EFI boot entry allowing the system to boot directly
 # caelestia-menu:requires-sudo=true

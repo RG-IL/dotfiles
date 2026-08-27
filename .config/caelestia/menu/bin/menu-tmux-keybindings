@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # caelestia-menu:summary=Display annotated Tmux keybindings using an interactive search menu.
 # caelestia-menu:args=[--print|-p] [--config <path>]

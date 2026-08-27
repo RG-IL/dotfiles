@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # caelestia-menu:summary=Show a fuzzy-finder TUI for picking new Arch and OPR packages to install.
 # caelestia-menu:requires-sudo=true

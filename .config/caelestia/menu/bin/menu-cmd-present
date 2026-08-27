@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Adapted from omarchy-cmd-present: true when a command exists.
 

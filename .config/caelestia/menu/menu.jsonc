@@ -88,7 +88,7 @@
 
   // Remove
   "remove.package": {"icon":"󰣇","label":"Package","action":"menu-term menu-pkg-remove"},
-  "remove.webapp": {"icon": "", "label": "Web App", "when": "grep -qs '^Exec=.*menu-launch-webapp' \"$HOME\"/.local/share/applications/*.desktop", "action": "menu-term menu-webapp-remove"},
+  "remove.webapp": {"icon": "", "label": "Web App", "when": "grep -qs '^Exec=.*menu-launch webapp' \"$HOME\"/.local/share/applications/*.desktop", "action": "menu-term menu-webapp-remove"},
   "remove.tui": {"icon": "", "label": "TUI", "when": "grep -qsE '^Exec=.*ghostty --class=TUI\\.' \"$HOME\"/.local/share/applications/*.desktop", "action": "menu-term menu-tui-remove"},
   "remove.security": {"icon":"","label":"Security"},
   "remove.security.fingerprint": {"icon":"󰈷","label":"Fingerprint","when":"pacman -Qq fprintd &>/dev/null","action":"menu-term menu-security-fingerprint-remove"},

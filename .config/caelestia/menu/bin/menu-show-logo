@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Adapted from omarchy-show-logo: prints a banner before menu commands.
 
