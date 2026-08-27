@@ -11,7 +11,7 @@ return {
                         config.settings.python = config.settings.python or {}
                         local python = vim.fn.exepath("python3")
                         if python == "" then
-                            python = "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3"
+                            python = "/usr/bin/python3"
                         end
                         config.settings.python.pythonPath = python
                     end,

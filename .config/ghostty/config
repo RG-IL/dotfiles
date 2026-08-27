@@ -12,7 +12,6 @@ theme = Catppuccin Frappe
 font-size = 12
 background-opacity = 0.4
 background-blur = 5
-mouse-hide-while-typing = true
 window-decoration = auto
 window-padding-balance = true
 window-padding-x = 12

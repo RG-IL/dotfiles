@@ -198,12 +198,17 @@ local function shell_join(argv) -- uhh praise danny for this
     return table.concat(quoted, " ")
 end
 
--- Merge user config with defaults
+-- Merge user config with defaults (cached after first load)
+local _cached_config = nil
+
 local function load_toggle_config()
+    if _cached_config then return _cached_config end
+
     local config = default_config()
 
     local user_file = io.open(config_dir .. "/caelestia/cli.json", "r") -- CLI config
     if not user_file then
+        _cached_config = config
         return config
     end
 
@@ -221,6 +226,7 @@ local function load_toggle_config()
             shell_join({ "Failed to parse CLI config", reason }) .. " error")
     end
 
+    _cached_config = config
     return config
 end
 

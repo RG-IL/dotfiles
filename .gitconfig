@@ -1,6 +1,5 @@
 # This is Git's per-user configuration file.
 [user]
-	gmail = grumbachraphael@gmail.com
 	email = grumbachraphael@gmail.com
 	name = Raphael Grumbach
 # Please adapt and uncomment the following lines:
@@ -25,7 +24,7 @@
 [delta]
 	navigate = true
 	dark = true
-	features = catppuccin-mocha
+	features = catppuccin-frappe
 	side-by-side = true
 [include]
 	path = ~/.config/delta/catppuccin.gitconfig

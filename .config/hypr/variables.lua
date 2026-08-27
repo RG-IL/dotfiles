@@ -112,6 +112,8 @@ return {
     kbTodoWs                   = "SUPER + R",
 
     -- Apps
+    -- NOTE: kbTerminal/kbBrowser are overridden by hyprland-gui.lua (loaded last).
+    -- Edit the GUI overrides there, not here.
     kbTerminal                 = "SUPER + T",
     kbBrowser                  = "SUPER + W",
     kbEditor                   = "SUPER + C",
