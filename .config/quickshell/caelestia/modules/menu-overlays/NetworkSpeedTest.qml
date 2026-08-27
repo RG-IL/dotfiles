@@ -13,6 +13,16 @@ Item {
     property bool opened: false
     property string connectionName: ""
 
+    // Stacking info supplied by the menu-overlay coordinator (MenuOverlays):
+    // how many overlays are open and this one's vertical position.
+    property int stackCount: 1
+    property int stackRank: 0
+    property real stackCenter: 0.5
+
+    // The underlying overlay, exposed so the coordinator in MenuOverlays can
+    // observe its close/run-again requests and act on every overlay at once.
+    readonly property alias overlay: overlayInstance
+
     property bool running: false
     property bool expectedStop: false
     property bool pendingRun: false
@@ -148,7 +158,9 @@ Item {
     Timer {
         id: phaseTimer
 
-        interval: 5000
+        // Match the disk speed test's 8s per phase so the two open side by
+        // side finish at roughly the same time.
+        interval: 8000
         repeat: false
         onTriggered: root.stopPhase()
     }
@@ -170,10 +182,15 @@ Item {
     }
 
     SpeedTestOverlay {
+        id: overlayInstance
+
         layerNamespace: "caelestia-menu-network-speedtest"
         title: root.connectionName
         leftLabel: "DOWNLOAD"
         rightLabel: "UPLOAD"
+        stackCount: root.stackCount
+        stackRank: root.stackRank
+        stackCenter: root.stackCenter
         runAgainTooltip: "Measure again via fast.com"
         running: root.running
         leftValue: root.downloadValue
@@ -182,7 +199,5 @@ Item {
         rightLive: root.running && root.phase === "up"
         error: root.error
         open: root.opened
-        onCloseRequested: root.close()
-        onRunAgainRequested: root.runSpeedTest()
     }
 }

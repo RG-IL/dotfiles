@@ -7,9 +7,9 @@ import qs.services
 import qs.modules.launcher.services
 import "Model.js" as Model
 
-// Ported from omarchy's wifiqr_Panel.qml: centered Wi-Fi share overlay, just
-// the QR code floating on a heavy scrim. Each summon regenerates the code via
-// menu-network-qr --meta.
+// Ported from omarchy's wifiqr_Panel.qml: the Wi-Fi QR code floats on its own
+// card, packed toward the vertical center when other overlay cards are open.
+// Each summon regenerates the code via menu-network-qr --meta.
 Item {
     id: root
 
@@ -17,6 +17,35 @@ Item {
     property string iface: ""
     property string ssid: ""
     property bool secured: false
+
+    // Card entrance: 0 -> 1 on open, so each card fades and pops into its
+    // slot rather than sliding in from off-screen.
+    property real pop: 0
+    onOpenedChanged: {
+        if (opened) {
+            pop = 0;
+            Qt.callLater(function() {
+                if (!root.opened)
+                    return;
+                pop = 1;
+            });
+        }
+    }
+
+    // Stacking: how many overlays are open in total and this card's vertical
+    // rank (0 = top). The coordinator in MenuOverlays supplies these, and also
+    // a ready-made vertical-center fraction that keeps the cards apart.
+    property int stackCount: 1
+    property int stackRank: 0
+    property real stackCenter: 0.5
+
+    // Emitted when the user dismisses this overlay; the coordinator in
+    // MenuOverlays closes every open overlay so one Esc exits them all.
+    signal closeRequested()
+
+    // Emitted on Enter so the coordinator can restart any open speed test,
+    // even when this card (with the keyboard focus) is on top.
+    signal runAgainRequested()
 
     property var qrRows: []
     property int qrSize: 0
@@ -193,29 +222,64 @@ Item {
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
 
-        Rectangle {
-            anchors.fill: parent
-            color: Qt.rgba(0, 0, 0, 0.78)
-
-            MouseArea {
-                anchors.fill: parent
-                onClicked: root.close()
-            }
-        }
-
         Item {
             id: keyCatcher
 
             anchors.fill: parent
             focus: true
 
-            Keys.onEscapePressed: root.close()
+            Keys.onEscapePressed: root.closeRequested()
+            Keys.onPressed: (event) => {
+                if (event.key === Qt.Key_Q)
+                    root.closeRequested();
+            }
+            Keys.onReturnPressed: root.runAgainRequested()
+            Keys.onEnterPressed: root.runAgainRequested()
 
-            Item {
-                anchors.centerIn: parent
-                width: content.implicitWidth
-                height: content.implicitHeight
-                scale: Math.min(1, (keyCatcher.width - 32) / Math.max(1, width), (keyCatcher.height - 32) / Math.max(1, height))
+            MouseArea {
+                anchors.fill: parent
+                onClicked: root.closeRequested()
+            }
+
+            Rectangle {
+                id: card
+
+                radius: 20
+                color: Qt.rgba(0.045, 0.05, 0.075, 0.82)
+                border.color: Qt.rgba(1, 1, 1, 0.08)
+                border.width: 1
+
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.verticalCenter: parent.verticalCenter
+                // Pack the card toward the top/bottom of the center as more
+                // overlays open; the offset eases so repositioning settles
+                // into its slot instead of snapping around.
+                anchors.verticalCenterOffset: (root.stackCenter - 0.5) * parent.height
+
+                opacity: root.pop
+                scale: root.pop * Math.min(1, (keyCatcher.width - 32) / Math.max(1, card.width), (keyCatcher.height - 32) / Math.max(1, card.height))
+
+                width: content.implicitWidth + 48
+                height: content.implicitHeight + 40
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 160
+                        easing.type: Easing.OutCubic
+                    }
+                }
+                Behavior on scale {
+                    NumberAnimation {
+                        duration: 260
+                        easing.type: Easing.OutBack
+                    }
+                }
+                Behavior on anchors.verticalCenterOffset {
+                    NumberAnimation {
+                        duration: 220
+                        easing.type: Easing.OutCubic
+                    }
+                }
 
                 MouseArea {
                     anchors.fill: parent
@@ -225,7 +289,13 @@ Item {
                 ColumnLayout {
                     id: content
 
-                    anchors.fill: parent
+                    anchors {
+                        fill: parent
+                        topMargin: 20
+                        bottomMargin: 20
+                        leftMargin: 24
+                        rightMargin: 24
+                    }
                     spacing: 16
 
                     Text {

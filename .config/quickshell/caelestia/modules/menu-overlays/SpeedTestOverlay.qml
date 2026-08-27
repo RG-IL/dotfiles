@@ -5,10 +5,11 @@ import Quickshell
 import Quickshell.Wayland
 import qs.services
 
-// Ported from omarchy's Ui_SpeedTestOverlay: centered gauge-cluster overlay
-// shared by the network and disk speed tests. Two dials sit directly on a
-// darkened scrim. Esc, the scrim, or the corner dismiss close it; the needles
-// sweep to full scale and back on open, then track the live readings.
+// Ported from omarchy's Ui_SpeedTestOverlay: gauges sit on a rounded card,
+// and the card packs toward the vertical center when other overlay cards are
+// open at the same time. Esc, the card's surroundings, or the corner dismiss
+// close it; the needles sweep to full scale and back on open, then track the
+// live readings.
 PanelWindow {
     id: root
 
@@ -25,6 +26,13 @@ PanelWindow {
     property bool rightLive: false
     property string error: ""
     property bool open: false
+
+    // Stacking: how many overlays are open in total and this card's vertical
+    // rank (0 = top). The coordinator in MenuOverlays supplies these, and also
+    // a ready-made vertical-center fraction that keeps the cards apart.
+    property int stackCount: 1
+    property int stackRank: 0
+    property real stackCenter: 0.5
 
     // Full-scale latch points for the dials, smallest first.
     property var scaleStops: [100, 250, 500, 1000, 2500, 5000, 10000]
@@ -69,6 +77,10 @@ PanelWindow {
     readonly property color onScrimUrgent: "#ff6b6b"
     readonly property color accent: Colours.palette.m3primary
 
+    // Card entrance: 0 -> 1 on open, so each card fades and pops into its
+    // slot rather than sliding in from off-screen.
+    property real pop: 0
+
     visible: open
     anchors {
         top: true
@@ -83,23 +95,16 @@ PanelWindow {
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
 
     onOpenChanged: {
-        if (open)
+        if (open) {
+            pop = 0;
             Qt.callLater(function() {
                 if (!root.open)
                     return;
+                pop = 1;
                 keyCatcher.forceActiveFocus();
                 leftDial.ignite();
                 rightDial.ignite();
             });
-    }
-
-    Rectangle {
-        anchors.fill: parent
-        color: Qt.rgba(0, 0, 0, 0.78)
-
-        MouseArea {
-            anchors.fill: parent
-            onClicked: root.closeRequested()
         }
     }
 
@@ -110,18 +115,59 @@ PanelWindow {
         focus: true
 
         Keys.onEscapePressed: root.closeRequested()
+        Keys.onPressed: (event) => {
+            if (event.key === Qt.Key_Q)
+                root.closeRequested();
+        }
         Keys.onReturnPressed: if (!root.running)
             root.runAgainRequested()
         Keys.onEnterPressed: if (!root.running)
             root.runAgainRequested()
 
-        Item {
-            id: cluster
+        MouseArea {
+            anchors.fill: parent
+            onClicked: root.closeRequested()
+        }
 
-            anchors.centerIn: parent
-            width: content.implicitWidth
-            height: content.implicitHeight
-            scale: Math.min(1, (keyCatcher.width - 32) / Math.max(1, width), (keyCatcher.height - 32) / Math.max(1, height))
+        Rectangle {
+            id: card
+
+            radius: 20
+            color: Qt.rgba(0.045, 0.05, 0.075, 0.82)
+            border.color: Qt.rgba(1, 1, 1, 0.08)
+            border.width: 1
+
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.verticalCenter: parent.verticalCenter
+            // Pack the card toward the top/bottom of the center as more
+            // overlays open; the offset eases so repositioning settles into
+            // its slot instead of snapping around.
+            anchors.verticalCenterOffset: (root.stackCenter - 0.5) * parent.height
+
+            opacity: root.pop
+            scale: root.pop * Math.min(1, (keyCatcher.width - 32) / Math.max(1, width), (keyCatcher.height - 32) / Math.max(1, height))
+
+            width: content.implicitWidth + 48
+            height: content.implicitHeight + 40
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 160
+                    easing.type: Easing.OutCubic
+                }
+            }
+            Behavior on scale {
+                NumberAnimation {
+                    duration: 260
+                    easing.type: Easing.OutBack
+                }
+            }
+            Behavior on anchors.verticalCenterOffset {
+                NumberAnimation {
+                    duration: 220
+                    easing.type: Easing.OutCubic
+                }
+            }
 
             MouseArea {
                 anchors.fill: parent
@@ -131,7 +177,13 @@ PanelWindow {
             ColumnLayout {
                 id: content
 
-                anchors.fill: parent
+                anchors {
+                    fill: parent
+                    topMargin: 20
+                    bottomMargin: 20
+                    leftMargin: 24
+                    rightMargin: 24
+                }
                 spacing: 16
 
                 Text {
@@ -165,15 +217,6 @@ PanelWindow {
                         value: root.rightValue
                         live: root.rightLive
                     }
-                }
-
-                Text {
-                    text: !root.running ? "Press Enter to measure again" : ""
-                    visible: !root.running
-                    color: root.onScrimDim
-                    font.family: root.fontFamily
-                    font.pixelSize: 13
-                    Layout.alignment: Qt.AlignHCenter
                 }
 
                 Text {
@@ -397,7 +440,10 @@ PanelWindow {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
             text: dial.label
-            color: root.onScrimDim
+            // Accent when this dial's phase has finished (a reading landed and
+            // it is no longer the live phase), dim while it is measuring or
+            // has not run yet. Each dial is independent.
+            color: (dial.value > 0 && !dial.live) ? root.accent : root.onScrimDim
             font.family: root.fontFamily
             font.pixelSize: 12
             font.bold: true

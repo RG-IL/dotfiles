@@ -20,6 +20,16 @@ Item {
     property string error: ""
     property string stderrText: ""
 
+    // Stacking info supplied by the menu-overlay coordinator (MenuOverlays):
+    // how many overlays are open and this one's vertical position.
+    property int stackCount: 1
+    property int stackRank: 0
+    property real stackCenter: 0.5
+
+    // The underlying overlay, exposed so the coordinator in MenuOverlays can
+    // observe its close/run-again requests and act on every overlay at once.
+    readonly property alias overlay: overlayInstance
+
     function open() {
         opened = true;
         runTest();
@@ -115,11 +125,16 @@ Item {
     }
 
     SpeedTestOverlay {
+        id: overlayInstance
+
         layerNamespace: "caelestia-menu-disk-speedtest"
         title: root.diskName
         leftLabel: "READ"
         rightLabel: "WRITE"
         unit: "MB/s"
+        stackCount: root.stackCount
+        stackRank: root.stackRank
+        stackCenter: root.stackCenter
         running: root.running
         leftValue: root.toRate(root.readMBps)
         rightValue: root.toRate(root.writeMBps)
@@ -128,7 +143,5 @@ Item {
         error: root.error
         open: root.opened
         scaleStops: [500, 1000, 2500, 5000, 10000, 15000]
-        onCloseRequested: root.close()
-        onRunAgainRequested: root.runTest()
     }
 }
