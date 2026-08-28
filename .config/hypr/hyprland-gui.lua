@@ -5,7 +5,15 @@ hl.monitor({
 	output = "HDMI-A-1",
 	disabled = false,
 	mode = "1920x1080@60.00Hz",
-	position = "-1920x-250",
+	position = "0x0",
+	scale = 1,
+	cm = "srgb",
+})
+hl.monitor({
+	output = "eDP-1",
+	disabled = false,
+	mode = "1366x768@60.01Hz",
+	position = "1920x750",
 	scale = 1,
 	cm = "srgb",
 })

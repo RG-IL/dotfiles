@@ -157,6 +157,9 @@ hl.window_rule({ match = { class = "org.caelestia.about" }, float = true, size =
 -- Ueberzugpp
 hl.window_rule({ match = { class = "ueberzugpp_.*" }, float = true, no_initial_focus = true })
 
+-- Chrome YouTube PWA
+hl.window_rule({ match = { class = "chrome-youtube.com__-Default" }, suppress_event = "fullscreen" })
+
 -- Autodesk Fusion 360
 hl.window_rule({ match = { class = "fusion360.exe", title = "Fusion360|(Marking Menu)" }, no_blur = true })
 
