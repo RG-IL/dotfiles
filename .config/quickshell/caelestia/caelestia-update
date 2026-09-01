@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-has_update=$(paru -Qu caelestia-shell 2>/dev/null | head -1)
+has_update=$(paru -Qu caelestia-shell 2>/dev/null | head -1) || true
 
 if [[ -n $has_update ]]; then
   # caelestia-shell has an update — caelestia update handles everything
