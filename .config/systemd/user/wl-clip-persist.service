@@ -1,0 +1,10 @@
+[Unit]
+Description=Keep Wayland clipboard even after programs close
+
+[Service]
+ExecStart=/usr/bin/wl-clip-persist --clipboard regular
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

@@ -2,6 +2,11 @@ local vars = require("variables")
 local fn   = require("utils.functions")
 
 hl.on("hyprland.start", function()
+    -- Restart wl-clip-persist now that the Wayland session env is available
+    hl.exec_cmd("systemctl --user import-environment WAYLAND_DISPLAY XDG_RUNTIME_DIR XDG_CURRENT_DESKTOP XDG_SESSION_TYPE XDG_SESSION_DESKTOP")
+    hl.exec_cmd("systemctl --user reset-failed wl-clip-persist || true")
+    hl.exec_cmd("systemctl --user restart wl-clip-persist")
+
     -- Keyring and auth
     hl.exec_cmd("gnome-keyring-daemon --start --components=secrets")
     hl.exec_cmd("/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1")

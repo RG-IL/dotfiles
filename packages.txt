@@ -32,6 +32,7 @@ lazygit
 libva-utils
 linux
 linux-firmware
+lsof
 neovim
 networkmanager
 nodejs
@@ -61,6 +62,7 @@ unzip
 vlc
 vlc-plugin-ffmpeg
 wget
+wl-clip-persist
 wl-clipboard
 xdg-desktop-portal-hyprland
 xdg-user-dirs
