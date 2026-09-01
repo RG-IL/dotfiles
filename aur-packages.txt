@@ -11,3 +11,4 @@ spotify
 ttf-rubik-vf
 zsh-fast-syntax-highlighting
 hyprmod
+cloudflare-warp-bin
