@@ -20,6 +20,7 @@ rm -rf ~/.config/lazygit/
 rm -rf ~/.config/hypr/
 cd dotfiles
 stow .
+~/.config/quickshell/caelestia/sync-upstream.sh
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/keyitdev/sddm-astronaut-theme/master/setup.sh)"
 sudo systemctl enable sddm
 sudo systemctl enable --now bluetooth
