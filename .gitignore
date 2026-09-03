@@ -1,0 +1,5 @@
+# /etc/xdg symlinks managed by sync-upstream.sh; only real overrides are tracked
+.config/quickshell/caelestia/modules/dashboard/*.qml
+.config/quickshell/caelestia/modules/dashboard/dash
+.config/quickshell/caelestia/modules/dashboard/media
+.config/quickshell/caelestia/modules/dashboard/performance
