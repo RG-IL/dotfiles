@@ -70,6 +70,10 @@ done_file=$(mktemp)
 rm -f "$done_file"
 trap 'rm -f "$selection_file" "$done_file"' EXIT
 
+# Same theme as the terminal's fzf, single source of truth.
+[[ -f $HOME/.config/caelestia/menu/fzf-theme.sh ]] &&
+  source "$HOME/.config/caelestia/menu/fzf-theme.sh"
+
 # Terminal fallback (adapted): fzf picker instead of the shell menu widget.
 # Options may lead with a "<glyph><TAB>" which is shown but not returned.
 display=()

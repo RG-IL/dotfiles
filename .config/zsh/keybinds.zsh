@@ -5,12 +5,10 @@ ZSH_AUTOSUGGEST_USE_ASYNC=true
 ZSH_AUTOSUGGEST_MANUAL_REBIND=1
 ZSH_AUTOSUGGEST_COMPLETION_IGNORE="(?|*[| ]|*[| ]?)"
 
-export FZF_DEFAULT_OPTS=" \
---color=fg:#C6D0F5,header:#E78284,info:#CA9EE6,pointer:#F2D5CF \
---color=marker:#BABBF1,fg+:#C6D0F5,prompt:#CA9EE6,hl+:#E78284 \
---color=selected-bg:#51576D \
---color=border:#737994,label:#C6D0F5 \
---bind 'tab:down,btab:up'"
+# Theme comes from the shared file the menu's fzf also sources; only the
+# zsh-specific navigation binds live here.
+source "$HOME/.config/caelestia/menu/fzf-theme.sh"
+export FZF_DEFAULT_OPTS="$FZF_DEFAULT_OPTS --bind 'tab:down,btab:up'"
 
 export FZF_COMPLETION_TRIGGER=''
 

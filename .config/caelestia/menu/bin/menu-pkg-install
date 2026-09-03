@@ -4,6 +4,9 @@ set -euo pipefail
 # caelestia-menu:summary=Show a fuzzy-finder TUI for picking new Arch packages to install.
 # caelestia-menu:requires-sudo=true
 
+[[ -f $HOME/.config/caelestia/menu/fzf-theme.sh ]] &&
+  source "$HOME/.config/caelestia/menu/fzf-theme.sh"
+
 fzf_args=(
   --multi
   --preview 'pacman -Sii {1}'
@@ -13,7 +16,7 @@ fzf_args=(
   --bind 'alt-p:toggle-preview'
   --bind 'alt-d:preview-half-page-down,alt-u:preview-half-page-up'
   --bind 'alt-k:preview-up,alt-j:preview-down'
-  --color 'pointer:green,marker:green'
+  --bind 'tab:toggle'
 )
 
 pkg_names=$(pacman -Slq | fzf "${fzf_args[@]}")

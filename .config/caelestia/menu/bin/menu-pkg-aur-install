@@ -8,6 +8,9 @@
 # RPC previews — same UX, no local AUR database required.
 set -euo pipefail
 
+[[ -f $HOME/.config/caelestia/menu/fzf-theme.sh ]] &&
+  source "$HOME/.config/caelestia/menu/fzf-theme.sh"
+
 export PATH="$HOME/.config/caelestia/menu/bin:$PATH"
 SELF="$(readlink -f "$0")"
 
@@ -74,7 +77,7 @@ if [[ $AUR == yay ]]; then
     --bind 'alt-p:toggle-preview'
     --bind 'alt-b:change-preview:yay -Gpa {1} | tail -n +5'
     --bind 'alt-B:change-preview:yay -Siia {1}'
-    --color 'pointer:green,marker:green'
+    --bind 'tab:toggle'
   )
   pkg_names=$(yay -Slqa | fzf "${fzf_args[@]}")
   [[ -z $pkg_names ]] && exit 0
@@ -103,7 +106,8 @@ pkg_names=$(
     --preview-label-pos='bottom' \
     --preview-window 'down:65%:wrap' \
     --bind 'alt-p:toggle-preview' \
-    --color 'pointer:green,marker:green' <"$LIST"
+    --bind 'tab:toggle' \
+    <"$LIST"
 )
 
 [[ -z $pkg_names ]] && exit 0
