@@ -9,7 +9,7 @@ usage() {
   echo "Usage: menu-launch <command> [args...]"
   echo "  tui [--app-id=<id>] <cmd> [args...]     Launch a TUI in the default terminal"
   echo "  webapp <url> [flags...]                 Launch a URL as a web app in the browser"
-  echo "  or-focus <pattern> [launch-cmd]         Focus a window matching pattern, else launch"
+  echo "  or-focus <pattern> [cmd...]              Focus a window matching pattern, else launch cmd"
   echo "  tui-or-focus [--app-id=<id>] <cmd>...   Launch a TUI or focus its existing window"
   echo "  webapp-or-focus <pattern> <url>...      Launch a web app or focus its existing window"
 }
@@ -43,7 +43,16 @@ launch_webapp() {
   *) browser="chromium.desktop" ;;
   esac
 
-  exec setsid $(sed -n 's/^Exec=\([^ ]*\).*/\1/p' {~/.local,~/.nix-profile,/usr}/share/applications/$browser 2>/dev/null | head -1) --app="$1" "${@:2}"
+  # sed exits nonzero on the paths that don't exist; guard it or pipefail
+  # plus set -e would abort the script over a perfectly fine lookup.
+  browser_bin=$({ sed -n 's/^Exec=\([^ ]*\).*/\1/p' \
+      {~/.local,~/.nix-profile,/usr}/share/applications/$browser 2>/dev/null || true; } | head -1)
+  if [[ -z $browser_bin ]]; then
+    echo "menu-launch webapp: could not resolve a browser binary from $browser" >&2
+    return 1
+  fi
+
+  exec setsid "$browser_bin" --app="$1" "${@:2}"
 }
 
 or_focus() {
@@ -53,13 +62,20 @@ or_focus() {
   fi
 
   WINDOW_PATTERN="$1"
-  LAUNCH_COMMAND="${2:-$WINDOW_PATTERN}"
+  shift
   WINDOW_ADDRESS=$(hyprctl clients -j | jq -r --arg p "$WINDOW_PATTERN" '.[]|select((.class|test("\\b" + $p + "\\b";"i")) or (.title|test("\\b" + $p + "\\b";"i")))|.address' | head -n1)
 
   if [[ -n $WINDOW_ADDRESS ]]; then
     hyprctl dispatch "hl.dsp.focus({ window = \"address:$WINDOW_ADDRESS\" })" >/dev/null 2>&1 || hyprctl dispatch focuswindow "address:$WINDOW_ADDRESS"
   else
-    eval exec setsid $LAUNCH_COMMAND
+    # Launch from argv, never through eval: the command words arrive quoted
+    # and are exec'd byte for byte, so a URL like "...?a=1&b=2" cannot turn
+    # its & into a background operator.
+    if (( $# > 0 )); then
+      exec setsid "$@"
+    else
+      exec setsid "$WINDOW_PATTERN"
+    fi
   fi
 }
 
@@ -83,7 +99,7 @@ tui-or-focus)
   else
     APP_ID="TUI.$(basename "$1")"
   fi
-  or_focus "$APP_ID" "menu-launch tui $*"
+  or_focus "$APP_ID" menu-launch tui "$@"
   ;;
 webapp-or-focus)
   shift || true
@@ -93,7 +109,7 @@ webapp-or-focus)
   fi
   WINDOW_PATTERN="$1"
   shift
-  or_focus "$WINDOW_PATTERN" "menu-launch webapp $*"
+  or_focus "$WINDOW_PATTERN" menu-launch webapp "$@"
   ;;
 *)
   usage

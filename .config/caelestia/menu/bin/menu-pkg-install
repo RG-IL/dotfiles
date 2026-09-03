@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# caelestia-menu:summary=Show a fuzzy-finder TUI for picking new Arch and OPR packages to install.
+# caelestia-menu:summary=Show a fuzzy-finder TUI for picking new Arch packages to install.
 # caelestia-menu:requires-sudo=true
 
 fzf_args=(
@@ -22,5 +22,5 @@ if [[ -n $pkg_names ]]; then
   source menu-sudo-keepalive
 
   # Convert newline-separated selections to space-separated for pacman
-  echo "$pkg_names" | tr '\n' ' ' | xargs sudo pacman -S --noconfirm
+  echo "$pkg_names" | tr '\n' ' ' | xargs sudo pacman -S --noconfirm --needed
 fi

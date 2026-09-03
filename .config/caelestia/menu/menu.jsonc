@@ -77,7 +77,7 @@
   "setup.security.fingerprint": {"icon":"󰈷","label":"Fingerprint","when":"lsusb 2>/dev/null | grep -qi fingerprint","action":"menu-term menu-security-fingerprint-setup"},
   "setup.security.passwordless-sudo": {"icon":"󰟵","label":"Passwordless Sudo","action":"menu-term menu-sudo-passwordless"},
   "setup.config": {"icon":"","label":"Config"},
-  "setup.config.hyprland": {"icon":"","label":"Hyprland","action":"command -v hyprmod >/dev/null 2>&1 && exec hyprmod || exec menu-edit \"$HOME/.config/hypr/hyprland.lua\""},
+  "setup.config.hyprland": {"icon":"","label":"Hyprland","action":"open style.hyprland"},
   "setup.direct-boot": {"icon":"","label":"Direct Boot","when":"[[ -d /sys/firmware/efi ]]","action":"menu-term menu-direct-boot"},
 
   // Install

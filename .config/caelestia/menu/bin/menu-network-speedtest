@@ -11,6 +11,10 @@ BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export PATH="$BIN_DIR:$PATH"
 
 direction="${1:-}"
+# Self-terminate instead of streaming forever: 8s matches the disk test's
+# phase and the overlay's kill timer. Override via env or second arg.
+max_seconds=${CAELESTIA_SPEEDTEST_SECONDS:-8}
+[[ ${2:-} =~ ^[0-9]+$ ]] && max_seconds=$2
 probe=1.1.1.1
 parallel=8
 url_count=3
@@ -19,7 +23,7 @@ case "$direction" in
   down | up)
     ;;
   *)
-    echo "Usage: menu-network-speedtest [down|up]" >&2
+    echo "Usage: menu-network-speedtest [down|up] [seconds]" >&2
     exit 2
     ;;
 esac
@@ -44,7 +48,7 @@ if ! menu-cmd-present curl; then
   exit 1
 fi
 
-fast_token="YXNkZmFzZGxmbnNkYWZoYXNkZmhrYWxm"
+fast_token="${CAELESTIA_FAST_TOKEN:-YXNkZmFzZGxmbnNkYWZoYXNkZmhrYWxm}"
 fast_api_url="https://api.fast.com/netflix/speedtest/v2?https=true&token=$fast_token&urlCount=$url_count"
 
 fast_urls=$(curl -fsS "$fast_api_url" 2>/dev/null | jq -r '.targets[]?.url // empty')
@@ -110,6 +114,9 @@ any_alive() {
 }
 
 while any_alive; do
+  if (( SECONDS >= max_seconds )); then
+    break
+  fi
   sleep 1
   rx_after=$(cat "/sys/class/net/$iface/statistics/rx_bytes")
   tx_after=$(cat "/sys/class/net/$iface/statistics/tx_bytes")
@@ -131,4 +138,5 @@ while any_alive; do
   tx_before=$tx_after
 done
 
-wait 2>/dev/null || true
+# Workers are stopped and reaped by the EXIT trap; do not wait on them here,
+# they only ever exit on failure and would hang the self-termination.

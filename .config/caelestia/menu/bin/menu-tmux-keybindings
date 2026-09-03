@@ -25,14 +25,8 @@ while (($#)); do
 done
 
 if [[ ! -f $config_file ]]; then
-  default_config="$OMARCHY_PATH/config/tmux/tmux.conf"
-
-  if [[ -f $default_config ]]; then
-    config_file="$default_config"
-  else
-    echo "Tmux config not found: $config_file" >&2
-    exit 1
-  fi
+  echo "Tmux config not found: $config_file" >&2
+  exit 1
 fi
 
 output_keybindings() (

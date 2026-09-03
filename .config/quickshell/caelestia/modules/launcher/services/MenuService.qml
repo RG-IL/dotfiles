@@ -564,15 +564,20 @@ Singleton {
     function dispatchBinding(row: var): void {
         const d = row.dispatcher ?? "";
         const arg = row.arg ?? "";
-        if (d === "exec") {
-            if (arg)
-                Quickshell.execDetached(["bash", "-c", arg]);
-        } else if (d === "lua") {
-            if (arg)
-                Quickshell.execDetached(["hyprctl", "dispatch"].concat(arg.split(" ")));
-        } else if (d !== "" && arg !== "") {
-            Quickshell.execDetached(["hyprctl", "dispatch", d].concat(arg.split(" ")));
+        if (!d)
+            return;
+        if (d === "exec" && arg && !arg.includes(" ")) {
+            // Fast path: a single word command needs no quoting machinery.
+            Quickshell.execDetached(["bash", "-c", arg]);
+            return;
         }
+        // One dispatcher, the tested one. The dispatcher and arg ride as
+        // positional parameters ($1/$2), not interpolated text, so args with
+        // quotes or $(...) reach menu-keybindings byte for byte.
+        Quickshell.execDetached(["bash", "-c",
+            `export PATH="${root.binDir}:$PATH"; exec menu-keybindings --dispatch "$1" "$2"`,
+            "menu-dispatch", d, arg
+        ]);
     }
 
     function loadBindings(): void {
@@ -634,8 +639,6 @@ Singleton {
                     set.add(n.checked);
                 if (n.disabled)
                     set.add(n.disabled);
-                if (n.children)
-                    walk(n.children);
             }
         }
         if (root.tree)

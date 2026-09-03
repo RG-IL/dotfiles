@@ -4,7 +4,7 @@
 # caelestia-menu:group=menu
 # caelestia-menu:name=select
 # caelestia-menu:args=prompt [option...] [-- menu args...]
-# caelestia-menu:examples=omarchy menu select Format jpg png|menu-select Resolution 4k 1080p 720p -- --width 400
+# caelestia-menu:examples=menu-select Format jpg png|menu-select Resolution 4k 1080p 720p -- --width 400
 
 # An option may lead with an icon, as "<glyph><TAB><label>", and may trail a
 # subtext shown under the label, as "<glyph><TAB><label><TAB><subtext>". The
@@ -23,7 +23,6 @@ prompt="$1"
 shift
 
 options=()
-menu_width=""
 menu_maxheight=""
 
 while (( $# > 0 )); do
@@ -37,8 +36,7 @@ while (( $# > 0 )); do
             echo "menu-select: --width requires a value" >&2
             exit 1
           fi
-          # Legacy widget option: accepted but ignored by the fzf picker.
-          ;;
+          ;; # Legacy widget option: accepted and ignored by the fzf picker.
         --height|--maxheight)
           arg="$1"
           shift

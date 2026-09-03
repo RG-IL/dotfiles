@@ -104,6 +104,14 @@ if [[ -z $APP_NAME || -z $APP_URL ]]; then
   exit 1
 fi
 
+# The name becomes a .desktop filename and is written into the entry itself.
+# A '/' would escape the applications dir; a newline would inject fake keys
+# into the desktop file. Reject both up front.
+if [[ $APP_NAME == *[/]* || $APP_NAME == *$'\n'* ]]; then
+  echo "App name must not contain '/' or newlines!" >&2
+  exit 1
+fi
+
 if [[ -z $ICON_REF ]]; then
   ICON_VALUE=$(safe_icon_name "$APP_NAME")
   mkdir -p "$ICON_DIR"

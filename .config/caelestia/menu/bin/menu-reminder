@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # caelestia-menu:summary=Set and show lightweight desktop notification reminders
-# caelestia-menu:args=[-i|--interactive] | <minutes> [message] | show [-j|--json] | clear
-# caelestia-menu:examples=omarchy reminder -i | omarchy reminder 5 | omarchy reminder 30 "Check the oven" | omarchy reminder show | omarchy reminder show --json | omarchy reminder clear
+# caelestia-menu:args=<minutes> [message] | show [-j|--json] | clear
+# caelestia-menu:examples=caelestia-menu-reminder 5 | caelestia-menu-reminder 30 "Check the oven" | caelestia-menu-reminder show | caelestia-menu-reminder show --json | caelestia-menu-reminder clear
 
 set -euo pipefail
 
@@ -23,11 +23,13 @@ format_remaining() {
 }
 
 # Live reminders are plain state files, one per reminder: <id>.meta (fire
-# epoch, minutes, fire time) from the setter, <id>.message with the text, and
-# <id>.pid tracking the detached sleeper that fires the notification. No
-# systemd involved: each reminder is just a background `sleep` that fires and
-# removes its own files. Out of the box a fired or cleared reminder leaves no
-# trace, so we only ever see ones still to come.
+# epoch, minutes, fire time) from the setter and <id>.message with the text.
+# Firing goes through a transient systemd user timer named after the id, so
+# the deadline is wall-clock (a suspend across it catches up on resume) and
+# pending reminders are listable with `systemctl --user list-timers`. Where
+# no user manager is reachable, the setter falls back to a detached `sleep`
+# and records its pid in <id>.pid. A fired or cleared reminder leaves no
+# trace, so only ones still to come are ever listed.
 active_reminders() {
   local now=${1:-$(date +%s)}
   local file id fire minutes at_time
@@ -46,10 +48,6 @@ active_reminders() {
 
 refresh_indicator() {
   :
-}
-
-open_interactive() {
-  notify-send "Reminders" "Open reminders listed above"
 }
 
 show_reminders() {
@@ -146,6 +144,9 @@ clear_reminders() {
   done < <(active_reminders "$(date +%s)")
 
   for id in $units; do
+    # Stop the transient timer; the pid file only exists for reminders that
+    # fell back to a detached sleeper because no user manager was reachable.
+    systemctl --user stop "$id.timer" 2>/dev/null || true
     if [[ -f $reminder_dir/$id.pid ]]; then
       pid=$(<"$reminder_dir/$id.pid")
       [[ $pid =~ ^[0-9]+$ ]] && kill -- "$pid" 2>/dev/null || true
@@ -163,17 +164,12 @@ clear_reminders() {
 }
 
 usage() {
-  echo "Usage: caelestia-menu-reminder [-i|--interactive]"
-  echo "       caelestia-menu-reminder <minutes> [message]"
+  echo "Usage: caelestia-menu-reminder <minutes> [message]"
   echo "       caelestia-menu-reminder show [-j|--json]"
   echo "       caelestia-menu-reminder clear"
 }
 
 case ${1:-} in
--i | --interactive)
-  open_interactive
-  exit 0
-  ;;
 show | list)
   case ${2:-} in
   -j | --json)
@@ -230,16 +226,27 @@ fi
 
 printf "%s\t%s\t%s\n" "$fire" "$minutes" "$remind_at" >"$meta_file"
 
-# One detached sleep per reminder. On fire it notifies and cleans up its own
-# state files; cleared reminders are killed before they reach that point.
-nohup bash -c '
-  sleep "$1"
-  if [[ -f "$2" ]]; then
-    notify-send "Reminder" "$3"
-    rm -f "$2" "$4" "$5"
-  fi
-' _ "$delay" "$meta_file" "$message" "$message_file" "$pid_file" >/dev/null 2>&1 &
-echo $! >"$pid_file"
+# Fire at a wall-clock time through a transient user timer: on fire the unit
+# notifies, cleans up its own state files, and stops its timer. Cleared
+# reminders are stopped first, so they never reach this point. Where no user
+# manager is reachable (no session bus), fall back to a detached sleeper.
+calendar_time=$(date -d "@$fire" '+%Y-%m-%d %H:%M:%S')
+if systemd-run --user --quiet --unit="$id" \
+     --on-calendar="$calendar_time" \
+     --timer-property=AccuracySec=1s \
+     bash -c 'notify-send "Reminder" "$1"; rm -f "$2" "$3"; systemctl --user stop "$4.timer" 2>/dev/null' \
+     _ "$message" "$meta_file" "$message_file" "$id" 2>/dev/null; then
+  :
+else
+  nohup bash -c '
+    sleep "$1"
+    if [[ -f "$2" ]]; then
+      notify-send "Reminder" "$3"
+      rm -f "$2" "$4" "$5"
+    fi
+  ' _ "$delay" "$meta_file" "$message" "$message_file" "$pid_file" >/dev/null 2>&1 &
+  echo $! >"$pid_file"
+fi
 
 refresh_indicator
 notify-send "$confirmation_title" "$confirmation"
