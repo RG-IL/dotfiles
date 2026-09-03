@@ -3,6 +3,7 @@
 ^/setup\.sh$
 ^/packages\.txt$
 ^/aur-packages\.txt$
+^/\.gitignore$
 ^/etc-sddm/
 ^/README.*
 \.stow-local-ignore
