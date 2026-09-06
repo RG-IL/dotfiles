@@ -66,6 +66,9 @@ create_bind(vars.kbClearNotifs, hl.dsp.global("caelestia:clearNotifs"), locked)
 create_bind(vars.kbShowPanels, hl.dsp.global("caelestia:showall"))
 create_bind(vars.kbLock, hl.dsp.global("caelestia:lock"))
 
+-- Keyboard layout (tap Ctrl, same trick as the Super-tap launcher)
+create_bind(vars.kbSwitchLayout, hl.dsp.exec_cmd("hyprctl switchxkblayout current next"), release)
+
 -- Restore lock
 create_bind(vars.kbRestoreLock, function()
     hl.dispatch(hl.dsp.exec_cmd("caelestia shell -d"))
