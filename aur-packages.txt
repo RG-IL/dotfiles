@@ -1,4 +1,5 @@
 darkly-bin
+t3code-bin
 helium-browser-bin
 libcava
 oh-my-posh-bin
