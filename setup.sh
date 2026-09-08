@@ -61,9 +61,10 @@ fi
 sudo systemctl enable --now fstrim.timer
 
 # Cloudflare WARP - auto-enable on networks doing SSL interception.
-# Installed from aur-packages.txt (cloudflare-warp-bin).
-# Registration below is one-time per device and is interactive.
-if command -v warp-cli >/dev/null; then
+# Optional: prompted, so home machines can skip it entirely.
+read -rp "Install and set up Cloudflare WARP? [y/N] " install_warp
+if [[ "$install_warp" =~ ^[Yy]$ ]]; then
+paru -S --needed --noconfirm cloudflare-warp-bin
 sudo systemctl enable --now warp-svc
 sudo mkdir -p /etc/NetworkManager/dispatcher.d
 sudo tee /etc/NetworkManager/dispatcher.d/50-warp-autoconnect.sh <<'EOF'
