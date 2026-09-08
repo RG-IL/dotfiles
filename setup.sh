@@ -1,17 +1,26 @@
 cd
-sudo pacman -S stow
-sudo pacman -S base-devel
+sudo pacman -S --needed --noconfirm stow base-devel rustup
+
+# CPU vendor-specific: microcode + VA-API video driver
+if grep -qm1 "AuthenticAMD" /proc/cpuinfo; then
+  echo "AMD CPU detected"
+  sudo pacman -S --needed --noconfirm amd-ucode libva-mesa-driver
+elif grep -qm1 "GenuineIntel" /proc/cpuinfo; then
+  echo "Intel CPU detected"
+  sudo pacman -S --needed --noconfirm intel-ucode intel-media-driver
+fi
+
 git clone https://aur.archlinux.org/paru.git
 cd paru/
-makepkg -si
 rustup default stable
+export PATH="$HOME/.cargo/bin:$PATH"
 makepkg -si
 cd ..
 rm -rf paru/
 paru -S caelestia-cli
 caelestia install --disable-components micro,firefox,fish,foot,starship
-sudo pacman -S - <dotfiles/packages.txt
-paru -S - <dotfiles/aur-packages.txt
+sudo pacman -S --needed - <dotfiles/packages.txt
+paru -S --needed - <dotfiles/aur-packages.txt
 rm -rf ~/.bashrc
 rm -rf ~/.config/fastfetch/
 rm -rf ~/.config/caelestia/
@@ -39,6 +48,17 @@ EOF
 
 sudo systemctl enable --now keyd
 systemctl --user enable wl-clip-persist.service
+
+# Swap: keep whatever archinstall created; if none, fall back to zram
+if ! swapon --show=NAME --noheadings 2>/dev/null | grep -q .; then
+  sudo tee /etc/systemd/zram-generator.conf >/dev/null <<'EOF'
+[zram]
+zram-size = ram / 2
+EOF
+fi
+
+# Weekly SSD TRIM
+sudo systemctl enable --now fstrim.timer
 
 # Cloudflare WARP - auto-enable on networks doing SSL interception.
 # Installed from aur-packages.txt (cloudflare-warp-bin).
