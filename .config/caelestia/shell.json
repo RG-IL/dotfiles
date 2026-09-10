@@ -4,6 +4,13 @@
             "enabled": true
         }
     },
+    "background": {
+        "desktopClock": {
+            "enabled": true,
+            "position": "bottom-right",
+            "scale": 1.0
+        }
+    },
     "general": {
         "apps": {
             "terminal": [

@@ -2,4 +2,5 @@
 
 ### rules
 
-Never, and I mean never, remove Users/raphael/JumpGame and JumpGame_Github
+Never, and I mean never, remove JumpGame and JumpGame_Github
+ALWAYS USE UNSLOP SKILL
