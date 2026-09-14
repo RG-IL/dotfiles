@@ -57,6 +57,8 @@ sudo
 tesseract
 thunar
 trash-cli
+udiskie
+udisks2
 ttf-jetbrains-mono-nerd
 unzip
 vlc

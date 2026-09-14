@@ -30,6 +30,9 @@ hl.on("hyprland.start", function()
     -- Forward bluetooth media commands to MPRIS
     hl.exec_cmd("mpris-proxy")
 
+    -- Auto-mount USB drives
+    hl.exec_cmd("udiskie -a")
+
     -- Start shell
     hl.exec_cmd("caelestia shell -d")
 end)
