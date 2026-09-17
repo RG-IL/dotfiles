@@ -66,13 +66,14 @@ function View(props: { context: PluginTypes.Context; sessionID: string }) {
 		const fromState = readCost(props.context.data.session.get(props.sessionID) as any)
 		if (fromState > 0) return fromState
 		return messages()
-			.filter((m) => (m?.role ?? m?.info?.role) === "assistant")
+			.filter((m: any) => ((m?.type ?? m?.role ?? m?.info?.role)) === "assistant")
 			.reduce((sum, m) => sum + readCost(m), 0)
 	})
 
 	const usage = createMemo(() => {
-		const lastAssistant = messages().findLast((m) => {
-			const role = m?.role ?? m?.info?.role
+		// V2 SessionMessageInfo: role lives in `type` (V1 used `role`/`info.role`).
+		const lastAssistant = messages().findLast((m: any) => {
+			const role = m?.type ?? m?.role ?? m?.info?.role
 			const output = safeNumber(m?.tokens?.output)
 			return role === "assistant" && output > 0
 		})
