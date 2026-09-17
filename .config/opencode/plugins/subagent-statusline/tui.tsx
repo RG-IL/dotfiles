@@ -82,7 +82,9 @@ function View(props: { context: PluginTypes.Context; sessionID: string }) {
 				const tokens =
 					s.tokens.input + s.tokens.output + s.tokens.reasoning + s.tokens.cache.read + s.tokens.cache.write
 				const created = s.time?.created ?? 0
-				const end = running ? nowMs : s.time?.updated ?? nowMs
+				// time.updated echoes creation (ms later); time.idle is when the
+				// session actually went quiet, so use it as the end timestamp.
+				const end = running ? nowMs : s.time?.idle ?? s.time?.updated ?? nowMs
 				return {
 					id: s.id,
 					title: s.title || s.agent || "subagent",
