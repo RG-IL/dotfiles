@@ -1,0 +1,13 @@
+{
+    "toggles": {
+        "music": {
+            "spotify": {
+                "match": [
+                    { "class": "Spotify" },
+                    { "class": "spotify" },
+                    { "initial_title": "Spotify" }
+                ]
+            }
+        }
+    }
+}
