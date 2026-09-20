@@ -2,20 +2,20 @@
 
 -- Monitors
 hl.monitor({
-	output = "HDMI-A-1",
-	disabled = false,
-	mode = "1920x1080@60.00Hz",
-	position = "0x0",
-	scale = 1,
-	cm = "srgb",
+    output = "HDMI-A-1",
+    disabled = false,
+    mode = "2560x1440@144.00Hz",
+    position = "0x0",
+    scale = 1.33,
+    cm = "srgb",
 })
 hl.monitor({
-	output = "eDP-1",
-	disabled = false,
-	mode = "1366x768@60.01Hz",
-	position = "1920x750",
-	scale = 1,
-	cm = "srgb",
+    output = "eDP-1",
+    disabled = false,
+    mode = "1366x768@60.01Hz",
+    position = "1920x750",
+    scale = 1,
+    cm = "srgb",
 })
 
 -- Keybinds
