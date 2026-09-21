@@ -5,7 +5,7 @@
 # config that always tracks the installed package.
 #
 # Real files here win over upstream links — that is how the customizations
-# (MenuService, launcher Content/ContentList, menu-overlays, ServiceLoader)
+# (MenuService, launcher Content/ContentList, menuoverlays, ServiceLoader)
 # survive caelestia-shell updates: pacman only ever writes to /etc/xdg, and
 # everything not overridden follows those updates through the symlinks.
 #

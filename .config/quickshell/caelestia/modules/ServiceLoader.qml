@@ -2,7 +2,7 @@ import QtQuick
 import Quickshell
 import Caelestia.Config
 import qs.services
-import "menu-overlays"
+import "menuoverlays"
 
 Scope {
     // Menu overlays + IPC deep links (ported from omarchy)
