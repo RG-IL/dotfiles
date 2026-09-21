@@ -116,6 +116,7 @@
             }
         ],
         "toasts": {
+            "configLoaded": false,
             "capsLockChanged": false,
             "kbLayoutChanged": false,
             "numLockChanged": false
