@@ -38,8 +38,6 @@
         ]
     },
     "services": {
-        "useFahrenheit": false,
-        "useTwelveHourClock": false,
         "visualiserBars": 120
     },
     "utilities": {
