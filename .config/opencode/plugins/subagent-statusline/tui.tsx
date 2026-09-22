@@ -17,6 +17,11 @@
  * machinery drops out. Row visuals, markers, colors, and duration format
  * match the original (statusColor: done→success, error→error, running→
  * warning; clock U+F017, token U+F51E; rows capped at 5, running first).
+ *
+ * Theme tokens read via optional chaining with catppuccin hex fallbacks:
+ * OpenCode 2.0.12 renamed them (default→base, subdued→muted,
+ * feedback.default→feedback.base) and a future rename should degrade to
+ * theme colors instead of crashing the slot or rendering white.
  */
 /** @jsxImportSource @opentui/solid */
 import { createMemo, createSignal, For, Show, onCleanup } from "solid-js"
@@ -34,6 +39,7 @@ type Child = {
 	title: string
 	running: boolean
 	failed: boolean
+	status: "running" | "done" | "error"
 	tokens: number
 	elapsedMs: number
 }
@@ -61,8 +67,12 @@ function marker(status: "running" | "done" | "error"): string {
 }
 
 function View(props: { context: PluginTypes.Context; sessionID: string }) {
-	const theme = () => props.context.theme
-	const feedback = () => theme().text.feedback
+	const t = () => props.context.theme as any
+	const textBase = () => t()?.text?.base ?? "#cdd6f4"
+	const textMuted = () => t()?.text?.muted ?? "#9399b2"
+	const errorColor = () => t()?.text?.feedback?.error?.base ?? "#f38ba8"
+	const warningColor = () => t()?.text?.feedback?.warning?.base ?? "#f9e2af"
+	const successColor = () => t()?.text?.feedback?.success?.base ?? "#a6e3a1"
 	const [now, setNow] = createSignal(Date.now())
 	const timer = setInterval(() => setNow(Date.now()), 1000)
 	onCleanup(() => clearInterval(timer))
@@ -123,19 +133,19 @@ function View(props: { context: PluginTypes.Context; sessionID: string }) {
 			<box flexDirection="column">
 				<box flexDirection="row">
 					<text
-						fg={theme().text.default}
+						fg={textBase()}
 						onMouseDown={() => void setStore((draft) => void (draft.expanded = !draft.expanded))}
 					>{`${store.expanded ? ARROW_EXPANDED : ARROW_COLLAPSED} Subagents`}</text>
-					<text fg={theme().text.subdued}>{` ${VERSION}`}</text>
+					<text fg={textMuted()}>{` ${VERSION}`}</text>
 				</box>
 				<box flexDirection="row">
-					<text fg={feedback().warning.default}>{`● ${counts().running} run`}</text>
-					<text fg={theme().text.subdued}> · </text>
-					<text fg={feedback().success.default}>{`✓ ${counts().done} done`}</text>
-					<text fg={theme().text.subdued}> · </text>
-					<text fg={feedback().error.default}>{`✕ ${counts().error} err`}</text>
-					<text fg={theme().text.subdued}> · </text>
-					<text fg={theme().text.default}>{`Σ ${counts().total}`}</text>
+					<text fg={warningColor()}>{`● ${counts().running} run`}</text>
+					<text fg={textMuted()}> · </text>
+					<text fg={successColor()}>{`✓ ${counts().done} done`}</text>
+					<text fg={textMuted()}> · </text>
+					<text fg={errorColor()}>{`✕ ${counts().error} err`}</text>
+					<text fg={textMuted()}> · </text>
+					<text fg={textBase()}>{`Σ ${counts().total}`}</text>
 				</box>
 				<Show when={store.expanded}>
 					<box flexDirection="column">
@@ -147,28 +157,25 @@ function View(props: { context: PluginTypes.Context; sessionID: string }) {
 	)
 
 	function Row(props: { child: Child; context: PluginTypes.Context }) {
-		const theme = () => props.context.theme
 		const statusColor = () => {
-			const f = theme().text.feedback
-			if (props.child.status === "done") return f.success.default
-			if (props.child.status === "error") return f.error.default
-			return f.warning.default
+			if (props.child.status === "done") return successColor()
+			if (props.child.status === "error") return errorColor()
+			return warningColor()
 		}
-		const elapsed = () => formatDuration(props.child.elapsedMs)
 		return (
 			<box
 				flexDirection="column"
 				onMouseUp={() => void props.context.ui.router.navigate({ type: "session", sessionID: props.child.id })}
 			>
 				<box flexDirection="row">
-					<text fg={theme().text.subdued}>{" "}</text>
+					<text fg={textMuted()}>{" "}</text>
 					<text fg={statusColor()}>{marker(props.child.status)}</text>
-					<text fg={theme().text.default}>{` ${props.child.title}`}</text>
+					<text fg={textBase()}>{` ${props.child.title}`}</text>
 				</box>
 				<box flexDirection="row" paddingLeft={4}>
-					<text fg={theme().text.subdued}>{`↳ ${CLOCK_ICON} ${formatDuration(props.child.elapsedMs)}`}</text>
+					<text fg={textMuted()}>{`↳ ${CLOCK_ICON} ${formatDuration(props.child.elapsedMs)}`}</text>
 					<Show when={props.child.tokens > 0}>
-						<text fg={theme().text.subdued}>{` ${TOKEN_ICON} ${formatTokens(props.child.tokens)}`}</text>
+						<text fg={textMuted()}>{` ${TOKEN_ICON} ${formatTokens(props.child.tokens)}`}</text>
 					</Show>
 				</box>
 			</box>

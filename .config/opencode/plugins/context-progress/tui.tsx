@@ -11,8 +11,8 @@
  * Original logic preserved: token count = input + output + reasoning +
  * cache.read + cache.write of the last assistant message; context window
  * from the active model; bar color = accent, warning >= 70%, error >= 90%.
- * V2 token mapping: text→text.default, textMuted→text.subdued,
- * accent→text.status.unread (accent hue), warning/error→text.feedback.
+ * V2 token mapping (v2.0.12 names): text→text.base, textMuted→text.muted,
+ * accent→hue.accent[200], warning/error→text.feedback.*.base.
  */
 /** @jsxImportSource @opentui/solid */
 import { createMemo } from "solid-js"
@@ -61,6 +61,16 @@ function buildBar(percent: number): { bar: string; clamped: number } {
 }
 
 function View(props: { context: PluginTypes.Context; sessionID: string }) {
+	// v2.0.12 renamed theme tokens (default→base, subdued→muted,
+	// feedback.default→feedback.base) and removed text.status. Read through
+	// optional chaining with catppuccin hex fallbacks so a future rename
+	// degrades to theme colors instead of crashing the slot.
+	const t = () => props.context.theme as any
+	const textBase = () => t()?.text?.base ?? "#cdd6f4"
+	const textMuted = () => t()?.text?.muted ?? "#9399b2"
+	const errorColor = () => t()?.text?.feedback?.error?.base ?? "#f38ba8"
+	const warningColor = () => t()?.text?.feedback?.warning?.base ?? "#f9e2af"
+	const accentColor = () => t()?.hue?.accent?.[200] ?? "#f5c2e7"
 	const messages = createMemo(() => (props.context.data.session.message.list(props.sessionID) ?? []) as any[])
 	const sessionCost = createMemo(() => {
 		const fromState = readCost(props.context.data.session.get(props.sessionID) as any)
@@ -110,13 +120,10 @@ function View(props: { context: PluginTypes.Context; sessionID: string }) {
 		return `${formatInt(state.tokens)} / ${limitText} / ${formatMoney(sessionCost())}`
 	})
 
-	const theme = () => props.context.theme
-
 	const progress = createMemo(() => {
 		const percent = usage().percent
 		const bar = buildBar(percent)
-		const feedback = theme().text.feedback
-		const color = percent >= 90 ? feedback.error.default : percent >= 70 ? feedback.warning.default : theme().text.status.unread
+		const color = percent >= 90 ? errorColor() : percent >= 70 ? warningColor() : accentColor()
 		return {
 			bar: bar.bar,
 			color,
@@ -126,14 +133,14 @@ function View(props: { context: PluginTypes.Context; sessionID: string }) {
 
 	return (
 		<box>
-			<text fg={theme().text.default} attributes={TextAttributes.BOLD}>
+			<text fg={textBase()} attributes={TextAttributes.BOLD}>
 				Context
 			</text>
 			<box flexDirection="row" gap={1}>
 				<text fg={progress().color}>{progress().bar}</text>
 				<text fg={progress().color}> {progress().percent}%</text>
 			</box>
-			<text fg={theme().text.subdued}>{detailLine()}</text>
+			<text fg={textMuted()}>{detailLine()}</text>
 		</box>
 	)
 }
