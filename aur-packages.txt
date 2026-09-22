@@ -10,5 +10,6 @@ qtengine
 quickshell-git
 spotify
 ttf-rubik-vf
+wispr-flow-appimage
 zsh-fast-syntax-highlighting
 hyprmod

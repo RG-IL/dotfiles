@@ -35,6 +35,7 @@ sudo systemctl enable sddm
 sudo systemctl enable --now bluetooth
 sudo systemctl enable --now NetworkManager
 sudo usermod --shell $(which zsh) $(whoami)
+sudo usermod -aG input $(whoami)
 sudo mkdir -p /etc/keyd
 sudo tee /etc/keyd/default.conf <<'EOF'
 [ids]
