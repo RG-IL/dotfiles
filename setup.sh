@@ -32,6 +32,13 @@ stow .
 ~/.config/quickshell/caelestia/sync-upstream.sh
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/keyitdev/sddm-astronaut-theme/master/setup.sh)"
 sudo systemctl enable sddm
+
+# Timezone: Israel. Hardware clock stays UTC, NTP keeps time accurate.
+sudo timedatectl set-timezone Asia/Jerusalem
+
+# regulatory.db for WiFi country rules; Bluetooth also wants it present at boot
+sudo pacman -S --needed --noconfirm wireless-regdb
+
 sudo systemctl enable --now bluetooth
 sudo systemctl enable --now NetworkManager
 sudo usermod --shell $(which zsh) $(whoami)
