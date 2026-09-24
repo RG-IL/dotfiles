@@ -117,4 +117,8 @@ else
   echo "WARP already registered, skipping."
 fi
 fi
+
+if ! command -v kdeconnect-cli >/dev/null; then
+  sudo pacman -S --needed --noconfirm kdeconnect
+fi
 reboot

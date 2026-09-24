@@ -33,6 +33,8 @@ hl.on("hyprland.start", function()
     -- Auto-mount USB drives
     hl.exec_cmd("udiskie -a")
 
+    hl.exec_cmd("kdeconnect-indicator")
+
     -- Start shell
     hl.exec_cmd("caelestia shell -d")
 end)

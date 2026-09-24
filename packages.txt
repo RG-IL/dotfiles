@@ -74,3 +74,4 @@ zoxide
 zram-generator
 zsh
 zsh-autosuggestions
+kdeconnect
