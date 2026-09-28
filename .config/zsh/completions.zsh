@@ -91,6 +91,7 @@ zle -N fzf-completion
 # Override fzf dir completion to show hidden directories
 _fzf_compgen_dir() {
   command fd --type d --follow --hidden \
+    --exclude '.steam' \
     --exclude '.git' --exclude 'target' --exclude 'node_modules' \
     --exclude '.cache' --exclude 'Library' --exclude 'vendor' \
     --exclude '.cargo' --exclude '.venv' --exclude '.direnv' \
