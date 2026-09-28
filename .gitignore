@@ -3,3 +3,4 @@
 .config/quickshell/caelestia/modules/dashboard/dash
 .config/quickshell/caelestia/modules/dashboard/media
 .config/quickshell/caelestia/modules/dashboard/performance
+.config/nvim/lazy-lock.json
