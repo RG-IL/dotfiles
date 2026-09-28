@@ -8,3 +8,7 @@ hl.bind("SUPER + D", hl.dsp.exec_cmd("caelestia shell drawers toggle dashboard")
 -- Spotify on native Wayland reports a lowercase class, so route it to the music
 -- workspace here (the dots' rule only matches the X11 "Spotify" class)
 hl.window_rule({ match = { class = "spotify" }, workspace = "special:music" })
+
+-- XWayland apps (Steam etc): render at native 1440p instead of being
+-- stretched by the 1.07 desktop scale, keeps them pixel-crisp
+hl.config({ xwayland = { force_zero_scaling = true } })
