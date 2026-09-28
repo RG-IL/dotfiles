@@ -43,7 +43,7 @@ fzf-completion() {
   tail=${LBUFFER:$(( ${#LBUFFER} - ${#trigger} ))}
 
   if [ ${#tokens} -gt 1 -a "$tail" = "$trigger" ]; then
-    d_cmds=(${=FZF_COMPLETION_DIR_COMMANDS-cd pushd rmdir ls rm})
+    d_cmds=(${=FZF_COMPLETION_DIR_COMMANDS-cd pushd rmdir})
 
     {
       cursor_pos=$CURSOR
@@ -69,7 +69,7 @@ fzf-completion() {
       zle reset-prompt
     elif [ ${d_cmds[(i)$cmd_word]} -le ${#d_cmds} ]; then
       _fzf_dir_completion "$prefix" "$lbuf"
-    elif [[ "$cmd_word" == (nvim|vim|vi|nano|emacs|less) ]]; then
+    elif [[ "$cmd_word" == (ls|rm|nvim|vim|vi|nano|emacs|less) ]]; then
       _fzf_path_completion "$prefix" "$lbuf"
     elif [[ -n "${_comps[$cmd_word]-}" ]] || (( ${+functions[_$cmd_word]} )); then
       _fzf_complete --height=40% --layout=reverse --prompt=" > " \
@@ -88,24 +88,36 @@ fzf-completion() {
 
 zle -N fzf-completion
 
-# Override fzf dir completion to show hidden directories
+# Shared excludes for the completion walkers below. .steam stays out because
+# Steam's dir is a symlink farm and --follow re-walks the same tree per alias.
+_fzf_fd_excludes=(
+  --exclude '.steam'
+  --exclude '.bun' --exclude '.pki' --exclude '.gnupg'
+  --exclude '.git' --exclude 'target' --exclude 'node_modules'
+  --exclude '.cache' --exclude 'Library' --exclude 'vendor'
+  --exclude '.cargo' --exclude '.venv' --exclude '.direnv'
+  --exclude '.vscode' --exclude '.dotnet' --exclude '.wine'
+  --exclude '.agents' --exclude '.terraform' --exclude '.github'
+  --exclude '.gem' --exclude '.ServiceHub'
+  --exclude '.atuin' --exclude '.copilot' --exclude '.zsh_sessions'
+  --exclude '.hg' --exclude '.svn'
+  --exclude '.aspnet' --exclude '.npm'
+  --exclude '.trash' --exclude '.rustup'
+  --exclude '.homebrew' --exclude '.zcompcache' --exclude '.nuget'
+  --exclude '.omo' --exclude '.Trash'
+  --exclude '.local' --exclude '.config/raycast-x' --exclude '.config/raycast'
+  --exclude '.agi' --exclude '.android' --exclude '.bash_sessions'
+)
+
+# Directories only (cd, pushd, rmdir)
 _fzf_compgen_dir() {
-  command fd --type d --follow --hidden \
-    --exclude '.steam' \
-    --exclude '.git' --exclude 'target' --exclude 'node_modules' \
-    --exclude '.cache' --exclude 'Library' --exclude 'vendor' \
-    --exclude '.cargo' --exclude '.venv' --exclude '.direnv' \
-    --exclude '.vscode' --exclude '.dotnet' --exclude '.wine' \
-    --exclude '.agents' --exclude '.terraform' --exclude '.github' \
-    --exclude '.gem' --exclude '.ServiceHub' \
-    --exclude '.atuin' --exclude '.copilot' --exclude '.zsh_sessions' \
-    --exclude '.hg' --exclude '.svn' \
-    --exclude '.aspnet' --exclude '.npm' \
-    --exclude '.trash' --exclude '.rustup' \
-    --exclude '.homebrew' --exclude '.zcompcache' --exclude '.nuget' \
-    --exclude '.omo' --exclude '.Trash' \
-    --exclude '.local' --exclude '.config/raycast-x' --exclude '.config/raycast' \
-    --exclude '.agi' --exclude '.android' --exclude '.bash_sessions' \
+  command fd --type d --follow --hidden "${_fzf_fd_excludes[@]}" \
+    . "$1" 2>/dev/null | sed 's@^\./@@'
+}
+
+# Files and directories (ls, rm, nvim, ...)
+_fzf_compgen_path() {
+  command fd --follow --hidden "${_fzf_fd_excludes[@]}" \
     . "$1" 2>/dev/null | sed 's@^\./@@'
 }
 
