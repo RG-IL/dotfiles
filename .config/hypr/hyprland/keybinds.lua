@@ -8,6 +8,7 @@ local mouse            = { mouse = true }
 local release          = { release = true }
 local repeating        = { repeating = true }
 local locked_repeating = { locked = true, repeating = true }
+local locked_release   = { locked = true, release = true }
 
 local function normalise_keybind(key)
     return key:gsub("%s+", ""):lower()
@@ -64,10 +65,18 @@ create_bind(vars.kbSession, hl.dsp.global("caelestia:session"))
 create_bind(vars.kbShowSidebar, hl.dsp.global("caelestia:sidebar"))
 create_bind(vars.kbClearNotifs, hl.dsp.global("caelestia:clearNotifs"), locked)
 create_bind(vars.kbShowPanels, hl.dsp.global("caelestia:showall"))
-create_bind(vars.kbLock, hl.dsp.global("caelestia:lock"))
+-- Reset to the first layout (English) before locking, so the password prompt
+-- always starts in a layout the password can actually be typed in.
+create_bind(vars.kbLock, function()
+    hl.dispatch(hl.dsp.exec_cmd("hyprctl switchxkblayout all 0"))
+    hl.dispatch(hl.dsp.global("caelestia:lock"))
+end)
 
 -- Keyboard layout (tap Ctrl, same trick as the Super-tap launcher)
-create_bind(vars.kbSwitchLayout, hl.dsp.exec_cmd("hyprctl switchxkblayout current next"), release)
+-- `locked` keeps this bind alive on the lock screen (the lock grabs the
+-- keyboard and Hyprland drops all non-locked binds), so you can still switch
+-- layouts while locked instead of getting stuck in Hebrew.
+create_bind(vars.kbSwitchLayout, hl.dsp.exec_cmd("hyprctl switchxkblayout all next"), locked_release)
 
 -- Restore lock
 create_bind(vars.kbRestoreLock, function()
