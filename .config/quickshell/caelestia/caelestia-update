@@ -1,16 +1,140 @@
 #!/bin/bash
 set -euo pipefail
 
+# Rebuild the Qt-linked stack (quickshell, caelestia-shell's QML plugins,
+# qt6-m3shapes, qtengine) whenever qt6-base moves underneath it. Without this,
+# a Qt update leaves quickshell built against the old Qt and the shell breaks
+# on its next restart.
+#
+# The -git packages build from their paru clones, pinned through a #commit
+# fragment injected into the source URL. quickshell follows its newest stable
+# tag, so Qt updates move it to releases instead of random master snapshots;
+# other -git clones rebuild their current checkout and fall back to master if
+# the pinned revision no longer compiles. If a clone is missing (cleared paru
+# cache), it is cloned fresh from the AUR and pinned the same way, so recovery
+# keeps the same version policy.
+
+qt_state="${XDG_CACHE_HOME:-$HOME/.cache}/caelestia-update/qt6-built-against"
+
+compat_ok() { quickshell --private-check-compat >/dev/null 2>&1; }
+
+rebuild_git_clone() {
+    local name=$1 dir srcdir sha pkg tag sha_repo
+    dir="$HOME/.cache/paru/clone/$name"
+
+    # Recover the AUR clone if the paru cache was cleared
+    if [[ ! -f $dir/PKGBUILD ]]; then
+        echo ":: no paru clone for $name; cloning it fresh from the AUR"
+        if ! git clone -q "https://aur.archlinux.org/$name.git" "$dir" 2>/dev/null; then
+            echo ":: WARNING: could not clone $name from the AUR (offline?); run 'paru -S --rebuild $name' manually" >&2
+            return 1
+        fi
+    fi
+
+    # makepkg's working copy: directly in the clone (old layout) or under
+    # src/ (pacman >= 6.1 keeps the upstream repo as a bare clone beside it).
+    # The AUR repo's own .git is excluded.
+    srcdir=$(find "$dir" -type d -name .git -not -path "$dir/.git" -exec dirname {} \; 2>/dev/null | head -1)
+    if [[ -z $srcdir ]]; then
+        (cd "$dir" && makepkg -o --noconfirm) || {
+            echo ":: WARNING: could not fetch sources for $name; run 'paru -S --rebuild $name' manually" >&2
+            return 1
+        }
+        srcdir=$(find "$dir" -type d -name .git -not -path "$dir/.git" -exec dirname {} \; 2>/dev/null | head -1)
+    fi
+    if [[ -z $srcdir ]]; then
+        echo ":: WARNING: could not locate the source checkout for $name; run 'paru -S --rebuild $name' manually" >&2
+        return 1
+    fi
+
+    # Prefer the bare clone for version lookups: its origin is the real
+    # upstream, while a working copy's origin may just be the local bare repo
+    sha_repo=$srcdir
+    for d in "$dir"/*/; do
+        d=${d%/}
+        case ${d##*/} in src|pkg) continue ;; esac
+        if [[ -f $d/HEAD && ! -d $d/.git ]]; then
+            sha_repo=$d
+            break
+        fi
+    done
+
+    if [[ $name == quickshell-git ]]; then
+        # Newest stable tag; fall back to the current checkout when offline
+        if git -C "$sha_repo" fetch origin --tags -q 2>/dev/null; then
+            tag=$(git -C "$sha_repo" tag --sort=-v:refname | grep -E '^v?[0-9]+(\.[0-9]+)+$' | head -1 || true)
+        fi
+        if [[ -n ${tag:-} ]]; then
+            sha=$(git -C "$sha_repo" rev-parse "$tag^{commit}")
+        else
+            sha=$(git -C "$sha_repo" rev-parse HEAD)
+        fi
+    else
+        sha=$(git -C "$sha_repo" rev-parse HEAD)
+    fi
+
+    if grep -q '#commit=' "$dir/PKGBUILD"; then
+        sed -i "s|#commit=[0-9a-f]*|#commit=$sha|" "$dir/PKGBUILD"
+    else
+        sed -i "s|\.git\"|.git#commit=$sha\"|" "$dir/PKGBUILD"
+    fi
+    grep -q "#commit=$sha" "$dir/PKGBUILD" ||
+        echo ":: WARNING: could not pin $name to $sha; building unpinned" >&2
+
+    rm -rf "$srcdir/build"
+    if ! (cd "$dir" && makepkg -f --noconfirm); then
+        echo ":: pinned revision of $name no longer builds; falling back to master"
+        git -C "$sha_repo" checkout -q -B master origin/master 2>/dev/null ||
+            git -C "$sha_repo" checkout -q master 2>/dev/null || true
+        sed -i 's|#commit=[0-9a-f]*||' "$dir/PKGBUILD"
+        rm -rf "$srcdir/build"
+        (cd "$dir" && makepkg -f --noconfirm)
+    fi
+
+    pkg=$(cd "$dir" && ls -t "$name"-*-x86_64.pkg.tar.zst | grep -v -- '-debug-' | head -1 || true)
+    sudo pacman -U --noconfirm "$dir/$pkg"
+}
+
+ensure_qt_stack() {
+    local cur prev="" failed=0
+    # Compare only the upstream Qt version, not Arch's pkgrel: a -2 -> -3 bump
+    # repackages the same Qt with no ABI change, so it must not trigger a rebuild
+    cur=$(pacman -Q qt6-base | awk '{print $2}'); cur=${cur%-*}
+    [[ -f $qt_state ]] && prev=$(<"$qt_state") && prev=${prev%-*}
+
+    if [[ $cur == "$prev" ]] && compat_ok; then
+        return 0
+    fi
+    if [[ -z $prev ]] && compat_ok; then
+        mkdir -p "${qt_state%/*}"
+        printf '%s\n' "$cur" > "$qt_state" # first run with a healthy shell: just record it
+        return 0
+    fi
+
+    echo ":: qt6-base is now $cur (last built against: ${prev:-unknown}); rebuilding Qt-linked packages"
+    rebuild_git_clone quickshell-git || failed=$((failed + 1))
+    rebuild_git_clone qt6-m3shapes-git || failed=$((failed + 1))
+    paru -S --rebuild caelestia-shell qtengine --noconfirm
+
+    mkdir -p "${qt_state%/*}"
+    if (( failed == 0 )) && compat_ok; then
+        printf '%s\n' "$cur" > "$qt_state"
+    else
+        echo ":: WARNING: Qt-linked rebuild incomplete; quickshell may break on its next restart" >&2
+        return 1
+    fi
+}
+
 has_update=$(paru -Qu caelestia-shell 2>/dev/null | head -1) || true
 
 if [[ -n $has_update ]]; then
-  # caelestia-shell has an update — caelestia update handles everything
-  caelestia update --noconfirm
-  ~/.config/quickshell/caelestia/sync-upstream.sh
+    # caelestia-shell has an update — caelestia update handles everything
+    caelestia update --noconfirm
+    ~/.config/quickshell/caelestia/sync-upstream.sh
 else
-  # No caelestia-shell update — use wrapper to prevent quickshell-git from updating
-  bindir=$(mktemp -d)
-  cat > "$bindir/paru" << 'SCRIPT'
+    # No caelestia-shell update — use wrapper to prevent quickshell-git from updating
+    bindir=$(mktemp -d)
+    cat > "$bindir/paru" << 'SCRIPT'
 #!/bin/bash
 args=()
 for arg in "$@"; do
@@ -19,11 +143,13 @@ for arg in "$@"; do
 done
 exec /usr/bin/paru "${args[@]}"
 SCRIPT
-  chmod +x "$bindir/paru"
-  export PATH="$bindir:$PATH"
+    chmod +x "$bindir/paru"
+    export PATH="$bindir:$PATH"
 
-  caelestia update --noconfirm
+    caelestia update --noconfirm
 
-  export PATH="${PATH#$bindir:}"
-  rm -rf "$bindir"
+    export PATH="${PATH#$bindir:}"
+    rm -rf "$bindir"
 fi
+
+ensure_qt_stack
