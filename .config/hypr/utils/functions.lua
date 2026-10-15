@@ -1,4 +1,4 @@
-local function wsaction(action, range, i, follow)
+local function wsaction(action, range, i)
     return function()
         local activews = hl.get_active_workspace()
         if activews then
@@ -8,7 +8,7 @@ local function wsaction(action, range, i, follow)
             local z  = (range == "group") and s or t
 
             if action == "move" then
-                return hl.dispatch(hl.dsp.window.move({ workspace = z, follow = follow ~= false }))
+                return hl.dispatch(hl.dsp.window.move({ workspace = z }))
             else
                 return hl.dispatch(hl.dsp.focus({ workspace = z }))
             end
@@ -41,9 +41,8 @@ local function resize_active_window(x, y)
     end
 end
 
-local function resizer(window, pattern, x_percent, y_percent, actions, exact, field)
-    local value = window and window[field or "title"]
-    if value and string.find(value, pattern, 1, exact) then
+local function resizer(window, val_fn, x_percent, y_percent, actions)
+    if window and val_fn(window) then
         local disp = (type(actions) == "table") and actions or { actions }
         for _, x in ipairs(disp) do
             hl.dispatch(x)
@@ -57,7 +56,6 @@ local function resizer(window, pattern, x_percent, y_percent, actions, exact, fi
             sz.window = window
             hl.dispatch(hl.dsp.window.resize(sz))
         end
-        hl.dispatch(hl.dsp.window.set_prop({ prop = "keep_aspect_ratio", value = "true", window = window }))
     end
 end
 
@@ -84,6 +82,7 @@ local function move_actions(win)
         return {
             hl.dsp.window.resize({ x = x_resize, y = y_resize, window = win }),
             hl.dsp.window.move({ x = move_x, y = move_y, relative = false, window = win }),
+            hl.dsp.window.set_prop({ prop = "keep_aspect_ratio", value = "true", window = win })
         }
     end
 end
@@ -218,6 +217,7 @@ local function load_toggle_config()
     local recognized, conf_or_error = pcall(json.decode, content)
     if recognized and type(conf_or_error) == "table" then
         merge(config, conf_or_error.toggles or {})
+        _cached_config = config
     else
         -- Invalid cli.json: notify and fall back to defaults.
         -- conf_or_error holds the parse error (string) or a non-table value on success.
