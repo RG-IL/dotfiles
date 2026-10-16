@@ -101,6 +101,7 @@ return {
     kbPinWindow                = "SUPER + P",
     kbWindowFullscreen         = "SUPER + F",
     kbWindowBorderedFullscreen = "SUPER + ALT + F",
+    kbWindowFakeFullscreen     = "ALT + F",
     kbToggleWindowFloating     = "SUPER + ALT + Space",
     kbCloseWindow              = "SUPER + Q",
 

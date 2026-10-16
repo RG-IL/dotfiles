@@ -160,6 +160,18 @@ end)
 create_bind(vars.kbPinWindow, hl.dsp.window.pin())
 create_bind(vars.kbWindowFullscreen, hl.dsp.window.fullscreen({ mode = "fullscreen" }))
 create_bind(vars.kbWindowBorderedFullscreen, hl.dsp.window.fullscreen({ mode = "maximized" }))
+-- Fake fullscreen (same as Omarchy's "tiled full screen"): the app is told it's
+-- fullscreen, but the window keeps its size and the layout doesn't move.
+create_bind(vars.kbWindowFakeFullscreen, function()
+    local a = hl.get_active_window()
+    if a then
+        if a.fullscreen_client == 2 then
+            hl.dispatch(hl.dsp.window.fullscreen_state({ internal = 0, client = 0 }))
+        else
+            hl.dispatch(hl.dsp.window.fullscreen_state({ internal = 0, client = 2 }))
+        end
+    end
+end)
 create_bind(vars.kbToggleWindowFloating, hl.dsp.window.float())
 create_bind(vars.kbCloseWindow, hl.dsp.window.close())
 
