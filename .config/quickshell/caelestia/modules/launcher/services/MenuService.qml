@@ -332,7 +332,9 @@ Singleton {
 
         // Interactive reminder composer: "@remind <minutes> [message]" renders
         // as a normal row so Enter runs it through the regular action path.
-        const rm = query.trim().match(/^@remind(?:\s+(\d+))?(?:\s+(.+))?$/);
+        // A fractional part is seconds read literally (1.5 is 1m 05s, 0.30 is
+        // 30s) and cannot reach 60 — that would just be another minute.
+        const rm = query.trim().match(/^@remind(?:\s+(\d+(?:\.\d+)?))?(?:\s+(.+))?$/);
         if (rm) {
             const minutes = rm[1];
             const msg = (rm[2] ?? "").replace(/["`$\\]/g, "").trim();
@@ -349,14 +351,25 @@ Singleton {
                             desc: "Keep typing: @remind <minutes> <message>",
                             disabled: true
                         })];
-            if (parseInt(minutes) === 0)
+            const dot = minutes.indexOf(".");
+            const mins = dot === -1 ? parseInt(minutes, 10) : parseInt(minutes.slice(0, dot), 10);
+            const secs = dot === -1 ? 0 : parseInt(minutes.slice(dot + 1), 10);
+            if (secs > 59)
+                return [Object.assign({}, base, {
+                            label: "Seconds must be below 60",
+                            desc: `The .${minutes.slice(dot + 1)} is seconds — write ${mins + 1}.${secs - 60} instead`,
+                            disabled: true
+                        })];
+            const totalSeconds = mins * 60 + secs;
+            if (totalSeconds === 0)
                 return [Object.assign({}, base, {
                             label: "Minutes must be above zero",
                             desc: "@remind <minutes> <message>",
                             disabled: true
                         })];
+            const duration = mins > 0 && secs > 0 ? `${mins}m ${secs}s` : mins > 0 ? `${mins}m` : `${secs}s`;
             return [Object.assign({}, base, {
-                        label: msg !== "" ? `${msg} — in ${minutes} min` : `${minutes} minute reminder`,
+                        label: msg !== "" ? `${msg} — in ${duration}` : `${duration} reminder`,
                         desc: "Enter to set",
                         action: `menu-reminder ${minutes}${msg !== "" ? ` ${msg}` : ""}`
                     })];
