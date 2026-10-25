@@ -96,7 +96,7 @@ for i = 1, 10 do
     local key = i % 10 -- 10 maps to key 0
     create_bind(extend_keybind(vars.kbGoToWs, key), fn.wsaction("focus", "", i))
     create_bind(extend_keybind(vars.kbMoveWinToWs, key), fn.wsaction("move", "", i))
-    create_bind(extend_keybind(vars.kbMoveWinToWsSilent, key), fn.wsaction("move", "", i, false))
+    create_bind(extend_keybind(vars.kbMoveWinToWsSilent, key), fn.wsaction("move_silent", "", i))
     create_bind(extend_keybind(vars.kbGoToWsGroup, key), fn.wsaction("focus", "group", i))
     create_bind(extend_keybind(vars.kbMoveWinToWsGroup, key), fn.wsaction("move", "group", i))
 end
