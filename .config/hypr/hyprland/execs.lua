@@ -3,7 +3,8 @@ local fn   = require("utils.functions")
 
 hl.on("hyprland.start", function()
     -- Restart wl-clip-persist now that the Wayland session env is available
-    hl.exec_cmd("systemctl --user import-environment WAYLAND_DISPLAY XDG_RUNTIME_DIR XDG_CURRENT_DESKTOP XDG_SESSION_TYPE XDG_SESSION_DESKTOP")
+    hl.exec_cmd("systemctl --user import-environment WAYLAND_DISPLAY XDG_RUNTIME_DIR XDG_CURRENT_DESKTOP XDG_SESSION_TYPE XDG_SESSION_DESKTOP GDK_WAYLAND_DISABLE")
+    hl.exec_cmd("dbus-update-activation-environment --systemd GDK_WAYLAND_DISABLE")
     hl.exec_cmd("systemctl --user reset-failed wl-clip-persist || true")
     hl.exec_cmd("systemctl --user restart wl-clip-persist")
 
@@ -34,6 +35,9 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("udiskie -a")
 
     hl.exec_cmd("kdeconnect-indicator")
+
+    -- Warm ghostty so Super+Return opens an instant window
+    hl.exec_cmd("ghostty --initial-window=false")
 
     -- Start shell
     hl.exec_cmd("caelestia shell -d")
@@ -72,7 +76,7 @@ local function apply_resizer_rules(win)
     fn.resizer(win, match_class("nngceckbapebfimnlniiiahkandclblb", true), 20, 54, float_center)                         -- Chromium
 
     -- Picture in picture
-    fn.resizer(win, match_title("Picture[- ]in[- ][Pp]icture", false), 0, 0, pip_actions)
+    fn.resizer(win, match_title("^Picture[- ]in[- ][Pp]icture$", false), 0, 0, pip_actions)
 
     -- Tags, because window rules are unreliable
     fn.resizer(win, match_tag("float_60_70"), 60, 70, float_center)

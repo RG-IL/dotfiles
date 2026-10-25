@@ -12,7 +12,7 @@ hl.monitor({
 
 -- Keybinds
 hl.unbind("SUPER + T")
-hl.bind("SUPER + Return", hl.dsp.exec_cmd("ghostty"))
+hl.bind("SUPER + Return", hl.dsp.exec_cmd("ghostty +new-window"))
 hl.unbind("SUPER + W")
 hl.bind("SUPER + SHIFT + Return", hl.dsp.exec_cmd("helium-browser"))
 hl.unbind("SUPER + CTRL + V")

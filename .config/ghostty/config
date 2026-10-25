@@ -1,10 +1,10 @@
-# Always Start to maximize. 
+# Always Start to maximize.
 maximize = true
 app-notifications = no-clipboard-copy
 keybind = shift+insert=paste_from_clipboard
 window-save-state = never
 confirm-close-surface = false
-quit-after-last-window-closed = true
+quit-after-last-window-closed = false
 foreground = #F2D5CF
 font-family = "CaskaydiaCove Nerd Font"
 font-style = Italic
