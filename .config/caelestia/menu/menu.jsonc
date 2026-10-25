@@ -56,7 +56,13 @@
   "trigger.capture.text": {"icon":"󰴑","label":"Text","action":"menu-capture-text"},
   "trigger.capture.color": {"icon":"󰃉","label":"Color","action":"pkill hyprpicker || hyprpicker -a"},
   "trigger.toggle": {"icon":"󰔎","label":"Toggle","aliases":["toggle","toggles"]},
-  "trigger.toggle.idle-lock": {"icon":"󰅶","label":"Stay Awake","toggle":true,"checked":"[[ $(qs -c caelestia ipc call idleInhibitor isEnabled 2>/dev/null) == true ]]","action":"qs -c caelestia ipc call idleInhibitor toggle"},
+  // Temporary Stay Awake until caelestia-dots/shell#1835 lands upstream; the
+  // shell's idleInhibitor IPC is a silent no-op (0x0 inhibitor window never
+  // maps on Hyprland). menu-stay-awake disables the idle timeouts through
+  // shell.json instead. Revert to the IPC calls once the shell is fixed.
+  // NOTE: checked runs via plain `bash -c` WITHOUT the menu bin/ on PATH
+  // (only actions get bin/ prepended), so it must use the absolute path.
+  "trigger.toggle.idle-lock": {"icon":"󰅶","label":"Stay Awake","toggle":true,"checked":"[[ $($HOME/.config/caelestia/menu/bin/menu-stay-awake status) == on ]]","action":"menu-stay-awake toggle"},
   "trigger.toggle.notifications": {"icon":"󰂛","label":"Notifications","aliases":["dnd","do-not-disturb"],"toggle":true,"checked":"[[ $(qs -c caelestia ipc call notifs isDndEnabled 2>/dev/null) != true ]]","action":"qs -c caelestia ipc call notifs toggleDnd"},
   "trigger.tests": {"icon":"󰓅","label":"Speed Test"},
   "trigger.tests.network-speedtest": {"icon":"󰓅","label":"Network Speed Test","internal":"speedtest-network"},

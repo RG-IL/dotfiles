@@ -1,0 +1,92 @@
+#!/bin/bash
+
+# caelestia-menu:summary=Keep the session awake by suspending the shell's idle timeouts
+# caelestia-menu:args=on | off | toggle | status
+# caelestia-menu:examples=menu-stay-awake toggle | menu-stay-awake status
+
+set -euo pipefail
+
+# TEMPORARY implementation of the menu's Stay Awake toggle.
+#
+# The shell's built-in keep-awake (qs ipc idleInhibitor) is a no-op right now:
+# its inhibitor window is 0x0, Hyprland never maps it, so no Wayland idle
+# inhibitor is ever registered while the toggle keeps saying on
+# (caelestia-dots/shell#1835, fix tracked in PRs #1756/#1889).
+#
+# Until a fixed shell ships, this works through the supported config surface
+# instead: an empty general.idle.timeouts list in shell.json disables every
+# idle monitor (lock / dpms / suspend) inside the shell, which hot-reloads the
+# change. Toggling off removes the override and the defaults return
+# (lock 180s, dpms off 300s, suspend 600s). logind lockBeforeSleep is untouched.
+#
+# When the upstream fix lands, revert menu.jsonc's trigger.toggle.idle-lock to
+# the IPC calls and delete this script.
+
+cfg="$HOME/.config/caelestia/shell.json"
+
+status() {
+  if [[ -f $cfg ]] && jq -e '(.general.idle.timeouts // null) == []' "$cfg" >/dev/null 2>&1; then
+    echo on
+  else
+    echo off
+  fi
+}
+
+apply() {
+  python3 - "$cfg" "$1" <<'PYEOF'
+import json, os, sys, tempfile
+
+path, mode = sys.argv[1], sys.argv[2]
+
+try:
+    with open(path) as f:
+        cfg = json.load(f)
+except FileNotFoundError:
+    cfg = {}
+except json.JSONDecodeError as e:
+    sys.exit(f"refusing to touch a broken {path}: {e}")
+
+general = cfg.setdefault("general", {})
+idle = general.setdefault("idle", {})
+
+if mode == "on":
+    idle["timeouts"] = []
+else:
+    idle.pop("timeouts", None)
+    if not idle:
+        general.pop("idle", None)
+
+fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path) or ".", prefix=".shell.json.")
+try:
+    with os.fdopen(fd, "w") as f:
+        json.dump(cfg, f, indent=4)
+        f.write("\n")
+    os.replace(tmp, path)
+finally:
+    if os.path.exists(tmp):
+        os.unlink(tmp)
+PYEOF
+}
+
+case "${1:-toggle}" in
+  status)
+    status
+    ;;
+  on)
+    [[ $(status) == on ]] || apply on
+    ;;
+  off)
+    [[ $(status) == off ]] || apply off
+    ;;
+  toggle)
+    if [[ $(status) == on ]]; then
+      apply off
+    else
+      apply on
+    fi
+    ;;
+  *)
+    echo "usage: menu-stay-awake on|off|toggle|status" >&2
+    exit 2
+    ;;
+esac
