@@ -9,7 +9,8 @@
             "enabled": true,
             "position": "bottom-right",
             "scale": 1
-        }
+        },
+        "wallpaperEnabled": true
     },
     "bar": {
         "clock": {
@@ -52,6 +53,11 @@
             }
         ]
     },
+    "dashboard": {
+        "showClockSeconds": true,
+        "showOnHover": true,
+        "showWeather": false
+    },
     "general": {
         "apps": {
             "terminal": [
@@ -62,8 +68,7 @@
         }
     },
     "launcher": {
-        "favouriteApps": [
-        ],
+        "favouriteApps": [],
         "hiddenApps": [
             "qv4l2",
             "thunar-settings",
@@ -116,9 +121,11 @@
             }
         ],
         "toasts": {
-            "configLoaded": false,
             "capsLockChanged": false,
+            "configLoaded": false,
+            "fullscreen": "off",
             "kbLayoutChanged": false,
+            "nowPlaying": false,
             "numLockChanged": false
         }
     }
