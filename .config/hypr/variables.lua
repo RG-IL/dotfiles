@@ -43,6 +43,7 @@ return {
     -- Window styling
     windowOpacity              = 0.95,
     windowRounding             = 15,
+    windowRoundingPower        = 2,
     windowBorderSize           = 1,
     activeWindowBorderColour   = "rgba(" .. scheme.primary .. "e6)",
     inactiveWindowBorderColour = "rgba(" .. scheme.onSurfaceVariant .. "11)",
@@ -50,8 +51,8 @@ return {
     -- Misc
     volumeStep                 = 10,
     volumeMax                  = 100,
-    cursorTheme                = "sweet-cursors",
-    cursorSize                 = 24,
+    cursorTheme                = "Banana",
+    cursorSize                 = 48,
     sleepGestureCmd            = "systemctl suspend-then-hibernate",
 
     ------------------
