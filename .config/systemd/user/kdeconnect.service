@@ -1,0 +1,14 @@
+[Unit]
+Description=KDE Connect daemon
+Documentation=https://userbase.kde.org/KDEConnect
+After=dbus.service network.target
+Wants=dbus.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/kdeconnectd
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
