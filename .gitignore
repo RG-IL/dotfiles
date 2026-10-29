@@ -4,3 +4,7 @@
 .config/quickshell/caelestia/modules/dashboard/media
 .config/quickshell/caelestia/modules/dashboard/performance
 .config/nvim/lazy-lock.json
+# scheme files regenerated on every theme apply; re-apply a scheme to recreate
+.config/btop/themes/caelestia.theme
+.config/hypr/scheme/current.conf
+.config/hypr/scheme/current.lua
