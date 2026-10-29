@@ -7,7 +7,14 @@ PartOf=default.target
 
 [Service]
 Type=simple
+# The tray registers with the StatusNotifierWatcher once and never retries.
+# With lingering enabled the user manager starts at boot, before the bar exists,
+# so wait for the watcher (quickshell) before launching the tray.
+ExecStartPre=/bin/sh -c 'until busctl --user --quiet status org.kde.StatusNotifierWatcher >/dev/null 2>&1; do sleep 2; done'
 ExecStart=/usr/bin/tailscale systray
+TimeoutStartSec=infinity
+Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=default.target
