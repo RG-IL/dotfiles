@@ -1,7 +1,8 @@
 [Unit]
 Description=KDE Connect daemon
 Documentation=https://userbase.kde.org/KDEConnect
-After=dbus.service network.target
+After=dbus.service network.target hyprland-session.target
+PartOf=graphical-session.target
 Wants=dbus.service
 
 [Service]
@@ -11,4 +12,4 @@ Restart=on-failure
 RestartSec=5
 
 [Install]
-WantedBy=default.target
+WantedBy=hyprland-session.target
