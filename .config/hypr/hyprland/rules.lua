@@ -169,6 +169,11 @@ hl.window_rule({ match = { class = "org.caelestia.about" }, float = true, size =
 -- Ueberzugpp
 hl.window_rule({ match = { class = "ueberzugpp_.*" }, float = true, no_initial_focus = true })
 
+-- Helium: some videos (e.g. CampusIL course videos) are HDR and make Hyprland
+-- flip the monitor into AutoHDR when fullscreened. The TS2400 drops its HDMI
+-- link on every flip (screen flicker). Tone-map to SDR instead.
+hl.window_rule({ match = { class = "helium" }, no_auto_hdr = true })
+
 -- Autodesk Fusion 360
 hl.window_rule({ match = { class = "fusion360.exe", title = "Fusion360|(Marking Menu)" }, no_blur = true })
 
