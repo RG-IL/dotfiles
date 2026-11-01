@@ -1,19 +1,23 @@
 local function wsaction(action, range, i)
     return function()
         local activews = hl.get_active_workspace()
-        if activews then
-            local id = activews.id
-            local s  = (i - 1) * 10 + (id % 10)
-            local t  = math.floor((id - 1) / 10) * 10 + i
-            local z  = (range == "group") and s or t
+        if not activews then return end
 
-            if action == "move" then
-                return hl.dispatch(hl.dsp.window.move({ workspace = z }))
-            elseif action == "move_silent" then
-                return hl.dispatch(hl.dsp.window.move({ workspace = z, follow = false }))
-            else
-                return hl.dispatch(hl.dsp.focus({ workspace = z }))
-            end
+        local id = activews.id
+        if type(id) ~= "number" or id < 1 then
+            -- Named workspaces have no numbered group, fall back to the first one.
+            id = 1
+        end
+
+        local slot  = (id - 1) % 10 + 1
+        local z     = range == "group" and ((i - 1) * 10 + slot) or (math.floor((id - 1) / 10) * 10 + i)
+
+        if action == "move" then
+            return hl.dispatch(hl.dsp.window.move({ workspace = z }))
+        elseif action == "move_silent" then
+            return hl.dispatch(hl.dsp.window.move({ workspace = z, follow = false }))
+        else
+            return hl.dispatch(hl.dsp.focus({ workspace = z }))
         end
     end
 end
@@ -93,6 +97,7 @@ end
 local home       = os.getenv("HOME")
 local config_dir = os.getenv("XDG_CONFIG_HOME") or (home .. "/.config")
 local json       = require("utils.json") -- rxi's peak library
+local vars       = require("variables")
 
 -- Default config
 local function default_config()
@@ -199,17 +204,12 @@ local function shell_join(argv) -- uhh praise danny for this
     return table.concat(quoted, " ")
 end
 
--- Merge user config with defaults (cached after first load)
-local _cached_config = nil
-
+-- Merge user config with defaults
 local function load_toggle_config()
-    if _cached_config then return _cached_config end
-
     local config = default_config()
 
     local user_file = io.open(config_dir .. "/caelestia/cli.json", "r") -- CLI config
     if not user_file then
-        _cached_config = config
         return config
     end
 
@@ -219,7 +219,6 @@ local function load_toggle_config()
     local recognized, conf_or_error = pcall(json.decode, content)
     if recognized and type(conf_or_error) == "table" then
         merge(config, conf_or_error.toggles or {})
-        _cached_config = config
     else
         -- Invalid cli.json: notify and fall back to defaults.
         -- conf_or_error holds the parse error (string) or a non-table value on success.
@@ -228,7 +227,6 @@ local function load_toggle_config()
             shell_join({ "Failed to parse CLI config", reason }) .. " error")
     end
 
-    _cached_config = config
     return config
 end
 
@@ -261,9 +259,10 @@ local function toggle(special_workspace)
     return function()
         local active_workspace = hl.get_active_special_workspace()
 
-        -- Generic special workspace toggle: close if any is open, or open "special"
+        -- Generic special workspace toggle: close if any is open (if configured), or toggle "special"
         if special_workspace == "specialws" then
-            local target = active_workspace and active_workspace.name:gsub("^special:", "") or "special"
+            local close_any = vars.specialWsCloseAny == nil or vars.specialWsCloseAny
+            local target = close_any and active_workspace and active_workspace.name:gsub("^special:", "") or "special"
             return hl.dispatch(hl.dsp.workspace.toggle_special(target))
         end
 
