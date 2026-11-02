@@ -59,6 +59,8 @@ create_bind(
         return normalise_keybind(key) == launcher_default and release or nil
     end
 )
+create_bind("SUPER + mouse_up", hl.dsp.global("caelestia:launcherInterrupt"))
+create_bind("SUPER + mouse_down", hl.dsp.global("caelestia:launcherInterrupt"))
 
 -- Misc
 create_bind(vars.kbSession, hl.dsp.global("caelestia:session"))
@@ -82,15 +84,11 @@ create_bind(vars.kbSwitchLayout, hl.dsp.exec_cmd("hyprctl switchxkblayout all ne
 create_bind(vars.kbRestoreLock, function()
     hl.dispatch(hl.dsp.exec_cmd("caelestia shell -d"))
     hl.dispatch(hl.dsp.global("caelestia:lock"))
-end)
+end, locked)
 
 -- Kill/restart
-create_bind("CTRL + SUPER + SHIFT + R", hl.dsp.exec_cmd("qs -c caelestia kill"), release)
-create_bind(
-    "CTRL + SUPER + ALT + R",
-    hl.dsp.exec_cmd("qs -c caelestia kill; sleep .1; caelestia shell -d"),
-    release
-)
+create_bind("CTRL + SUPER + SHIFT + R", hl.dsp.exec_cmd("caelestia shell -k"), release)
+create_bind("CTRL + SUPER + ALT + R", hl.dsp.exec_cmd("caelestia shell -r -d"), release)
 
 for i = 1, 10 do
     local key = i % 10 -- 10 maps to key 0
