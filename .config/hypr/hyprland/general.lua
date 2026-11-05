@@ -23,6 +23,12 @@ hl.config({
         smart_resizing = true,
     },
 
+    -- AutoHDR flips the monitor's scanout format when HDR content appears,
+    -- and the TS2400 drops its HDMI link on every flip. We don't want HDR.
+    render = {
+        cm_auto_hdr = 0,
+    },
+
     scrolling = {
         fullscreen_on_one_column = true,
         focus_fit_method         = 1,

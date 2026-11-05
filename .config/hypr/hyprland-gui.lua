@@ -8,6 +8,7 @@ hl.monitor({
     position = "0x0",
     scale = 1.25,
     cm = "srgb",
+    supports_hdr = -1, -- HDR off globally: the TS2400 drops its HDMI link when HDR infoframes flip. Re-add if HyprMod regenerates this block.
 })
 
 -- Keybinds
