@@ -591,7 +591,6 @@ M.groups = {
     TodoSignTEST = { fg = "#eebebe" },
 
     -- Misc plugins
-    SupermavenSuggestion = { fg = p.subtext0, italic = true },
     LspReferenceText = { bg = p.surface1 },
     LspReferenceRead = { bg = p.surface1 },
     LspReferenceWrite = { bg = p.surface1 },

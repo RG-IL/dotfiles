@@ -258,27 +258,16 @@ vim.keymap.set({ "n", "v" }, "<leader>ci", smart_toggle_ignore, { desc = "Toggle
 vim.keymap.set("n", "<leader>ce", remove_all_comments, { desc = "Remove all comments" })
 vim.keymap.set("n", "<leader>ac", function()
     vim.g.copilot_enabled = true
-    vim.g.supermaven_enabled = false
     pcall(vim.cmd, "Copilot enable")
-    pcall(vim.cmd, "SupermavenStop")
-end, { desc = "Copilot on, SuperMaven off" })
-vim.keymap.set("n", "<leader>as", function()
-    vim.g.supermaven_enabled = true
-    vim.g.copilot_enabled = false
-    pcall(vim.cmd, "SupermavenStart")
-    pcall(vim.cmd, "Copilot disable")
-end, { desc = "SuperMaven on, Copilot off" })
+end, { desc = "Copilot on" })
 vim.keymap.set("n", "<leader>an", function()
-    vim.g.supermaven_enabled = false
     vim.g.copilot_enabled = false
-    pcall(vim.cmd, "SupermavenStop")
     pcall(vim.cmd, "Copilot disable")
-end, { desc = "Both off" })
+end, { desc = "Copilot off" })
 
 -- which-key icons
 local wk = require("which-key")
 wk.add({
-    { "<leader>ac", icon = "", desc = "Copilot on, SuperMaven off" },
-    { "<leader>as", icon = "", desc = "SuperMaven on, Copilot off" },
-    { "<leader>an", icon = "", desc = "Both off" },
+    { "<leader>ac", icon = "", desc = "Copilot on" },
+    { "<leader>an", icon = "", desc = "Copilot off" },
 })
