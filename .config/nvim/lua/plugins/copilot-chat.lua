@@ -28,6 +28,9 @@ return {
         },
         opts = {
             auto_apply_diff = true,
+            -- gpt-5-mini (the plugin default) was removed from Copilot's model
+            -- list; 'auto' lets the server pick a valid one.
+            model = "auto",
         },
     },
     {
