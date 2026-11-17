@@ -235,3 +235,26 @@ create_bind(
     hl.dsp.exec_cmd('sleep 0.5s && ydotool type -d 1 "$(cliphist list | head -1 | cliphist decode)"'),
     locked
 )
+
+-- Superwhisper: hold Left Alt + Left Ctrl + Left Super to dictate, in any
+-- press order; releasing any of the three stops and pastes. Drives the CLI
+-- directly (the same edges a hold shortcut produces) instead of a key bind,
+-- so no single key gets consumed and Superwhisper's own chord,
+-- Ctrl+Alt+Super+Space, stays available unchanged.
+local ptt_keys    = { [56] = true, [29] = true, [125] = true } -- evdev: left alt, left ctrl, left super
+local ptt_down    = {}
+local ptt_active  = false
+hl.on('input.keyboard.key', function(code, _, state)
+    code = code - 8 -- Hyprland reports XKB codes; these tables are evdev
+    if not ptt_keys[code] then return end
+    ptt_down[code] = state ~= 0 or nil
+    local all = ptt_down[56] and ptt_down[29] and ptt_down[125]
+    local cmd = os.getenv('HOME') .. '/.local/bin/superwhisper '
+    if all and not ptt_active then
+        ptt_active = true
+        hl.dispatch(hl.dsp.exec_cmd(cmd .. 'start'))
+    elseif not all and ptt_active then
+        ptt_active = false
+        hl.dispatch(hl.dsp.exec_cmd(cmd .. 'stop'))
+    end
+end)
