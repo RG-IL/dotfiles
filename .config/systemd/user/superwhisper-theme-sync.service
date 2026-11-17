@@ -1,0 +1,7 @@
+[Unit]
+Description=Sync caelestia colour scheme into the Superwhisper glow theme
+# The scheme file is rewritten when the wallpaper changes (Material You).
+
+[Service]
+Type=oneshot
+ExecStart=%h/.config/hypr/utils/superwhisper-theme-sync.sh

@@ -1,0 +1,8 @@
+[Unit]
+Description=Watch the caelestia colour scheme for Superwhisper glow sync
+
+[Path]
+PathModified=%h/.config/hypr/scheme/current.lua
+
+[Install]
+WantedBy=default.target
