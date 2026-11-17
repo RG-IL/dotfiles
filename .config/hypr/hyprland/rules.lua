@@ -178,19 +178,6 @@ tagged_rule(float_tag, {
     { class = "PandoraLauncher",    title = "Minecraft Game Output" },
 })
 
--- Wispr Flow status pill: park it in a hidden special workspace so it never
--- shows up and never grabs focus. The app has no built-in toggle for this.
--- While Ctrl+Alt is held the pill is pulled onto the active workspace, and it
--- is parked back here when either key is released (binds in keybinds.lua).
--- The Hub window (title "Flow Hub") is deliberately left alone.
-hl.window_rule({
-    match = { class = "wispr-flow", title = "^(Status|Flow Status Indicator)$" },
-    workspace = "special:wispr",
-    no_focus = true,
-    float = true,
-})
-
-
 -------------------------
 ---- Tag definitions ----
 -------------------------

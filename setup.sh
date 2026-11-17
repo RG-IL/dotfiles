@@ -128,4 +128,11 @@ fi
 if ! command -v kdeconnect-cli >/dev/null; then
   sudo pacman -S --needed --noconfirm kdeconnect
 fi
+
+# Superwhisper dictation: not packaged, official per-user installer instead.
+# Needs Wayland + systemd (both are set up above). Left Alt is push-to-talk;
+# the hypr dots ship hyprland.lua + bindings.lua, which load its shortcuts.
+curl -fsSL https://tux.superwhisper.com/install.sh | sh
+superwhisper shortcuts set hold "LeftAlt"
+
 reboot

@@ -1,0 +1,20 @@
+[Unit]
+Description=Superwhisper dictation
+After=graphical-session.target pipewire.service
+PartOf=graphical-session.target
+# A development install binds the same shortcuts and pastes on the same keys.
+Conflicts=superwhisper-dev.service
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/superwhisper daemon
+ExecStopPost=%h/.local/bin/superwhisper playback-restore
+ExecStopPost=%h/.local/bin/superwhisper desktop-release
+Restart=on-failure
+RestartSec=2
+KillMode=control-group
+TimeoutStopSec=15
+UMask=0077
+
+[Install]
+WantedBy=graphical-session.target

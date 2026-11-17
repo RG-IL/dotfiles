@@ -1,0 +1,7 @@
+[Unit]
+Description=Update Superwhisper
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/superwhisper update apply

@@ -75,6 +75,9 @@ require("hyprland.rules")
 require("hyprland.gestures")
 require("hyprland.keybinds")
 
+-- Superwhisper managed shortcuts (this file is written by Superwhisper)
+dofile(hypr .. "/bindings.lua")
+
 -- User configs
 if maybe_create(home .. "/.config/caelestia/hypr-user.lua") then
     require("hypr-user")

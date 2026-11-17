@@ -1,0 +1,11 @@
+[Unit]
+Description=Check for Superwhisper updates
+
+[Timer]
+OnBootSec=10m
+OnUnitActiveSec=6h
+RandomizedDelaySec=30m
+Persistent=true
+
+[Install]
+WantedBy=timers.target
