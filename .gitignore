@@ -10,3 +10,4 @@
 .config/btop/themes/caelestia.theme
 .config/hypr/scheme/current.conf
 .config/hypr/scheme/current.lua
+bindings.superwhisper-*.bak
