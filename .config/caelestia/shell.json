@@ -1,20 +1,4 @@
 {
-    "general": {
-        "idle": {
-            "lockBeforeSleep": true,
-            "inhibitWhenAudio": true,
-            "timeouts": [
-                {
-                    "timeout": 180,
-                    "idleAction": "lock"
-                },
-                {
-                    "timeout": 600,
-                    "idleAction": ["systemctl", "suspend-then-hibernate"]
-                }
-            ]
-        }
-    },
     "appearance": {
         "transparency": {
             "enabled": true
@@ -80,6 +64,23 @@
                 "/usr/bin/ghostty",
                 "--gtk-single-instance=true",
                 "-e"
+            ]
+        },
+        "idle": {
+            "lockBeforeSleep": true,
+            "inhibitWhenAudio": true,
+            "timeouts": [
+                {
+                    "timeout": 180,
+                    "idleAction": "lock"
+                },
+                {
+                    "timeout": 600,
+                    "idleAction": [
+                        "systemctl",
+                        "suspend"
+                    ]
+                }
             ]
         }
     },
