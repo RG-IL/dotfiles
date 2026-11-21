@@ -125,6 +125,40 @@ ensure_qt_stack() {
     fi
 }
 
+ensure_no_stale_sonames() {
+    # Qt is not the only library that can break the shell with an update:
+    # any soname bump does (e.g. sndio 1.11 moved libsndio.so.7 -> .9, which
+    # broke libcava, linked by caelestia-shell's audio service — the shell
+    # then failed to load with "libsndio.so.7: cannot open shared object
+    # file"). Such packages are invisible to the version checks above when
+    # they have no update of their own. checkrebuild (rebuild-detector)
+    # flags every installed package still referencing a stale soname;
+    # rebuild the AUR ones here. Official-repo ones can't be rebuilt locally,
+    # so just warn — Arch repackages them in its own repos.
+    if ! command -v checkrebuild >/dev/null 2>&1; then
+        echo ":: WARNING: rebuild-detector not installed; cannot check for stale sonames (pacman -S rebuild-detector)" >&2
+        return 0
+    fi
+
+    local stale pkg repo_pkgs
+    stale=$(checkrebuild 2>/dev/null) || true
+    [[ -n $stale ]] || return 0
+    repo_pkgs=$(pacman -Slq 2>/dev/null)
+
+    while read -r pkg; do
+        [[ -n $pkg ]] || continue
+        if grep -qx "$pkg" <<<"$repo_pkgs"; then
+            echo ":: WARNING: $pkg is an official-repo package linking a stale library; wait for Arch's rebuild" >&2
+        elif [[ $pkg == quickshell-git ]]; then
+            rebuild_git_clone quickshell-git || true
+        else
+            echo ":: $pkg links a stale library; rebuilding"
+            paru -S --rebuild --noconfirm "$pkg" ||
+                echo ":: WARNING: could not rebuild $pkg; run 'paru -S --rebuild $pkg' manually" >&2
+        fi
+    done <<<"$stale"
+}
+
 has_update=$(paru -Qu caelestia-shell 2>/dev/null | head -1) || true
 
 if [[ -n $has_update ]]; then
@@ -153,3 +187,4 @@ SCRIPT
 fi
 
 ensure_qt_stack
+ensure_no_stale_sonames
