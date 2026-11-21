@@ -75,7 +75,7 @@
                     "idleAction": "lock"
                 },
                 {
-                    "timeout": 600,
+                    "timeout": 300,
                     "idleAction": [
                         "systemctl",
                         "suspend"
