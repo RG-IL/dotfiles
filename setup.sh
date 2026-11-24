@@ -3,11 +3,11 @@ sudo pacman -S --needed --noconfirm stow base-devel rustup
 
 # CPU vendor-specific: microcode + VA-API video driver
 if grep -qm1 "AuthenticAMD" /proc/cpuinfo; then
-  echo "AMD CPU detected"
-  sudo pacman -S --needed --noconfirm amd-ucode libva-mesa-driver
+    echo "AMD CPU detected"
+    sudo pacman -S --needed --noconfirm amd-ucode libva-mesa-driver
 elif grep -qm1 "GenuineIntel" /proc/cpuinfo; then
-  echo "Intel CPU detected"
-  sudo pacman -S --needed --noconfirm intel-ucode intel-media-driver
+    echo "Intel CPU detected"
+    sudo pacman -S --needed --noconfirm intel-ucode intel-media-driver
 fi
 
 git clone https://aur.archlinux.org/paru.git
@@ -30,8 +30,7 @@ rm -rf ~/.config/hypr/
 cd dotfiles
 stow .
 ~/.config/quickshell/caelestia/sync-upstream.sh
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/keyitdev/sddm-astronaut-theme/master/setup.sh)"
-sudo systemctl enable sddm
+git clone https://github.com/Darkkal44/qylock
 
 # Timezone: Israel. Hardware clock stays UTC, NTP keeps time accurate.
 sudo timedatectl set-timezone Asia/Jerusalem
@@ -59,7 +58,7 @@ systemctl --user enable wl-clip-persist.service
 
 # Swap: keep whatever archinstall created; if none, fall back to zram
 if ! swapon --show=NAME --noheadings 2>/dev/null | grep -q .; then
-  sudo tee /etc/systemd/zram-generator.conf >/dev/null <<'EOF'
+    sudo tee /etc/systemd/zram-generator.conf >/dev/null <<'EOF'
 [zram]
 zram-size = ram / 2
 EOF
@@ -72,10 +71,10 @@ sudo systemctl enable --now fstrim.timer
 # Optional: prompted, so home machines can skip it entirely.
 read -rp "Install and set up Cloudflare WARP? [y/N] " install_warp
 if [[ "$install_warp" =~ ^[Yy]$ ]]; then
-paru -S --needed --noconfirm cloudflare-warp-bin
-sudo systemctl enable --now warp-svc
-sudo mkdir -p /etc/NetworkManager/dispatcher.d
-sudo tee /etc/NetworkManager/dispatcher.d/50-warp-autoconnect.sh <<'EOF'
+    paru -S --needed --noconfirm cloudflare-warp-bin
+    sudo systemctl enable --now warp-svc
+    sudo mkdir -p /etc/NetworkManager/dispatcher.d
+    sudo tee /etc/NetworkManager/dispatcher.d/50-warp-autoconnect.sh <<'EOF'
 #!/bin/bash
 
 IFACE="$1"
@@ -117,16 +116,16 @@ case "$ACTION" in
     ;;
 esac
 EOF
-sudo chmod +x /etc/NetworkManager/dispatcher.d/50-warp-autoconnect.sh
-if ! warp-cli --accept-tos registration show >/dev/null 2>&1; then
-  warp-cli --accept-tos registration new
-else
-  echo "WARP already registered, skipping."
-fi
+    sudo chmod +x /etc/NetworkManager/dispatcher.d/50-warp-autoconnect.sh
+    if ! warp-cli --accept-tos registration show >/dev/null 2>&1; then
+        warp-cli --accept-tos registration new
+    else
+        echo "WARP already registered, skipping."
+    fi
 fi
 
 if ! command -v kdeconnect-cli >/dev/null; then
-  sudo pacman -S --needed --noconfirm kdeconnect
+    sudo pacman -S --needed --noconfirm kdeconnect
 fi
 
 # Superwhisper dictation: not packaged, official per-user installer instead.
@@ -134,5 +133,6 @@ fi
 # the hypr dots ship hyprland.lua + bindings.lua, which load its shortcuts.
 curl -fsSL https://tux.superwhisper.com/install.sh | sh
 superwhisper shortcuts set hold "LeftAlt"
-
+chmod +x ./qylock/sddm.sh && ./qylock/sddm.sh
+sudo systemctl enable sddm
 reboot
