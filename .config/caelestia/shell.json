@@ -69,19 +69,7 @@
         "idle": {
             "lockBeforeSleep": true,
             "inhibitWhenAudio": true,
-            "timeouts": [
-                {
-                    "timeout": 180,
-                    "idleAction": "lock"
-                },
-                {
-                    "timeout": 300,
-                    "idleAction": [
-                        "systemctl",
-                        "suspend"
-                    ]
-                }
-            ]
+            "timeouts": []
         }
     },
     "launcher": {

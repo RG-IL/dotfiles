@@ -2,7 +2,10 @@
 Description=Watch the caelestia colour scheme for Superwhisper glow sync
 
 [Path]
-PathModified=%h/.config/hypr/scheme/current.lua
+# Watch the scheme DIRECTORY, not scheme/current.lua itself: caelestia
+# replaces that file by rename when the wallpaper changes, and a file watch
+# dies (stopping this unit) the moment the watched path is moved away.
+PathChanged=%h/.config/hypr/scheme/
 
 [Install]
 WantedBy=default.target

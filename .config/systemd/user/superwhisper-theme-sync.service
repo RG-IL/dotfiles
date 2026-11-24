@@ -1,6 +1,8 @@
 [Unit]
 Description=Sync caelestia colour scheme into the Superwhisper glow theme
 # The scheme file is rewritten when the wallpaper changes (Material You).
+# Bursts of writes must not trip the default start rate limit.
+StartLimitIntervalSec=0
 
 [Service]
 Type=oneshot

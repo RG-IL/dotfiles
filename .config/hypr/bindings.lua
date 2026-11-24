@@ -157,6 +157,8 @@
 
 
 
+
+
 -- Superwhisper managed shortcuts BEGIN
 dofile("/home/raphael/.config/superwhisper/shortcuts.lua")
 -- Superwhisper managed shortcuts END

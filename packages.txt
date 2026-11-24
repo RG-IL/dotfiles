@@ -47,6 +47,9 @@ pipewire-pulse
 polkit-gnome
 proton-vpn-gtk-app
 qrencode
+qt6-5compat
+qt6-multimedia
+qt6-multimedia-ffmpeg
 qt6-svg
 qt6-virtualkeyboard
 ripgrep
