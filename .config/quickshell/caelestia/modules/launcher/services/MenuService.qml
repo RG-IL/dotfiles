@@ -511,7 +511,6 @@ Singleton {
     }
 
     function enter(row: var): void {
-        console.log("enter:", row?.type, row?.id ?? row?.label ?? row?.internal);
         switch (row?.type) {
         case "submenu":
             root.route = row.id;
@@ -598,7 +597,6 @@ Singleton {
 
     function loadBindings(): void {
         bindingProc.command = ["bash", "-c", `export PATH="${root.binDir}:$PATH"; ${root.binDir}/menu-keybindings --records`];
-        console.log("loadBindings starting");
         bindingProc.running = true;
     }
 
@@ -753,7 +751,6 @@ Singleton {
     }
 
     function loadEmojis(): void {
-        console.log("loadEmojis starting");
         emojiProc.command = ["bash", "-c", "caelestia emoji"];
         emojiProc.running = true;
     }
