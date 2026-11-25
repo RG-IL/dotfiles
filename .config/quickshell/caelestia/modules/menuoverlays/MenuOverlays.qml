@@ -174,6 +174,20 @@ Item {
             return "ok";
         }
 
+        function clipboard(): string {
+            // The content applies the pending prefix when it appears; the
+            // Connections on the service covers an already-open launcher.
+            MenuService.pendingPrefix = "clipboard";
+            ShellState.forActive().launcher = true;
+            return "ok";
+        }
+
+        function emoji(): string {
+            MenuService.pendingPrefix = "emoji";
+            ShellState.forActive().launcher = true;
+            return "ok";
+        }
+
         function speedtest(): string {
             networkSpeedTest.open();
             return "ok";

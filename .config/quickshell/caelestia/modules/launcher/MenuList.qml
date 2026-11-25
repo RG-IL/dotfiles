@@ -32,8 +32,13 @@ StyledListView {
             root.search.text = "@remind ";
             return;
         }
+        // Clipboard & Emoji hand off to the >clipboard / >emoji views.
+        if (row.type === "internal" && (row.internal === "clipboard" || row.internal === "emoji")) {
+            root.search.text = `${GlobalConfig.launcher.actionPrefix}${row.internal} `;
+            return;
+        }
         // Entering a section or the keybindings view drops the active search.
-        const staysOpen = row.type === "submenu" || (row.type === "internal" && (row.internal === "keybindings" || row.internal === "emoji"));
+        const staysOpen = row.type === "submenu" || (row.type === "internal" && row.internal === "keybindings");
         if (staysOpen)
             root.search.clear();
         MenuService.enter(row);
@@ -49,7 +54,7 @@ StyledListView {
         values: {
             // Reference reactive state so the binding re-evaluates after
             // async loads (tree parse, cond batch, bindings) and navigation.
-            const deps = `${MenuService.loaded}|${MenuService.route}|${MenuService.mode}|${Object.keys(MenuService.conds).length}|${MenuService.bindings.length}|${MenuService.emojis.length}`;
+            const deps = `${MenuService.loaded}|${MenuService.route}|${MenuService.mode}|${Object.keys(MenuService.conds).length}|${MenuService.bindings.length}`;
             return MenuService.rowsFor(root.search.text);
         }
         onValuesChanged: root.settle()

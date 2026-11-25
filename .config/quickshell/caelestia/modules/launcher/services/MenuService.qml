@@ -21,13 +21,15 @@ Singleton {
     // Current navigation state
     property string route: ""
     property string mode: "menu" // "menu" | "keybindings"
+    // A launcher view a keybind or IPC asked for (e.g. "clipboard"), applied
+    // by the launcher content whenever it next appears.
+    property string pendingPrefix: ""
 
     // Condition string -> bool
     property var conds: ({})
 
     // Keybinding rows for the searchable keybindings view
     property var bindings: []
-    property var emojis: []
 
     signal viewChanged
 
@@ -310,16 +312,6 @@ Singleton {
                     }));
         }
 
-        if (root.mode === "emoji") {
-            const q = query.trim().toLowerCase();
-            return root.emojis.filter(e => q === "" || e.name.toLowerCase().includes(q)).slice(0, 200).map(e => ({
-                        type: "emoji",
-                        label: e.name,
-                        icon: e.char,
-                        char: e.char
-                    }));
-        }
-
         const needle = query.trim().toLowerCase();
 
         // Navigation: current level in natural menu order.
@@ -498,7 +490,7 @@ Singleton {
 
     // Returns true when something was popped, false when already at root
     function back(): bool {
-        if (root.mode === "keybindings" || root.mode === "emoji") {
+        if (root.mode === "keybindings") {
             root.mode = "menu";
         } else if (root.route !== "") {
             const idx = root.route.lastIndexOf(".");
@@ -537,9 +529,6 @@ Singleton {
         case "binding":
             root.dispatchBinding(row);
             break;
-        case "emoji":
-            Quickshell.execDetached(["bash", "-c", `printf '%s' '${row.char}' | wl-copy`]);
-            break;
         }
     }
 
@@ -554,11 +543,6 @@ Singleton {
         case "keybindings":
             root.mode = "keybindings";
             root.loadBindings();
-            root.viewChanged();
-            break;
-        case "emoji":
-            root.mode = "emoji";
-            root.loadEmojis();
             root.viewChanged();
             break;
         case "speedtest-network":
@@ -598,31 +582,6 @@ Singleton {
     function loadBindings(): void {
         bindingProc.command = ["bash", "-c", `export PATH="${root.binDir}:$PATH"; ${root.binDir}/menu-keybindings --records`];
         bindingProc.running = true;
-    }
-
-    Process {
-        id: emojiProc
-
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const rows = [];
-                const lines = text.trim().split("\n");
-                for (let i = 0; i < lines.length; i++) {
-                    const sp = lines[i].indexOf(" ");
-                    if (sp < 1)
-                        continue;
-                    const name = lines[i].slice(sp + 1);
-                    if (name.toLowerCase().includes("regional indicator"))
-                        continue;
-                    rows.push({
-                        char: lines[i].slice(0, sp),
-                        name
-                    });
-                }
-                root.emojis = rows;
-                root.viewChanged();
-            }
-        }
     }
 
     // The menu definition is watched: an edit to menu.jsonc reshapes the menu
@@ -748,10 +707,5 @@ Singleton {
                 root.viewChanged();
             }
         }
-    }
-
-    function loadEmojis(): void {
-        emojiProc.command = ["bash", "-c", "caelestia emoji"];
-        emojiProc.running = true;
     }
 }

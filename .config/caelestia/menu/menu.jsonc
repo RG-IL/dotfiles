@@ -42,6 +42,7 @@
   // Trigger
   "trigger.reminder": {"icon":"󰢌","label":"Reminder","aliases":["reminder"]},
   "trigger.emoji": {"icon":"󰞅","label":"Emoji","aliases":["emoji-picker","emote","smiley"],"internal":"emoji"},
+  "trigger.clipboard": {"icon":"󰅇","label":"Clipboard History","aliases":["clipboard","cliphist"],"internal":"clipboard"},
   "trigger.reminder.set": {"icon":"󰢌","label":"Set one…","aliases":["reminder-set","remind"]},
   "trigger.reminder.show": {"icon":"󰢌","label":"Show all","action":"menu-reminder show"},
   "trigger.reminder.clear": {"icon":"󰢌","label":"Clear all","action":"menu-reminder clear"},

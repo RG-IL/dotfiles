@@ -17,6 +17,9 @@ Item {
 
     readonly property int padding: Tokens.padding.large
     readonly property int rounding: Tokens.rounding.extraLarge
+    // Exposed for the drawers layer: Panels reads the clipboard selection
+    // through it to drive the preview panel beside the launcher.
+    readonly property alias list: list
 
     implicitWidth: listWrapper.width + padding * 2
     implicitHeight: search.height + listWrapper.height + padding + search.anchors.bottomMargin
@@ -92,6 +95,15 @@ Item {
                         Wallpapers.previewColourLock = true;
                     Wallpapers.setWallpaper(currentItem.modelData.path);
                     root.screenState.launcher = false;
+                } else if (list.showClipboard) {
+                    // Plain Enter pastes into the window below (handled in
+                    // Keys.onPressed, which sees the modifiers); reaching
+                    // here means Shift+Enter: copy only.
+                    Clipboard.copyToClipboard(currentItem.modelData);
+                    root.screenState.launcher = false;
+                } else if (list.showEmoji) {
+                    Emojis.copyEmoji(currentItem.modelData);
+                    root.screenState.launcher = false;
                 } else if (text.startsWith(GlobalConfig.launcher.actionPrefix)) {
                     if (text.startsWith(`${GlobalConfig.launcher.actionPrefix}calc `))
                         currentItem.onClicked();
@@ -114,7 +126,7 @@ Item {
             // the menu at the route it was opened from.
             if (event.key === Qt.Key_Backspace && !event.modifiers) {
                 const pfx = GlobalConfig.launcher.actionPrefix;
-                if (text === `${pfx}wallpaper ` || text === `${pfx}scheme `) {
+                if (text === `${pfx}wallpaper ` || text === `${pfx}scheme ` || text === `${pfx}clipboard ` || text === `${pfx}emoji `) {
                     clear();
                     event.accepted = true;
                     return;
@@ -141,6 +153,69 @@ Item {
                 return;
             }
 
+            // Omacale's clipboard keys, in the PR's launcher: Enter pastes
+            // into the window below, Shift+Enter copies, Alt+Enter opens,
+            // Delete removes, Shift+Delete asks before wiping, PageUp/Down
+            // page through.
+            if (list.showClipboard) {
+                if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                    const currentItem = list.currentList?.currentItem;
+                    if (currentItem) {
+                        if (event.modifiers & Qt.AltModifier)
+                            Clipboard.openItem(currentItem.modelData);
+                        else if (event.modifiers & Qt.ShiftModifier)
+                            Clipboard.copyToClipboard(currentItem.modelData);
+                        else
+                            Clipboard.pasteIntoWindow(currentItem.modelData);
+                        root.screenState.launcher = false;
+                    }
+                    event.accepted = true;
+                    return;
+                }
+                if (event.key === Qt.Key_Delete && !event.modifiers) {
+                    const currentItem = list.currentList?.currentItem;
+                    if (currentItem) {
+                        list.currentList.deletedItemIndex = list.currentList.currentIndex;
+                        Clipboard.deleteItem(currentItem.modelData);
+                    }
+                    event.accepted = true;
+                    return;
+                }
+                if (event.key === Qt.Key_Delete && (event.modifiers & Qt.ShiftModifier)) {
+                    list.currentList.showClearConfirmation = true;
+                    event.accepted = true;
+                    return;
+                }
+                if ((event.key === Qt.Key_PageDown || event.key === Qt.Key_PageUp) && list.currentList) {
+                    const clipList = list.currentList;
+                    clipList.currentIndex = Math.max(0, Math.min(clipList.count - 1, clipList.currentIndex + (event.key === Qt.Key_PageDown ? 5 : -5)));
+                    event.accepted = true;
+                    return;
+                }
+            }
+
+            // Left/Right walk the emoji grid cell by cell.
+            if (list.showEmoji && (event.key === Qt.Key_Left || event.key === Qt.Key_Right)) {
+                const gridList = list.currentList;
+                if (gridList && (event.key === Qt.Key_Left ? gridList.moveLeft : gridList.moveRight)) {
+                    if (event.key === Qt.Key_Left)
+                        gridList.moveLeft();
+                    else
+                        gridList.moveRight();
+                    event.accepted = true;
+                    return;
+                }
+            }
+
+            // Tab cycles the category bar in the clipboard and emoji views;
+            // everywhere else it moves the list selection.
+            if ((list.showClipboard || list.showEmoji) && (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab)) {
+                const delta = event.key === Qt.Key_Backtab || (event.modifiers & Qt.ShiftModifier) ? -1 : 1;
+                list.currentList?.cycleTab(delta);
+                event.accepted = true;
+                return;
+            }
+
             if (!GlobalConfig.launcher.vimKeybinds)
                 return;
 
@@ -161,7 +236,15 @@ Item {
             }
         }
 
-        Component.onCompleted: forceActiveFocus()
+        Component.onCompleted: {
+            forceActiveFocus();
+            // An IPC/keybind asked for a clipboard or emoji view before the
+            // content existed.
+            if (MenuService.pendingPrefix !== "") {
+                search.text = `${GlobalConfig.launcher.actionPrefix}${MenuService.pendingPrefix} `;
+                MenuService.pendingPrefix = "";
+            }
+        }
 
         Connections {
             function onLauncherChanged(): void {
@@ -183,6 +266,18 @@ Item {
             }
 
             target: root.screenState
+        }
+
+        Connections {
+            function onPendingPrefixChanged(): void {
+                if (MenuService.pendingPrefix !== "") {
+                    search.text = `${GlobalConfig.launcher.actionPrefix}${MenuService.pendingPrefix} `;
+                    search.forceActiveFocus();
+                    MenuService.pendingPrefix = "";
+                }
+            }
+
+            target: MenuService
         }
     }
 }

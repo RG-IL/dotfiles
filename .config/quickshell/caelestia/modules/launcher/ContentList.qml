@@ -20,10 +20,12 @@ Item {
     required property int rounding
 
     readonly property bool showWallpapers: search.text.startsWith(`${GlobalConfig.launcher.actionPrefix}wallpaper `)
+    readonly property bool showClipboard: search.text.startsWith(`${GlobalConfig.launcher.actionPrefix}clipboard `)
+    readonly property bool showEmoji: search.text.startsWith(`${GlobalConfig.launcher.actionPrefix}emoji `)
     readonly property bool showMenu: !search.text.startsWith(GlobalConfig.launcher.actionPrefix)
     readonly property string hintText: showMenu ? qsTr("Search menu…") : qsTr("Type \"%1\" for commands").arg(GlobalConfig.launcher.actionPrefix)
-    readonly property var currentList: showMenu ? menuList.item : showWallpapers ? wallpaperList.item : appList.item // Can be either ListView or PathView, so can't type properly
-    property string animState: showMenu ? "menu" : showWallpapers ? "wallpapers" : "apps"
+    readonly property var currentList: showMenu ? menuList.item : showWallpapers ? wallpaperList.item : showClipboard ? clipboardList.item : showEmoji ? emojiList.item : appList.item // Can be either ListView or GridView, so can't type properly
+    property string animState: showMenu ? "menu" : showWallpapers ? "wallpapers" : showClipboard ? "clipboard" : showEmoji ? "emoji" : "apps"
 
     anchors.horizontalCenter: parent.horizontalCenter
     anchors.bottom: parent.bottom
@@ -67,6 +69,34 @@ Item {
                 root.implicitWidth: Math.max(root.Tokens.sizes.launcher.itemWidth * 1.2, wallpaperList.implicitWidth)
                 root.implicitHeight: root.Tokens.sizes.launcher.wallpaperHeight
                 wallpaperList.active: true
+            }
+        },
+        State {
+            name: "clipboard"
+
+            PropertyChanges {
+                root.implicitWidth: root.Tokens.sizes.launcher.itemWidth
+                root.implicitHeight: Math.min(root.maxHeight, clipboardList.implicitHeight > 0 ? clipboardList.implicitHeight : empty.implicitHeight)
+                clipboardList.active: true
+            }
+
+            AnchorChanges {
+                anchors.left: root.parent.left
+                anchors.right: root.parent.right
+            }
+        },
+        State {
+            name: "emoji"
+
+            PropertyChanges {
+                root.implicitWidth: root.Tokens.sizes.launcher.itemWidth
+                root.implicitHeight: Math.min(root.maxHeight, emojiList.implicitHeight > 0 ? emojiList.implicitHeight : empty.implicitHeight)
+                emojiList.active: true
+            }
+
+            AnchorChanges {
+                anchors.left: root.parent.left
+                anchors.right: root.parent.right
             }
         }
     ]
@@ -141,9 +171,46 @@ Item {
         }
     }
 
+    Loader {
+        id: clipboardList
+
+        active: false
+
+        anchors.fill: parent
+
+        sourceComponent: ClipboardList {
+            objectName: "launcherClipboardList"
+
+            search: root.search
+            screenState: root.screenState
+        }
+    }
+
+    Loader {
+        id: emojiList
+
+        active: false
+
+        anchors.fill: parent
+
+        sourceComponent: EmojiList {
+            objectName: "launcherEmojiList"
+
+            search: root.search
+            screenState: root.screenState
+        }
+    }
+
     Row {
         id: empty
 
+        readonly property string emptyIcon: root.state === "wallpapers" ? "wallpaper_slideshow" : root.state === "menu" && MenuService.error !== "" ? "error" : root.state === "menu" ? "menu_open" : root.state === "clipboard" ? "content_paste" : root.state === "emoji" ? "sentiment_satisfied" : "manage_search"
+        readonly property string emptyTitle: root.state === "wallpapers" ? qsTr("No wallpapers found") : root.state === "menu" && MenuService.error !== "" ? qsTr("The menu definition is broken") : root.state === "menu" ? qsTr("No matching entries") : root.state === "clipboard" ? qsTr("No clipboard history") : root.state === "emoji" ? qsTr("No emojis found") : qsTr("No results")
+        readonly property string emptySubtitle: root.state === "menu" && MenuService.error !== "" ? MenuService.error : root.state === "wallpapers" && Wallpapers.list.length === 0 ? qsTr("Try putting some wallpapers in %1").arg(Paths.shortenHome(Paths.wallsdir)) : root.state === "clipboard" ? qsTr("Copy something to populate clipboard history") : root.state === "emoji" ? qsTr("Try searching for an emoji") : qsTr("Try searching for something else")
+
+        // The clipboard list draws its own empty state; everything else uses
+        // this one.
+        visible: opacity > 0 && root.state !== "clipboard"
         opacity: root.currentList?.count === 0 ? 1 : 0
         scale: root.currentList?.count === 0 ? 1 : 0.5
 
@@ -154,7 +221,7 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
 
         MaterialIcon {
-            text: root.state === "wallpapers" ? "wallpaper_slideshow" : root.state === "menu" && MenuService.error !== "" ? "error" : root.state === "menu" ? "menu_open" : "manage_search"
+            text: empty.emptyIcon
             color: Colours.palette.m3onSurfaceVariant
             fontStyle: Tokens.font.icon.extraLarge
 
@@ -165,13 +232,13 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
 
             StyledText {
-                text: root.state === "menu" && MenuService.error !== "" ? qsTr("The menu definition is broken") : root.state === "wallpapers" ? qsTr("No wallpapers found") : root.state === "menu" ? qsTr("No matching entries") : qsTr("No results")
+                text: empty.emptyTitle
                 color: Colours.palette.m3onSurfaceVariant
                 font: Tokens.font.body.builders.large.weight(Font.Medium).build()
             }
 
             StyledText {
-                text: root.state === "menu" && MenuService.error !== "" ? MenuService.error : root.state === "wallpapers" && Wallpapers.list.length === 0 ? qsTr("Try putting some wallpapers in %1").arg(Paths.shortenHome(Paths.wallsdir)) : qsTr("Try searching for something else")
+                text: empty.emptySubtitle
                 color: Colours.palette.m3onSurfaceVariant
                 font: Tokens.font.body.medium
             }
