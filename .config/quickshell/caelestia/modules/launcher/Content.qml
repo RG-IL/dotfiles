@@ -76,6 +76,12 @@ Item {
 
         placeholderText: list.hintText
 
+        // Omarchy's menu keeps the submenu's title in its header; the launcher
+        // has no header, so the route rides in the search bar as a pill. The
+        // empty query is the menu's root, where the pill hides.
+        crumbText: list.showMenu && MenuService.route !== "" ? MenuService.breadcrumb() : ""
+        onCrumbClicked: MenuService.back()
+
         onAccepted: {
             const currentItem = list.currentList?.currentItem;
             if (currentItem) {
