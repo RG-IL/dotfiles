@@ -15,6 +15,8 @@ Singleton {
 
     property var tree: null
     property bool loaded: false
+    // Set when menu.jsonc failed to parse or read; cleared on the next good load.
+    property string error: ""
 
     // Current navigation state
     property string route: ""
@@ -625,22 +627,34 @@ Singleton {
         }
     }
 
-    Process {
-        id: loader
+    // The menu definition is watched: an edit to menu.jsonc reshapes the menu
+    // without a shell restart. An edit that breaks the parse keeps the last
+    // good tree working and reports itself through `error`.
+    FileView {
+        id: menuFile
 
-        running: true
-        command: ["cat", `${root.menuDir}/menu.jsonc`]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    root.tree = root.parseJsonc(text);
-                    root.loaded = true;
-                    root.evalConds();
-                } catch (e) {
-                    console.warn("MenuService: failed to parse menu.jsonc:", e);
-                }
+        path: `${root.menuDir}/menu.jsonc`
+        watchChanges: true
+        printErrors: false
+
+        onLoaded: {
+            try {
+                root.tree = root.parseJsonc(text());
+                root.loaded = true;
+                root.error = "";
+                root.evalConds();
+            } catch (e) {
+                root.error = e.message ?? String(e);
+                console.warn("MenuService: failed to parse menu.jsonc:", e);
             }
         }
+
+        onLoadFailed: error => {
+            root.error = `menu.jsonc could not be read (${error})`;
+            console.warn("MenuService:", root.error);
+        }
+
+        onFileChanged: reload()
     }
 
     // Guard bookkeeping: one batch answers every condition, but a rerun must
