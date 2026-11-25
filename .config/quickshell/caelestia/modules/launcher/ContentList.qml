@@ -5,6 +5,7 @@ import Caelestia.Config
 import qs.components
 import qs.components.controls
 import qs.services
+import qs.modules.launcher.services
 import qs.utils
 
 Item {
@@ -153,7 +154,7 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
 
         MaterialIcon {
-            text: root.state === "wallpapers" ? "wallpaper_slideshow" : root.state === "menu" ? "menu_open" : "manage_search"
+            text: root.state === "wallpapers" ? "wallpaper_slideshow" : root.state === "menu" && MenuService.error !== "" ? "error" : root.state === "menu" ? "menu_open" : "manage_search"
             color: Colours.palette.m3onSurfaceVariant
             fontStyle: Tokens.font.icon.extraLarge
 
@@ -164,13 +165,13 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
 
             StyledText {
-                text: root.state === "wallpapers" ? qsTr("No wallpapers found") : root.state === "menu" ? qsTr("No matching entries") : qsTr("No results")
+                text: root.state === "menu" && MenuService.error !== "" ? qsTr("The menu definition is broken") : root.state === "wallpapers" ? qsTr("No wallpapers found") : root.state === "menu" ? qsTr("No matching entries") : qsTr("No results")
                 color: Colours.palette.m3onSurfaceVariant
                 font: Tokens.font.body.builders.large.weight(Font.Medium).build()
             }
 
             StyledText {
-                text: root.state === "wallpapers" && Wallpapers.list.length === 0 ? qsTr("Try putting some wallpapers in %1").arg(Paths.shortenHome(Paths.wallsdir)) : qsTr("Try searching for something else")
+                text: root.state === "menu" && MenuService.error !== "" ? MenuService.error : root.state === "wallpapers" && Wallpapers.list.length === 0 ? qsTr("Try putting some wallpapers in %1").arg(Paths.shortenHome(Paths.wallsdir)) : qsTr("Try searching for something else")
                 color: Colours.palette.m3onSurfaceVariant
                 font: Tokens.font.body.medium
             }
