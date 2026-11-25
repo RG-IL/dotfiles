@@ -115,11 +115,23 @@ Item {
                 }
             }
 
-            if (event.key === Qt.Key_Backspace && !event.modifiers && list.showMenu && text === "") {
+            // Omarchy's menu keys: Backspace and Left climb back out of a
+            // submenu once the query is empty; at the root Backspace is left
+            // alone so it cannot eat the launcher open. Right at the end of
+            // the query walks into (or runs) the row under the cursor.
+            if ((event.key === Qt.Key_Backspace || event.key === Qt.Key_Left) && !event.modifiers && list.showMenu && text === "") {
                 if (MenuService.back())
                     event.accepted = true;
                 else
                     root.screenState.launcher = false;
+                return;
+            }
+
+            if (event.key === Qt.Key_Right && !event.modifiers && list.showMenu && text !== "" && cursorPosition === text.length) {
+                const currentItem = list.currentList?.currentItem;
+                if (currentItem)
+                    list.currentList.enterRow(currentItem.modelData);
+                event.accepted = true;
                 return;
             }
 
