@@ -37,10 +37,11 @@ Singleton {
     }
 
     // Re-runs when/checked/disabled conditions shortly after an action fires,
-    // so toggles flip their own checkmark without closing the launcher.
+    // so toggles flip their own checkmark without closing the launcher. This
+    // refresh must not be throttled away: the checkbox depends on it.
     property Timer _condRefreshTimer: Timer {
         interval: 300
-        onTriggered: root.evalConds()
+        onTriggered: root.evalConds(true)
     }
 
     function scheduleCondRefresh(): void {
@@ -642,7 +643,15 @@ Singleton {
         }
     }
 
-    function evalConds(): void {
+    // Guard bookkeeping: one batch answers every condition, but a rerun must
+    // not kill the batch in flight. A killed batch's collector still fires
+    // with the lines read so far, and publishing a half-answered map makes
+    // rows gated by an unanswered `when:` blink out until the next run lands.
+    // Queue a rerun instead, and only publish batches that exited cleanly.
+    property bool _condsQueued: false
+    property real _lastCondRun: 0
+
+    function evalConds(force = false): void {
         const set = new Set();
         function walk(nodes) {
             for (const n of nodes) {
@@ -661,10 +670,17 @@ Singleton {
         if (conds.length === 0)
             return;
 
+        if (condProc.running) {
+            root._condsQueued = true;
+            return;
+        }
+        // Opening the launcher is not a reason to re-run lsusb and pacman
+        // every time; an action's refresh forces it.
+        if (!force && Date.now() - root._lastCondRun < 5000)
+            return;
+        root._condsQueued = false;
+
         const script = conds.map((c, i) => `if ${c} >/dev/null 2>&1; then printf '%s\\t%s\\n' "${i}" true; else printf '%s\\t%s\\n' "${i}" false; fi`).join("\n");
-        // Stop any in-flight batch first; a stale result must not overwrite
-        // a fresher one when evalConds is called repeatedly.
-        condProc.running = false;
         condProc.command = ["bash", "-c", script];
         condProc.condList = conds;
         condProc.running = true;
@@ -677,6 +693,11 @@ Singleton {
 
         stdout: StdioCollector {
             onStreamFinished: {
+                // A failed batch reached only some of the rows, and a
+                // half-answered map would hide rows gated by an unanswered
+                // `when:`. Keep the last complete set instead.
+                if (condProc.exitCode !== 0)
+                    return;
                 const map = {};
                 const lines = text.trim().split("\n");
                 for (let i = 0; i < lines.length; i++) {
@@ -687,6 +708,9 @@ Singleton {
                 }
                 root.conds = map;
                 root.viewChanged();
+                root._lastCondRun = Date.now();
+                if (root._condsQueued)
+                    root.evalConds(true);
             }
         }
     }
