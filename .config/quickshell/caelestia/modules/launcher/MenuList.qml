@@ -17,6 +17,10 @@ StyledListView {
     required property ScreenState screenState
 
     function enterRow(row: var): void {
+        // A disabled row (software already installed, a half-typed reminder)
+        // is listed to be read, not picked: leave the launcher as it is.
+        if (row.type === "item" && row.disabled)
+            return;
         // Wallpaper & Theme hand off to the native >wallpaper / >scheme flows;
         // Set Reminder opens the interactive >remind input.
         if (row.type === "submenu" && (row.id === "style.background" || row.id === "style.theme")) {
@@ -48,17 +52,35 @@ StyledListView {
             const deps = `${MenuService.loaded}|${MenuService.route}|${MenuService.mode}|${Object.keys(MenuService.conds).length}|${MenuService.bindings.length}|${MenuService.emojis.length}`;
             return MenuService.rowsFor(root.search.text);
         }
-        onValuesChanged: root.currentIndex = 0
+        onValuesChanged: root.settle()
     }
 
-    // Keyboard selection that steps over separator rows.
+    // Keyboard selection that steps over separator rows and dimmed disabled
+    // rows: neither can take the cursor.
     function move(dir: int): void {
         const vals = menuModel.values ?? [];
         let i = root.currentIndex + dir;
-        while (i >= 0 && i < vals.length && vals[i]?.type === "separator")
+        while (i >= 0 && i < vals.length && !root.pickable(vals[i]))
             i += dir;
         if (i >= 0 && i < vals.length)
             root.currentIndex = i;
+    }
+
+    // Omarchy's settleCursor: a view that opens onto a disabled row parks the
+    // highlight on the first row that can take it, so the first Enter still
+    // does something.
+    function settle(): void {
+        const vals = menuModel.values ?? [];
+        for (let i = 0; i < vals.length; i++) {
+            if (root.pickable(vals[i])) {
+                root.currentIndex = i;
+                return;
+            }
+        }
+    }
+
+    function pickable(row: var): bool {
+        return row !== undefined && row !== null && row.type !== "separator" && !(row.type === "item" && row.disabled);
     }
 
     spacing: Tokens.spacing.small

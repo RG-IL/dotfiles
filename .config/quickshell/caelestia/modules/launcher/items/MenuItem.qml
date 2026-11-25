@@ -22,7 +22,9 @@ Item {
 
     StateLayer {
         radius: Tokens.rounding.large
-        enabled: !root.isSeparator && !(root.modelData?.type === "item" && root.modelData?.disabled)
+        // Separators and disabled rows are not pickable: no hover ripple, and
+        // the arrow cursor instead of the pointing hand.
+        disabled: root.isSeparator || (root.modelData?.type === "item" && root.modelData?.disabled === true)
         onClicked: root.list.enterRow(root.modelData)
     }
 
