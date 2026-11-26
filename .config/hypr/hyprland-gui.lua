@@ -15,6 +15,6 @@ hl.monitor({
 hl.unbind("SUPER + T")
 hl.bind("SUPER + Return", hl.dsp.exec_cmd("ghostty +new-window"))
 hl.unbind("SUPER + W")
-hl.bind("SUPER + SHIFT + Return", hl.dsp.exec_cmd("helium-browser"))
+hl.bind("SUPER + SHIFT + Return", hl.dsp.exec_cmd("browser=$(xdg-settings get default-web-browser); gtk-launch \"${browser%.desktop}\""))
 hl.unbind("SUPER + CTRL + V")
 hl.bind("SUPER + CTRL + V", hl.dsp.exec_cmd("pkill fuzzel || caelestia clipboard"))

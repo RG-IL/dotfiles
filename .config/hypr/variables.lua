@@ -7,7 +7,7 @@ return {
 
     -- Apps
     terminal                   = "ghostty",
-    browser                    = "firefox",
+    browser                    = "browser=$(xdg-settings get default-web-browser); gtk-launch \"${browser%.desktop}\"",
     editor                     = "codium",
     fileExplorer               = "thunar",
     audioSettings              = "pwvucontrol",
