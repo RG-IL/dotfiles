@@ -13,20 +13,50 @@ set -euo pipefail
 # the pinned revision no longer compiles. If a clone is missing (cleared paru
 # cache), it is cloned fresh from the AUR and pinned the same way, so recovery
 # keeps the same version policy.
+#
+# Failures are collected in ISSUES and printed as a numbered summary at the
+# end, each with the exact command that fixes it, instead of scattered
+# WARNING lines that vanish into scrollback.
 
 qt_state="${XDG_CACHE_HOME:-$HOME/.cache}/caelestia-update/qt6-built-against"
 
+ISSUES=()
+add_issue() { ISSUES+=("$1"); }
+
 compat_ok() { quickshell --private-check-compat >/dev/null 2>&1; }
 
+# Pull the package names out of makepkg's "==> Missing dependencies:" block
+deps_of() {
+    awk '/Missing dependencies:/{f=1;next} /^==>/{f=0} f && /^  -> /{sub(/^  -> /,""); printf "%s ", $1}' "$1"
+}
+
+last_error() { grep '^==> ERROR' "$1" | tail -1 | cut -c1-120; }
+
+# Record the reason a makepkg invocation failed, with a concrete fix command
+note_makepkg_failure() {
+    local name=$1 log=$2
+    local missing reason
+    missing=$(deps_of "$log")
+    reason=$(last_error "$log")
+    if [[ -n $missing ]]; then
+        # makepkg -s already tries to install deps via sudo; getting here means
+        # passwordless sudo was not available (or pacman failed mid-install)
+        add_issue "$name: missing build dependencies ($missing). Fix: enable passwordless sudo, then run: sudo pacman -S --needed $missing && paru -S --rebuild $name"
+    else
+        add_issue "$name: makepkg failed${reason:+ ($reason)}. Fix: run: paru -S --rebuild $name"
+    fi
+}
+
 rebuild_git_clone() {
-    local name=$1 dir srcdir sha pkg tag sha_repo
+    local name=$1 dir srcdir sha pkg tag sha_repo build_log
     dir="$HOME/.cache/paru/clone/$name"
+    build_log=$(mktemp)
 
     # Recover the AUR clone if the paru cache was cleared
     if [[ ! -f $dir/PKGBUILD ]]; then
         echo ":: no paru clone for $name; cloning it fresh from the AUR"
         if ! git clone -q "https://aur.archlinux.org/$name.git" "$dir" 2>/dev/null; then
-            echo ":: WARNING: could not clone $name from the AUR (offline?); run 'paru -S --rebuild $name' manually" >&2
+            add_issue "$name: could not clone from the AUR (offline?). Fix: retry when online, or run: paru -S --rebuild $name"
             return 1
         fi
     fi
@@ -36,14 +66,17 @@ rebuild_git_clone() {
     # The AUR repo's own .git is excluded.
     srcdir=$(find "$dir" -type d -name .git -not -path "$dir/.git" -exec dirname {} \; 2>/dev/null | head -1)
     if [[ -z $srcdir ]]; then
-        (cd "$dir" && makepkg -o --noconfirm) || {
-            echo ":: WARNING: could not fetch sources for $name; run 'paru -S --rebuild $name' manually" >&2
+        # -s: install missing build deps via sudo instead of failing on them.
+        # paru strips -make deps after an install, so a later rebuild always
+        # needs some back.
+        if ! (cd "$dir" && makepkg -o -s --noconfirm) 2>"$build_log"; then
+            note_makepkg_failure "$name" "$build_log"
             return 1
-        }
+        fi
         srcdir=$(find "$dir" -type d -name .git -not -path "$dir/.git" -exec dirname {} \; 2>/dev/null | head -1)
     fi
     if [[ -z $srcdir ]]; then
-        echo ":: WARNING: could not locate the source checkout for $name; run 'paru -S --rebuild $name' manually" >&2
+        add_issue "$name: could not locate the source checkout. Fix: run: paru -S --rebuild $name"
         return 1
     fi
 
@@ -79,20 +112,30 @@ rebuild_git_clone() {
         sed -i "s|\.git\"|.git#commit=$sha\"|" "$dir/PKGBUILD"
     fi
     grep -q "#commit=$sha" "$dir/PKGBUILD" ||
-        echo ":: WARNING: could not pin $name to $sha; building unpinned" >&2
+        echo ":: note: could not pin $name to $sha; building unpinned" >&2
 
     rm -rf "$srcdir/build"
-    if ! (cd "$dir" && makepkg -f --noconfirm); then
+    if ! (cd "$dir" && makepkg -f -s --noconfirm) 2>"$build_log"; then
         echo ":: pinned revision of $name no longer builds; falling back to master"
         git -C "$sha_repo" checkout -q -B master origin/master 2>/dev/null ||
             git -C "$sha_repo" checkout -q master 2>/dev/null || true
         sed -i 's|#commit=[0-9a-f]*||' "$dir/PKGBUILD"
         rm -rf "$srcdir/build"
-        (cd "$dir" && makepkg -f --noconfirm)
+        if ! (cd "$dir" && makepkg -f -s --noconfirm) 2>>"$build_log"; then
+            note_makepkg_failure "$name" "$build_log"
+            return 1
+        fi
     fi
 
     pkg=$(cd "$dir" && ls -t "$name"-*-x86_64.pkg.tar.zst | grep -v -- '-debug-' | head -1 || true)
-    sudo pacman -U --noconfirm "$dir/$pkg"
+    if [[ -z $pkg ]]; then
+        add_issue "$name: built but no package file was produced. Fix: run: paru -S --rebuild $name"
+        return 1
+    fi
+    if ! sudo pacman -U --noconfirm "$dir/$pkg"; then
+        add_issue "$name: built but not installed. Fix: sudo pacman -U $dir/$pkg"
+        return 1
+    fi
 }
 
 ensure_qt_stack() {
@@ -114,13 +157,14 @@ ensure_qt_stack() {
     echo ":: qt6-base is now $cur (last built against: ${prev:-unknown}); rebuilding Qt-linked packages"
     rebuild_git_clone quickshell-git || failed=$((failed + 1))
     rebuild_git_clone qt6-m3shapes-git || failed=$((failed + 1))
-    paru -S --rebuild caelestia-shell qtengine --noconfirm
+    paru -S --rebuild caelestia-shell qtengine --noconfirm ||
+        { add_issue "caelestia-shell/qtengine rebuild failed. Fix: run: paru -S --rebuild caelestia-shell qtengine"; failed=$((failed + 1)); }
 
     mkdir -p "${qt_state%/*}"
     if (( failed == 0 )) && compat_ok; then
         printf '%s\n' "$cur" > "$qt_state"
     else
-        echo ":: WARNING: Qt-linked rebuild incomplete; quickshell may break on its next restart" >&2
+        add_issue "Qt-linked rebuild incomplete; quickshell may break on its next restart. Fix: paru -S --rebuild quickshell-git && caelestia shell -r -d"
         return 1
     fi
 }
@@ -136,7 +180,7 @@ ensure_no_stale_sonames() {
     # rebuild the AUR ones here. Official-repo ones can't be rebuilt locally,
     # so just warn — Arch repackages them in its own repos.
     if ! command -v checkrebuild >/dev/null 2>&1; then
-        echo ":: WARNING: rebuild-detector not installed; cannot check for stale sonames (pacman -S rebuild-detector)" >&2
+        add_issue "rebuild-detector is not installed; stale-soname check skipped. Fix: sudo pacman -S rebuild-detector"
         return 0
     fi
 
@@ -148,13 +192,13 @@ ensure_no_stale_sonames() {
     while read -r pkg; do
         [[ -n $pkg ]] || continue
         if grep -qx "$pkg" <<<"$repo_pkgs"; then
-            echo ":: WARNING: $pkg is an official-repo package linking a stale library; wait for Arch's rebuild" >&2
+            add_issue "$pkg is an official-repo package linking a stale library. Fix: wait for Arch's rebuild (or ignore if harmless)"
         elif [[ $pkg == quickshell-git ]]; then
             rebuild_git_clone quickshell-git || true
         else
             echo ":: $pkg links a stale library; rebuilding"
             paru -S --rebuild --noconfirm "$pkg" ||
-                echo ":: WARNING: could not rebuild $pkg; run 'paru -S --rebuild $pkg' manually" >&2
+                add_issue "$pkg: rebuild failed. Fix: run: paru -S --rebuild $pkg"
         fi
     done <<<"$stale"
 }
@@ -163,8 +207,8 @@ has_update=$(paru -Qu caelestia-shell 2>/dev/null | head -1) || true
 
 if [[ -n $has_update ]]; then
     # caelestia-shell has an update — caelestia update handles everything
-    caelestia update --noconfirm
-    ~/.config/quickshell/caelestia/sync-upstream.sh
+    caelestia update --noconfirm || add_issue "caelestia update failed (exit $?); configs may be out of sync. Fix: re-run the update"
+    ~/.config/quickshell/caelestia/sync-upstream.sh || add_issue "sync-upstream.sh failed; fix: run it manually to re-apply /etc/xdg symlinks"
 else
     # No caelestia-shell update — use wrapper to prevent quickshell-git from updating
     bindir=$(mktemp -d)
@@ -180,11 +224,30 @@ SCRIPT
     chmod +x "$bindir/paru"
     export PATH="$bindir:$PATH"
 
-    caelestia update --noconfirm
+    caelestia update --noconfirm || add_issue "caelestia update failed (exit $?); configs may be out of sync. Fix: re-run the update"
 
     export PATH="${PATH#$bindir:}"
     rm -rf "$bindir"
 fi
 
-ensure_qt_stack
-ensure_no_stale_sonames
+ensure_qt_stack || true
+ensure_no_stale_sonames || true
+
+echo
+echo "════════════════════ UPDATE SUMMARY ══════════════════"
+if (( ${#ISSUES[@]} == 0 )); then
+    echo ":: All clear — update finished without problems."
+else
+    echo ":: ${#ISSUES[@]} issue(s) found, in order of occurrence:"
+    local_i=1
+    for issue in "${ISSUES[@]}"; do
+        echo "  $local_i. $issue"
+        local_i=$((local_i + 1))
+    done
+fi
+echo "══════════════════════════════════════════════════════"
+
+if (( ${#ISSUES[@]} > 0 )); then
+    exit 1
+fi
+exit 0
