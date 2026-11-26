@@ -4,6 +4,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell.Io
 import Caelestia
+import Caelestia.Config
 import Caelestia.Services
 import "services"
 import qs.components
@@ -54,8 +55,10 @@ Item {
             return 0;
         }
 
-        if (previewImage.status === Image.Ready && previewImage.sourceSize.height > 0) {
-            const aspectRatio = previewImage.sourceSize.width / previewImage.sourceSize.height;
+        // implicitWidth/Height are the loaded image's intrinsic size;
+        // sourceSize is never set here, so it would read 0 forever.
+        if (previewImage.status === Image.Ready && previewImage.implicitHeight > 0) {
+            const aspectRatio = previewImage.implicitWidth / previewImage.implicitHeight;
             const maxHeight = 600;
             const minHeight = 200;
             const availableWidth = width - (Tokens.padding.medium * 2);
