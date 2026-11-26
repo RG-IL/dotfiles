@@ -19,8 +19,10 @@ Item {
     // launcher reads the active view and the selected row through these.
     // Hovering a row drives the preview too, as the PR's wrapper does: the
     // list records whether the last interaction was the pointer or the keys.
+    // The hop through currentList matters: the interaction state lives on
+    // the active list, not on the ContentList itself.
     readonly property var currentClipboardItem: {
-        const list = content.item?.list; // qmllint disable missing-property
+        const list = content.item?.list?.currentList; // qmllint disable missing-property
         if (!list)
             return null;
         if (list.lastInteraction === "hover" && list.hoveredItem) {
