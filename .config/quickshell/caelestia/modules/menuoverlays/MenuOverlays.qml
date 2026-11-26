@@ -177,8 +177,10 @@ Item {
         function clipboard(): string {
             const screenState = ShellState.forActive();
             // Toggle, as the PR's keybind does: a second press closes the
-            // clipboard view. Open on another view switches to it.
-            if (screenState.launcher && screenState.panels?.launcher?.showingClipboard) {
+            // clipboard view. Open on another view switches to it. The
+            // panels live on the components state, not the visibility one.
+            const panels = ShellState.componentsForActive().panels;
+            if (screenState.launcher && panels?.launcher?.showingClipboard) {
                 screenState.launcher = false;
                 return "ok";
             }
@@ -191,7 +193,8 @@ Item {
 
         function emoji(): string {
             const screenState = ShellState.forActive();
-            if (screenState.launcher && screenState.panels?.launcher?.showingEmoji) {
+            const panels = ShellState.componentsForActive().panels;
+            if (screenState.launcher && panels?.launcher?.showingEmoji) {
                 screenState.launcher = false;
                 return "ok";
             }
