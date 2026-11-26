@@ -18,6 +18,7 @@ Item {
     // Exposed for the drawers layer: the clipboard preview panel beside the
     // launcher reads the active view and the selected row through these.
     readonly property bool showingClipboard: content.item?.list?.showClipboard ?? false // qmllint disable missing-property
+    readonly property bool showingEmoji: content.item?.list?.showEmoji ?? false // qmllint disable missing-property
     readonly property var currentClipboardItem: content.item?.list?.currentClipboardItem ?? null // qmllint disable missing-property
 
     readonly property real maxHeight: {

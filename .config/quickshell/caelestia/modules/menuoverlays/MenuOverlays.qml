@@ -175,16 +175,28 @@ Item {
         }
 
         function clipboard(): string {
+            const screenState = ShellState.forActive();
+            // Toggle, as the PR's keybind does: a second press closes the
+            // clipboard view. Open on another view switches to it.
+            if (screenState.launcher && screenState.panels?.launcher?.showingClipboard) {
+                screenState.launcher = false;
+                return "ok";
+            }
             // The content applies the pending prefix when it appears; the
             // Connections on the service covers an already-open launcher.
             MenuService.pendingPrefix = "clipboard";
-            ShellState.forActive().launcher = true;
+            screenState.launcher = true;
             return "ok";
         }
 
         function emoji(): string {
+            const screenState = ShellState.forActive();
+            if (screenState.launcher && screenState.panels?.launcher?.showingEmoji) {
+                screenState.launcher = false;
+                return "ok";
+            }
             MenuService.pendingPrefix = "emoji";
-            ShellState.forActive().launcher = true;
+            screenState.launcher = true;
             return "ok";
         }
 
