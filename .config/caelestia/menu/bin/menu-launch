@@ -38,9 +38,18 @@ launch_webapp() {
 
   browser=$(xdg-settings get default-web-browser)
 
+  # Chromium-family browsers open web apps as chromeless --app windows.
+  # Firefox-family browsers have no --app mode: a regular --new-window is
+  # the equivalent — zen's compact mode (enabled at startup) keeps those
+  # windows chromeless while keeping zen's transparency and blur intact.
   case $browser in
-  google-chrome* | brave* | microsoft-edge* | opera* | vivaldi* | helium*) ;;
-  *) browser="chromium.desktop" ;;
+  google-chrome* | brave* | microsoft-edge* | opera* | vivaldi* | helium*)
+    app_mode="chrome" ;;
+  zen* | firefox* | librewolf* | waterfox*)
+    app_mode="firefox" ;;
+  *)
+    browser="chromium.desktop"
+    app_mode="chrome" ;;
   esac
 
   # sed exits nonzero on the paths that don't exist; guard it or pipefail
@@ -50,6 +59,10 @@ launch_webapp() {
   if [[ -z $browser_bin ]]; then
     echo "menu-launch webapp: could not resolve a browser binary from $browser" >&2
     return 1
+  fi
+
+  if [[ $app_mode == firefox ]]; then
+    exec setsid "$browser_bin" --new-window "$1" "${@:2}"
   fi
 
   exec setsid "$browser_bin" --app="$1" "${@:2}"
