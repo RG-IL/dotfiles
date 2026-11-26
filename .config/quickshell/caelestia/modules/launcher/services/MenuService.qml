@@ -661,28 +661,40 @@ Singleton {
         id: condProc
 
         property var condList: []
+        property string collected: ""
 
-        stdout: StdioCollector {
-            onStreamFinished: {
-                // A failed batch reached only some of the rows, and a
-                // half-answered map would hide rows gated by an unanswered
-                // `when:`. Keep the last complete set instead.
-                if (condProc.exitCode !== 0)
-                    return;
-                const map = {};
-                const lines = text.trim().split("\n");
-                for (let i = 0; i < lines.length; i++) {
-                    const fields = lines[i].split("\t");
-                    if (fields.length < 2)
-                        continue;
-                    map[condProc.condList[Number(fields[0])]] = fields[1].trim() === "true";
-                }
-                root.conds = map;
-                root.viewChanged();
-                root._lastCondRun = Date.now();
+        // The exit code only exists as a parameter of the exited signal
+        // (there is no exitCode property on quickshell Process), so the
+        // publish lives here rather than in the collector. A SplitParser
+        // accumulates into `collected` as lines arrive, so it is complete
+        // whenever the process exits.
+        stdout: SplitParser {
+            onRead: data => condProc.collected += data + "\n"
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            // A failed batch reached only some of the rows, and a
+            // half-answered map would hide rows gated by an unanswered
+            // `when:`. Keep the last complete set instead.
+            if (exitCode !== 0 || exitStatus !== 0) {
                 if (root._condsQueued)
                     root.evalConds(true);
+                return;
             }
+            const map = {};
+            const lines = condProc.collected.split("\n");
+            for (let i = 0; i < lines.length; i++) {
+                const fields = lines[i].split("\t");
+                if (fields.length < 2)
+                    continue;
+                map[condProc.condList[Number(fields[0])]] = fields[1].trim() === "true";
+            }
+            root.conds = map;
+            root.viewChanged();
+            root._lastCondRun = Date.now();
+            condProc.collected = "";
+            if (root._condsQueued)
+                root.evalConds(true);
         }
     }
 
