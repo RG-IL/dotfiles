@@ -71,10 +71,20 @@ Item {
         return lastValidHeight;
     }
 
+    property string pendingImageId: ""
+
     function decodeImageToDataUrl(): void {
         if (!currentItem?.modelData?.isImage)
             return;
-        decodeProcess.command = ["sh", "-c", `cliphist decode ${currentItem.modelData.id} | base64 -w 0`];
+        const id = currentItem.modelData.id;
+        // The command cannot change while a process runs; queue the request
+        // for the exit handler instead of killing mid-stream.
+        if (decodeProcess.running) {
+            pendingImageId = id;
+            return;
+        }
+        decodeProcess.decodeId = id;
+        decodeProcess.command = ["sh", "-c", `cliphist decode ${id} | base64 -w 0`];
         decodeProcess.running = true;
     }
 
@@ -102,6 +112,8 @@ Item {
         if (wasImage && !isImage)
             lastValidHeight = 0;
 
+        // A decode queued for the previous row is stale now.
+        pendingImageId = "";
         imageDataUrl = "";
         loadingImage = false;
         extractedImageUrl = "";
@@ -125,25 +137,40 @@ Item {
     Process {
         id: decodeProcess
 
-        stdout: StdioCollector {}
-        onExited: { // qmllint disable signal-handler-parameters
-            if (root.currentItem?.modelData?.isImage) {
-                const b64 = String(stdout.text).trim(); // qmllint disable missing-property
-                if (b64)
-                    root.imageDataUrl = "data:" + (root.currentItem.modelData.mime || "image/png") + ";base64," + b64;
+        property string decodeId: ""
+
+        // The collector's text is only guaranteed at streamFinished (it can
+        // still be empty at onExited), so the publish lives here, guarded
+        // against a decode for a row that is no longer selected.
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const row = root.currentItem?.modelData;
+                if (!row || String(row.id) !== decodeProcess.decodeId)
+                    return;
+                const b64 = String(text).trim();
+                root.imageDataUrl = b64 ? "data:" + (row.mime || "image/png") + ";base64," + b64 : "";
+                root.loadingImage = false;
             }
-            root.loadingImage = false;
+        }
+
+        onExited: { // qmllint disable signal-handler-parameters
+            if (root.pendingImageId !== "") {
+                root.pendingImageId = "";
+                root.decodeImageToDataUrl();
+            }
         }
     }
 
     Process {
         id: decodeHtmlProcess
 
-        stdout: StdioCollector {}
-        onExited: { // qmllint disable signal-handler-parameters
-            root.decodingHtml = false;
-            if (root.currentItem?.modelData?.needsDecodeForUrl) {
-                const srcMatch = String(stdout.text).match(/<img[^>]+src\s*=\s*["']([^"']+)["']/i); // qmllint disable missing-property
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.decodingHtml = false;
+                const row = root.currentItem?.modelData;
+                if (!row?.needsDecodeForUrl)
+                    return;
+                const srcMatch = String(text).match(/<img[^>]+src\s*=\s*["']([^"']+)["']/i);
                 if (srcMatch?.[1])
                     root.extractedImageUrl = srcMatch[1];
             }

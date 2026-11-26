@@ -17,9 +17,19 @@ Item {
 
     // Exposed for the drawers layer: the clipboard preview panel beside the
     // launcher reads the active view and the selected row through these.
+    // Hovering a row drives the preview too, as the PR's wrapper does: the
+    // list records whether the last interaction was the pointer or the keys.
+    readonly property var currentClipboardItem: {
+        const list = content.item?.list; // qmllint disable missing-property
+        if (!list)
+            return null;
+        if (list.lastInteraction === "hover" && list.hoveredItem) {
+            return list.hoveredItem;
+        }
+        return list.currentItem;
+    }
     readonly property bool showingClipboard: content.item?.list?.showClipboard ?? false // qmllint disable missing-property
     readonly property bool showingEmoji: content.item?.list?.showEmoji ?? false // qmllint disable missing-property
-    readonly property var currentClipboardItem: content.item?.list?.currentClipboardItem ?? null // qmllint disable missing-property
 
     readonly property real maxHeight: {
         let max = screen.height - Config.border.thickness * 2 + Tokens.padding.extraLarge;
