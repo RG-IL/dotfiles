@@ -26,5 +26,11 @@ hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
 hl.env("XDG_SESSION_TYPE", "wayland")
 hl.env("XDG_SESSION_DESKTOP", "Hyprland")
 
+-- Daily driver shell: ~/.config/quickshell/caelestia is a symlink to the
+-- caelestia-shell PR checkout, so `caelestia shell` loads that tree and needs
+-- its own built Caelestia modules instead of the packaged 2.5.0 ones.
+hl.env("QML2_IMPORT_PATH", os.getenv("HOME") .. "/Projects/caelestia-shell/build/qml")
+hl.env("CAELESTIA_LIB_DIR", os.getenv("HOME") .. "/Projects/caelestia-shell/build/lib")
+
 -- Others
 hl.env("_JAVA_AWT_WM_NONREPARENTING", "1")

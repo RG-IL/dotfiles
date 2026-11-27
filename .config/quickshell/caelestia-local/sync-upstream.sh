@@ -64,4 +64,4 @@ sync_tree() {
 sync_tree "$UPSTREAM" "$HERE"
 
 echo
-echo "done — apply with: qs -c caelestia kill; sleep .3; caelestia shell -d"
+echo "done — apply with: qs -c caelestia-local kill; sleep .3; qs -c caelestia-local -d"

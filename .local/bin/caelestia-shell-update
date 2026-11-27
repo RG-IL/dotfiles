@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Update the PR checkout, rebuild its QML plugins, and restart the daily shell.
+set -euo pipefail
+
+repo="$HOME/Projects/caelestia-shell"
+
+git -C "$repo" pull --ff-only origin feat/launcher-menu
+cmake --build "$repo/build"
+"$HOME/.local/bin/caelestia-shell-pr"

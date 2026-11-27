@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Switch back to the daily driver: the caelestia-shell PR checkout.
+set -euo pipefail
+
+repo="$HOME/Projects/caelestia-shell"
+
+qs -c caelestia-local kill 2>/dev/null || true
+qs -c caelestia kill 2>/dev/null || true
+sleep 0.3
+export QML2_IMPORT_PATH="$repo/build/qml"
+export CAELESTIA_LIB_DIR="$repo/build/lib"
+exec /usr/bin/caelestia shell -d

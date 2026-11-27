@@ -1,8 +1,10 @@
 # /etc/xdg symlinks managed by sync-upstream.sh; only real overrides are tracked
-.config/quickshell/caelestia/modules/dashboard/*.qml
-.config/quickshell/caelestia/modules/dashboard/dash
-.config/quickshell/caelestia/modules/dashboard/media
-.config/quickshell/caelestia/modules/dashboard/performance
+.config/quickshell/caelestia-local/modules/dashboard/*.qml
+.config/quickshell/caelestia-local/modules/dashboard/dash
+.config/quickshell/caelestia-local/modules/dashboard/media
+.config/quickshell/caelestia-local/modules/dashboard/performance
+# daily driver: symlink to the caelestia-shell PR checkout (see setup.sh / README)
+.config/quickshell/caelestia
 .config/nvim/lazy-lock.json
 # runtime file toggling the default AI assistant in nvim
 .config/nvim/.ai_default

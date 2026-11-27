@@ -249,7 +249,7 @@ has_update=$(paru -Qu caelestia-shell 2>/dev/null | head -1) || true
 if [[ -n $has_update ]]; then
     # caelestia-shell has an update — caelestia update handles everything
     caelestia update --noconfirm || add_issue "caelestia update failed (exit $?); configs may be out of sync. Fix: re-run the update"
-    ~/.config/quickshell/caelestia/sync-upstream.sh || add_issue "sync-upstream.sh failed; fix: run it manually to re-apply /etc/xdg symlinks"
+    ~/.config/quickshell/caelestia-local/sync-upstream.sh || add_issue "sync-upstream.sh failed; fix: run it manually to re-apply /etc/xdg symlinks"
 else
     # No caelestia-shell update — use wrapper to prevent quickshell-git from updating
     bindir=$(mktemp -d)

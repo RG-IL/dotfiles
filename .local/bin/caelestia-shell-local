@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Switch to the local backup shell: the package-tracked tree (with symlinks to
+# /etc/xdg) plus the personal launcher/overlay overrides in dotfiles.
+# The daily driver is the PR checkout symlinked into ~/.config/quickshell/caelestia.
+set -euo pipefail
+
+qs -c caelestia kill 2>/dev/null || true
+qs -c caelestia-local kill 2>/dev/null || true
+sleep 0.3
+# The session sets QML2_IMPORT_PATH for the PR checkout; the local tree needs
+# the installed caelestia-shell modules instead.
+exec env -u QML2_IMPORT_PATH -u CAELESTIA_LIB_DIR qs -c caelestia-local -n -d
