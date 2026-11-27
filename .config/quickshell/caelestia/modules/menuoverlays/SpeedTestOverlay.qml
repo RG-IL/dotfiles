@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Shapes
@@ -134,6 +136,9 @@ Item {
         // qmllint enable uncreatable-type
         id: cardWindow
 
+        readonly property real cardLeft: Math.max(0, Math.round((screen.width - card.width) / 2))
+        readonly property real cardTop: Math.max(0, Math.round((screen.height - card.height) / 2 + (root.stackCenter - 0.5) * screen.height))
+
         visible: root.open
         color: "transparent"
         exclusionMode: ExclusionMode.Ignore
@@ -155,10 +160,10 @@ Item {
         implicitWidth: card.width
         implicitHeight: card.height
 
-        margins.left: Math.max(0, Math.round((screen.width - card.width) / 2))
-        margins.right: Math.max(0, screen.width - card.width - margins.left)
-        margins.top: Math.max(0, Math.round((screen.height - card.height) / 2 + (root.stackCenter - 0.5) * screen.height))
-        margins.bottom: Math.max(0, screen.height - card.height - margins.top)
+        margins.left: cardLeft
+        margins.right: Math.max(0, screen.width - card.width - cardLeft)
+        margins.top: cardTop
+        margins.bottom: Math.max(0, screen.height - card.height - cardTop)
 
         Behavior on margins.top {
             NumberAnimation {

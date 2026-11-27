@@ -5,7 +5,6 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
-import qs.services
 import qs.modules.launcher.services
 import "Model.js" as Model
 
@@ -261,6 +260,9 @@ Item {
         // qmllint enable uncreatable-type
         id: cardWindow
 
+        readonly property real cardLeft: Math.max(0, Math.round((screen.width - card.width) / 2))
+        readonly property real cardTop: Math.max(0, Math.round((screen.height - card.height) / 2 + (root.stackCenter - 0.5) * screen.height))
+
         visible: root.opened
         color: "transparent"
         exclusionMode: ExclusionMode.Ignore
@@ -282,10 +284,10 @@ Item {
         implicitWidth: card.width
         implicitHeight: card.height
 
-        margins.left: Math.max(0, Math.round((screen.width - card.width) / 2))
-        margins.right: Math.max(0, screen.width - card.width - margins.left)
-        margins.top: Math.max(0, Math.round((screen.height - card.height) / 2 + (root.stackCenter - 0.5) * screen.height))
-        margins.bottom: Math.max(0, screen.height - card.height - margins.top)
+        margins.left: cardLeft
+        margins.right: Math.max(0, screen.width - card.width - cardLeft)
+        margins.top: cardTop
+        margins.bottom: Math.max(0, screen.height - card.height - cardTop)
 
         Behavior on margins.top {
             NumberAnimation {
@@ -364,10 +366,13 @@ Item {
                     id: qrCanvas
 
                     readonly property int moduleSize: root.qrSize > 0 ? Math.max(4, Math.floor(240 / root.qrSize)) : 0
+                    readonly property int side: root.qrSize * moduleSize
 
                     visible: root.showingQr
-                    width: root.qrSize * moduleSize
-                    height: width
+                    implicitWidth: side
+                    implicitHeight: side
+                    Layout.preferredWidth: side
+                    Layout.preferredHeight: side
                     color: "white"
                     radius: 12
                     Layout.alignment: Qt.AlignHCenter
