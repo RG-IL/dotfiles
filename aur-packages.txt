@@ -11,4 +11,3 @@ quickshell-git
 spotify
 ttf-rubik-vf
 zsh-fast-syntax-highlighting
-hyprmod
