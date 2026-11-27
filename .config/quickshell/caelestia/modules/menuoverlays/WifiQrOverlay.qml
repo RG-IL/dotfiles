@@ -260,43 +260,29 @@ Item {
         // qmllint enable uncreatable-type
         id: cardWindow
 
-        readonly property real cardLeft: Math.max(0, Math.round((screen.width - card.width) / 2))
-        readonly property real cardTop: Math.max(0, Math.round((screen.height - card.height) / 2 + (root.stackCenter - 0.5) * screen.height))
-
         visible: root.opened
         color: "transparent"
         exclusionMode: ExclusionMode.Ignore
         WlrLayershell.namespace: "caelestia-menu-network-qr-card"
         WlrLayershell.layer: WlrLayer.Overlay
 
+        // Anchoring only the top and left edges keeps the surface at the
+        // requested card size (anchoring opposite edges would stretch it to
+        // fill the screen minus margins). The margins then place the card and
+        // pack it toward the top/bottom of the center as other overlay cards
+        // open or close.
         anchors {
             top: true
-            bottom: true
             left: true
-            right: true
         }
 
-        // The layer-shell protocol centers a surface that is anchored to both
-        // edges while carrying a size; the margins then pack it toward the
-        // top/bottom of the center as other overlay cards open or close.
-        // Quickshell sizes anchored dimensions as screen minus margins, so all
-        // four margins carry the centering math explicitly.
         implicitWidth: card.width
         implicitHeight: card.height
 
-        margins.left: cardLeft
-        margins.right: Math.max(0, screen.width - card.width - cardLeft)
-        margins.top: cardTop
-        margins.bottom: Math.max(0, screen.height - card.height - cardTop)
+        margins.left: Math.max(0, Math.round((screen.width - card.width) / 2))
+        margins.top: Math.max(0, Math.round((screen.height - card.height) / 2 + (root.stackCenter - 0.5) * screen.height))
 
         Behavior on margins.top {
-            NumberAnimation {
-                duration: 220
-                easing.type: Easing.OutCubic
-            }
-        }
-
-        Behavior on margins.bottom {
             NumberAnimation {
                 duration: 220
                 easing.type: Easing.OutCubic
