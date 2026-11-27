@@ -189,7 +189,11 @@ ensure_no_stale_sonames() {
     [[ -n $stale ]] || return 0
     repo_pkgs=$(pacman -Slq 2>/dev/null)
 
-    while read -r pkg; do
+    # checkrebuild prints "<repo>\t<pkgname>"; the repo field is not a package,
+    # so take the last field as the name and test membership in the repo list
+    while read -r line; do
+        [[ -n $line ]] || continue
+        pkg=$(awk '{print $NF}' <<<"$line")
         [[ -n $pkg ]] || continue
         if grep -qx "$pkg" <<<"$repo_pkgs"; then
             add_issue "$pkg is an official-repo package linking a stale library. Fix: wait for Arch's rebuild (or ignore if harmless)"
