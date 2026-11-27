@@ -173,6 +173,21 @@ ensure_qt_stack() {
 
 rebuilt_state="${XDG_CACHE_HOME:-$HOME/.cache}/caelestia-update/rebuilt-soname"
 
+# True if a package's binaries fail to load (missing libraries). Used to
+# separate the harmless date-based rebuild-detector flag on prebuilt packages
+# from a package that is actually broken.
+prebuilt_broken() {
+    local pkg=$1 f
+    command -v file >/dev/null 2>&1 || return 1 # cannot verify, assume fine
+    while read -r f; do
+        file -b "$f" 2>/dev/null | grep -q ELF || continue
+        if ldd "$f" 2>/dev/null | grep -q "not found"; then
+            return 0
+        fi
+    done < <(pacman -Ql "$pkg" 2>/dev/null | awk '$2 ~ /\/bin\// {print $2}' | head -5)
+    return 1
+}
+
 ensure_no_stale_sonames() {
     # Qt is not the only library that can break the shell with an update:
     # any soname bump does (e.g. sndio 1.11 moved libsndio.so.7 -> .9, which
@@ -212,7 +227,11 @@ ensure_no_stale_sonames() {
                 # Rebuilding a -bin package from the same prebuilt source never
                 # relinks anything: the flag is build-date based and repeats
                 # until upstream ships a new binary. Don't redownload for it.
-                add_note "$pkg ($ver) still flags as stale; prebuilt package, expected. No action needed if it launches"
+                # Stay silent unless the binary actually stopped loading.
+                if ! prebuilt_broken "$pkg"; then
+                    continue
+                fi
+                add_issue "$pkg ($ver) has missing libraries and will fail to launch. Fix: wait for a new upstream build, or try: paru -S --rebuild $pkg"
                 continue
             fi
             echo ":: $pkg links a stale library; rebuilding"
