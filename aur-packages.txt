@@ -11,3 +11,6 @@ quickshell-git
 spotify
 ttf-rubik-vf
 zsh-fast-syntax-highlighting
+banana-cursor-bin
+clock-tui
+zen-browser-bin

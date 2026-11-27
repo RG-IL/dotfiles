@@ -1,11 +1,14 @@
+7zip
 adw-gtk-theme
 atuin
 base
 base-devel
 bat
 bluetui
+bluez
 bluez-utils
 btop
+cliphist
 cmake
 curl
 direnv
@@ -32,6 +35,7 @@ linux-firmware
 lsof
 man-db
 man-pages
+minisign
 neovim
 networkmanager
 nodejs
@@ -41,6 +45,7 @@ noto-fonts-emoji
 npm
 opencode
 pacman-contrib
+papirus-icon-theme
 pipewire-alsa
 pipewire-jack
 pipewire-pulse
@@ -52,11 +57,13 @@ qt6-multimedia
 qt6-multimedia-ffmpeg
 qt6-svg
 qt6-virtualkeyboard
+rebuild-detector
 ripgrep
 sddm
 speedtest-cli
 stow
 sudo
+tailscale
 tesseract
 thunar
 trash-cli
