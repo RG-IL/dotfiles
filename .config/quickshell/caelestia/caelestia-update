@@ -21,7 +21,9 @@ set -euo pipefail
 qt_state="${XDG_CACHE_HOME:-$HOME/.cache}/caelestia-update/qt6-built-against"
 
 ISSUES=()
+NOTES=()
 add_issue() { ISSUES+=("$1"); }
+add_note() { NOTES+=("$1"); } # expected behaviour, printed but not an error
 
 compat_ok() { quickshell --private-check-compat >/dev/null 2>&1; }
 
@@ -210,7 +212,7 @@ ensure_no_stale_sonames() {
                 # Rebuilding a -bin package from the same prebuilt source never
                 # relinks anything: the flag is build-date based and repeats
                 # until upstream ships a new binary. Don't redownload for it.
-                add_issue "$pkg ($ver) still flags as stale after a rebuild; it is a prebuilt package, so this is expected. No action needed if it launches"
+                add_note "$pkg ($ver) still flags as stale; prebuilt package, expected. No action needed if it launches"
                 continue
             fi
             echo ":: $pkg links a stale library; rebuilding"
@@ -255,13 +257,22 @@ ensure_no_stale_sonames || true
 
 echo
 echo "════════════════════ UPDATE SUMMARY ══════════════════"
-if (( ${#ISSUES[@]} == 0 )); then
+if (( ${#ISSUES[@]} == 0 )) && (( ${#NOTES[@]} == 0 )); then
     echo ":: All clear — update finished without problems."
-else
-    echo ":: ${#ISSUES[@]} issue(s) found, in order of occurrence:"
+fi
+if (( ${#ISSUES[@]} > 0 )); then
+    echo ":: ${#ISSUES[@]} issue(s) need attention, in order of occurrence:"
     local_i=1
     for issue in "${ISSUES[@]}"; do
         echo "  $local_i. $issue"
+        local_i=$((local_i + 1))
+    done
+fi
+if (( ${#NOTES[@]} > 0 )); then
+    echo ":: ${#NOTES[@]} note(s), no action needed:"
+    local_i=1
+    for note in "${NOTES[@]}"; do
+        echo "  $local_i. $note"
         local_i=$((local_i + 1))
     done
 fi
