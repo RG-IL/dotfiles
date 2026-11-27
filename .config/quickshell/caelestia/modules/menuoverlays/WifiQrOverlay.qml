@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -8,8 +10,11 @@ import qs.modules.launcher.services
 import "Model.js" as Model
 
 // Ported from omarchy's wifiqr_Panel.qml: the Wi-Fi QR code floats on its own
-// card, packed toward the vertical center when other overlay cards are open.
-// Each summon regenerates the code via menu-network-qr --meta.
+// dark translucent card. Two surfaces keep the blur scoped to the card only:
+// a fullscreen catcher takes the keyboard and outside clicks (never blurred),
+// while the card itself is its own layer surface, so the blur rule can only
+// ever apply behind it. Each summon regenerates the code via
+// menu-network-qr --meta.
 Item {
     id: root
 
@@ -21,16 +26,6 @@ Item {
     // Card entrance: 0 -> 1 on open, so each card fades and pops into its
     // slot rather than sliding in from off-screen.
     property real pop: 0
-    onOpenedChanged: {
-        if (opened) {
-            pop = 0;
-            Qt.callLater(function() {
-                if (!root.opened)
-                    return;
-                pop = 1;
-            });
-        }
-    }
 
     // Stacking: how many overlays are open in total and this card's vertical
     // rank (0 = top). The coordinator in MenuOverlays supplies these, and also
@@ -38,14 +33,6 @@ Item {
     property int stackCount: 1
     property int stackRank: 0
     property real stackCenter: 0.5
-
-    // Emitted when the user dismisses this overlay; the coordinator in
-    // MenuOverlays closes every open overlay so one Esc exits them all.
-    signal closeRequested()
-
-    // Emitted on Enter so the coordinator can restart any open speed test,
-    // even when this card (with the keyboard focus) is on top.
-    signal runAgainRequested()
 
     property var qrRows: []
     property int qrSize: 0
@@ -60,17 +47,24 @@ Item {
     property bool pwExpectedStop: false
 
     readonly property bool showingQr: qrSize > 0 && !loading && error === ""
-
     readonly property color onScrim: "white"
     readonly property color onScrimDim: Qt.rgba(1, 1, 1, 0.55)
     readonly property color onScrimUrgent: "#ff6b6b"
     readonly property string fontFamily: "JetBrainsMono Nerd Font"
 
+    // Emitted when the user dismisses this overlay; the coordinator in
+    // MenuOverlays closes every open overlay so one Esc exits them all.
+    signal closeRequested
+
+    // Emitted on Enter so the coordinator can restart any open speed test,
+    // even when this card (with the keyboard focus) is on top.
+    signal runAgainRequested
+
     function open() {
         root.ssid = "";
         generate("");
         root.opened = true;
-        Qt.callLater(function() {
+        Qt.callLater(function () {
             if (root.opened)
                 keyCatcher.forceActiveFocus();
         });
@@ -121,7 +115,7 @@ Item {
             pwExpectedStop = true;
             pwProc.running = false;
         }
-        qrProc.command = requestedIface !== "" ? [`${MenuService.binDir}/menu-network-qr`, "--meta", requestedIface] : [`${MenuService.binDir}/menu-network-qr`, "--meta"];
+        qrProc.command = requestedIface !== "" ? ["bash", "-c", `export PATH="${MenuService.binDir}:$PATH"; exec menu-network-qr --meta "$1"`, "menu-network-qr", requestedIface] : ["bash", "-c", `export PATH="${MenuService.binDir}:$PATH"; exec menu-network-qr --meta`];
         qrProc.running = true;
     }
 
@@ -151,8 +145,19 @@ Item {
             return;
         passwordError = "";
         pwExpectedStop = false;
-        pwProc.command = [`${MenuService.binDir}/menu-network-password`, iface];
+        pwProc.command = ["bash", "-c", `export PATH="${MenuService.binDir}:$PATH"; exec menu-network-password "$1"`, "menu-network-password", iface];
         pwProc.running = true;
+    }
+
+    onOpenedChanged: {
+        if (opened) {
+            pop = 0;
+            Qt.callLater(function () {
+                if (!root.opened)
+                    return;
+                pop = 1;
+            });
+        }
     }
 
     Process {
@@ -163,16 +168,18 @@ Item {
             onStreamFinished: if (!root.expectedStop)
                 root.updateQr(text)
         }
+
         stderr: StdioCollector {
             waitForEnd: true
             onStreamFinished: if (!root.expectedStop)
                 root.error = String(text || "").trim()
         }
+
         onExited: (exitCode, exitStatus) => {
             root.loading = false;
             if (root.pendingShow) {
                 root.pendingShow = false;
-                Qt.callLater(function() {
+                Qt.callLater(function () {
                     root.generate(root.pendingIface);
                 });
                 return;
@@ -196,6 +203,7 @@ Item {
             onStreamFinished: if (root.opened && !root.pwExpectedStop)
                 root.password = String(text || "").trim()
         }
+
         onExited: (exitCode, exitStatus) => {
             if (root.pwExpectedStop)
                 return;
@@ -208,19 +216,24 @@ Item {
         }
     }
 
+    // qmllint disable uncreatable-type
     PanelWindow {
+        // qmllint enable uncreatable-type
+        id: catcher
+
         visible: root.opened
+        color: "transparent"
+        exclusionMode: ExclusionMode.Ignore
+        WlrLayershell.namespace: "caelestia-menu-network-qr"
+        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+
         anchors {
             top: true
             bottom: true
             left: true
             right: true
         }
-        color: "transparent"
-        exclusionMode: ExclusionMode.Ignore
-        WlrLayershell.namespace: "caelestia-menu-network-qr"
-        WlrLayershell.layer: WlrLayer.Overlay
-        WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
 
         Item {
             id: keyCatcher
@@ -229,7 +242,7 @@ Item {
             focus: true
 
             Keys.onEscapePressed: root.closeRequested()
-            Keys.onPressed: (event) => {
+            Keys.onPressed: event => {
                 if (event.key === Qt.Key_Q)
                     root.closeRequested();
             }
@@ -240,159 +253,194 @@ Item {
                 anchors.fill: parent
                 onClicked: root.closeRequested()
             }
+        }
+    }
 
-            Rectangle {
-                id: card
+    // qmllint disable uncreatable-type
+    PanelWindow {
+        // qmllint enable uncreatable-type
+        id: cardWindow
 
-                radius: 20
-                color: Qt.rgba(0.045, 0.05, 0.075, 0.82)
-                border.color: Qt.rgba(1, 1, 1, 0.08)
-                border.width: 1
+        visible: root.opened
+        color: "transparent"
+        exclusionMode: ExclusionMode.Ignore
+        WlrLayershell.namespace: "caelestia-menu-network-qr-card"
+        WlrLayershell.layer: WlrLayer.Overlay
 
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.verticalCenter: parent.verticalCenter
-                // Pack the card toward the top/bottom of the center as more
-                // overlays open; the offset eases so repositioning settles
-                // into its slot instead of snapping around.
-                anchors.verticalCenterOffset: (root.stackCenter - 0.5) * parent.height
+        anchors {
+            top: true
+            bottom: true
+            left: true
+            right: true
+        }
 
-                opacity: root.pop
-                scale: root.pop * Math.min(1, (keyCatcher.width - 32) / Math.max(1, card.width), (keyCatcher.height - 32) / Math.max(1, card.height))
+        // The layer-shell protocol centers a surface that is anchored to both
+        // edges while carrying a size; the margins then pack it toward the
+        // top/bottom of the center as other overlay cards open or close.
+        // Quickshell sizes anchored dimensions as screen minus margins, so all
+        // four margins carry the centering math explicitly.
+        implicitWidth: card.width
+        implicitHeight: card.height
 
-                width: content.implicitWidth + 48
-                height: content.implicitHeight + 40
+        margins.left: Math.max(0, Math.round((screen.width - card.width) / 2))
+        margins.right: Math.max(0, screen.width - card.width - margins.left)
+        margins.top: Math.max(0, Math.round((screen.height - card.height) / 2 + (root.stackCenter - 0.5) * screen.height))
+        margins.bottom: Math.max(0, screen.height - card.height - margins.top)
 
-                Behavior on opacity {
-                    NumberAnimation {
-                        duration: 160
-                        easing.type: Easing.OutCubic
-                    }
+        Behavior on margins.top {
+            NumberAnimation {
+                duration: 220
+                easing.type: Easing.OutCubic
+            }
+        }
+
+        Behavior on margins.bottom {
+            NumberAnimation {
+                duration: 220
+                easing.type: Easing.OutCubic
+            }
+        }
+
+        Rectangle {
+            id: card
+
+            radius: 20
+            color: Qt.rgba(0.15, 0.15, 0.17, 0.6)
+            border.color: Qt.rgba(1, 1, 1, 0.08)
+            border.width: 1
+
+            opacity: root.pop
+            scale: root.pop
+
+            width: content.implicitWidth + 48
+            height: content.implicitHeight + 40
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 160
+                    easing.type: Easing.OutCubic
                 }
-                Behavior on scale {
-                    NumberAnimation {
-                        duration: 260
-                        easing.type: Easing.OutBack
-                    }
+            }
+
+            Behavior on scale {
+                NumberAnimation {
+                    duration: 260
+                    easing.type: Easing.OutBack
                 }
-                Behavior on anchors.verticalCenterOffset {
-                    NumberAnimation {
-                        duration: 220
-                        easing.type: Easing.OutCubic
-                    }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {}
+            }
+
+            ColumnLayout {
+                id: content
+
+                spacing: 16
+
+                anchors {
+                    fill: parent
+                    topMargin: 20
+                    bottomMargin: 20
+                    leftMargin: 24
+                    rightMargin: 24
                 }
 
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: {}
+                Text {
+                    text: (root.ssid || "Wi-Fi").toUpperCase()
+                    color: root.onScrimDim
+                    font.family: root.fontFamily
+                    font.pixelSize: 12
+                    font.bold: true
+                    font.letterSpacing: 2
+                    elide: Text.ElideRight
+                    Layout.maximumWidth: 320
+                    Layout.alignment: Qt.AlignHCenter
+                    horizontalAlignment: Text.AlignHCenter
                 }
 
-                ColumnLayout {
-                    id: content
+                Rectangle {
+                    id: qrCanvas
 
-                    anchors {
-                        fill: parent
-                        topMargin: 20
-                        bottomMargin: 20
-                        leftMargin: 24
-                        rightMargin: 24
-                    }
-                    spacing: 16
+                    readonly property int moduleSize: root.qrSize > 0 ? Math.max(4, Math.floor(240 / root.qrSize)) : 0
 
-                    Text {
-                        text: (root.ssid || "Wi-Fi").toUpperCase()
-                        color: root.onScrimDim
-                        font.family: root.fontFamily
-                        font.pixelSize: 12
-                        font.bold: true
-                        font.letterSpacing: 2
-                        elide: Text.ElideRight
-                        Layout.maximumWidth: 320
-                        Layout.alignment: Qt.AlignHCenter
-                        horizontalAlignment: Text.AlignHCenter
-                    }
+                    visible: root.showingQr
+                    width: root.qrSize * moduleSize
+                    height: width
+                    color: "white"
+                    radius: 12
+                    Layout.alignment: Qt.AlignHCenter
 
-                    Rectangle {
-                        id: qrCanvas
+                    Grid {
+                        anchors.fill: parent
+                        columns: root.qrSize
 
-                        readonly property int moduleSize: root.qrSize > 0 ? Math.max(4, Math.floor(240 / root.qrSize)) : 0
+                        Repeater {
+                            model: root.qrSize * root.qrSize
 
-                        visible: root.showingQr
-                        width: root.qrSize * moduleSize
-                        height: width
-                        color: "white"
-                        radius: 12
-                        Layout.alignment: Qt.AlignHCenter
+                            Rectangle {
+                                required property int index
 
-                        Grid {
-                            anchors.fill: parent
-                            columns: root.qrSize
+                                readonly property int matrixRow: Math.floor(index / root.qrSize)
+                                readonly property int matrixColumn: index % root.qrSize
 
-                            Repeater {
-                                model: root.qrSize * root.qrSize
-
-                                Rectangle {
-                                    required property int index
-
-                                    readonly property int matrixRow: Math.floor(index / root.qrSize)
-                                    readonly property int matrixColumn: index % root.qrSize
-
-                                    width: qrCanvas.moduleSize
-                                    height: qrCanvas.moduleSize
-                                    color: root.qrRows[matrixRow].charAt(matrixColumn) === "1" ? "#111111" : "transparent"
-                                }
+                                width: qrCanvas.moduleSize
+                                height: qrCanvas.moduleSize
+                                color: root.qrRows[matrixRow].charAt(matrixColumn) === "1" ? "#111111" : "transparent"
                             }
                         }
                     }
+                }
 
-                    Text {
-                        visible: root.loading
-                        text: "Generating QR code…"
-                        color: root.onScrimDim
-                        font.family: root.fontFamily
-                        font.pixelSize: 13
-                        Layout.fillWidth: true
-                        horizontalAlignment: Text.AlignHCenter
-                    }
+                Text {
+                    visible: root.loading
+                    text: "Generating QR code…"
+                    color: root.onScrimDim
+                    font.family: root.fontFamily
+                    font.pixelSize: 13
+                    Layout.fillWidth: true
+                    horizontalAlignment: Text.AlignHCenter
+                }
 
-                    Text {
-                        visible: root.error !== ""
-                        text: root.error
-                        color: root.onScrimUrgent
-                        font.family: root.fontFamily
-                        font.pixelSize: 13
-                        wrapMode: Text.Wrap
-                        Layout.fillWidth: true
-                        Layout.maximumWidth: 320
-                        horizontalAlignment: Text.AlignHCenter
-                    }
+                Text {
+                    visible: root.error !== ""
+                    text: root.error
+                    color: root.onScrimUrgent
+                    font.family: root.fontFamily
+                    font.pixelSize: 13
+                    wrapMode: Text.Wrap
+                    Layout.fillWidth: true
+                    Layout.maximumWidth: 320
+                    horizontalAlignment: Text.AlignHCenter
+                }
 
-                    Text {
-                        visible: root.showingQr
-                        text: "Scan to join this network"
-                        color: root.onScrimDim
-                        font.family: root.fontFamily
-                        font.pixelSize: 13
-                        Layout.fillWidth: true
-                        horizontalAlignment: Text.AlignHCenter
-                    }
+                Text {
+                    visible: root.showingQr
+                    text: "Scan to join this network"
+                    color: root.onScrimDim
+                    font.family: root.fontFamily
+                    font.pixelSize: 13
+                    Layout.fillWidth: true
+                    horizontalAlignment: Text.AlignHCenter
+                }
 
-                    Text {
-                        visible: root.showingQr && root.secured
-                        text: root.passwordError !== "" ? root.passwordError : root.passwordVisible ? root.password : "Click to show password"
-                        color: root.passwordError !== "" ? root.onScrimUrgent : root.onScrim
-                        opacity: root.passwordVisible || root.passwordError !== "" ? 1 : 0.6
-                        font.family: root.fontFamily
-                        font.pixelSize: 13
-                        wrapMode: Text.WrapAnywhere
-                        Layout.fillWidth: true
-                        Layout.maximumWidth: 320
-                        horizontalAlignment: Text.AlignHCenter
+                Text {
+                    visible: root.showingQr && root.secured
+                    text: root.passwordError !== "" ? root.passwordError : root.passwordVisible ? root.password : "Click to show password"
+                    color: root.passwordError !== "" ? root.onScrimUrgent : root.onScrim
+                    opacity: root.passwordVisible || root.passwordError !== "" ? 1 : 0.6
+                    font.family: root.fontFamily
+                    font.pixelSize: 13
+                    wrapMode: Text.WrapAnywhere
+                    Layout.fillWidth: true
+                    Layout.maximumWidth: 320
+                    horizontalAlignment: Text.AlignHCenter
 
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.togglePassword()
-                        }
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.togglePassword()
                     }
                 }
             }

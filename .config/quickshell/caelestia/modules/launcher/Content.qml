@@ -141,7 +141,7 @@ Item {
             // the menu at the route it was opened from.
             if (event.key === Qt.Key_Backspace && !event.modifiers) {
                 const pfx = GlobalConfig.launcher.actionPrefix;
-                if (text === `${pfx}wallpaper ` || text === `${pfx}scheme ` || text === `${pfx}clipboard ` || text === `${pfx}emoji `) {
+                if (text === `${pfx}wallpaper ` || text === `${pfx}scheme ` || text === `${pfx}clipboard ` || text === `${pfx}emoji ` || text === `${pfx}kaomoji ` || text === `${pfx}symbol `) {
                     clear();
                     event.accepted = true;
                     return;

@@ -224,3 +224,9 @@ hl.layer_rule({ match = { namespace = "launcher" }, animation = "popin 80%", blu
 -- Shell
 hl.layer_rule({ match = { namespace = "caelestia-(border-exclusion|area-picker)" }, no_anim = true })
 hl.layer_rule({ match = { namespace = "caelestia-(drawers|background)" }, animation = "fade" })
+
+-- Menu overlay cards (speed tests, Wi-Fi QR): blur on the card-sized
+-- layer surface only; the fullscreen catcher stays blur-free.
+hl.layer_rule({ match = { namespace = "caelestia-menu-network-speedtest-card" }, blur = true, ignore_alpha = 0.4 })
+hl.layer_rule({ match = { namespace = "caelestia-menu-disk-speedtest-card" }, blur = true, ignore_alpha = 0.4 })
+hl.layer_rule({ match = { namespace = "caelestia-menu-network-qr-card" }, blur = true, ignore_alpha = 0.4 })

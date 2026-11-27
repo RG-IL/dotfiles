@@ -5,17 +5,18 @@ import Quickshell
 import Quickshell.Wayland
 import qs.services
 
-// Ported from omarchy's Ui_SpeedTestOverlay: gauges sit on a rounded card,
-// and the card packs toward the vertical center when other overlay cards are
-// open at the same time. Esc, the card's surroundings, or the corner dismiss
-// close it; the needles sweep to full scale and back on open, then track the
-// live readings.
-PanelWindow {
+// Ported from omarchy's Ui_SpeedTestOverlay: gauges sit on a dark translucent
+// card. Two surfaces keep the blur scoped to the card only: a fullscreen
+// catcher takes the keyboard and outside clicks (never blurred), while the
+// card itself is its own layer surface, so the blur rule can only ever apply
+// behind it.
+Item {
     id: root
 
     required property bool running
     required property string leftLabel
     required property string rightLabel
+
     property string unit: "Mbps"
     property string title: ""
     property string layerNamespace: "caelestia-menu-speed-test"
@@ -38,12 +39,19 @@ PanelWindow {
     property var scaleStops: [100, 250, 500, 1000, 2500, 5000, 10000]
     property real fullScale: scaleStops[0]
 
-    signal closeRequested()
-    signal runAgainRequested()
+    // Card entrance: 0 -> 1 on open, so each card fades and pops into its
+    // slot rather than sliding in from off-screen.
+    property real pop: 0
 
     readonly property bool failed: error !== ""
-
+    readonly property color onScrim: "white"
+    readonly property color onScrimDim: Qt.rgba(1, 1, 1, 0.55)
+    readonly property color onScrimUrgent: "#ff6b6b"
+    readonly property color accent: Colours.palette.m3primary
     readonly property string fontFamily: "JetBrainsMono Nerd Font"
+
+    signal closeRequested
+    signal runAgainRequested
 
     function resetScale() {
         fullScale = scaleStops[0];
@@ -65,39 +73,10 @@ PanelWindow {
     onLeftValueChanged: expandScale(leftValue)
     onRightValueChanged: expandScale(rightValue)
 
-    Behavior on fullScale {
-        NumberAnimation {
-            duration: 400
-            easing.type: Easing.OutCubic
-        }
-    }
-
-    readonly property color onScrim: "white"
-    readonly property color onScrimDim: Qt.rgba(1, 1, 1, 0.55)
-    readonly property color onScrimUrgent: "#ff6b6b"
-    readonly property color accent: Colours.palette.m3primary
-
-    // Card entrance: 0 -> 1 on open, so each card fades and pops into its
-    // slot rather than sliding in from off-screen.
-    property real pop: 0
-
-    visible: open
-    anchors {
-        top: true
-        bottom: true
-        left: true
-        right: true
-    }
-    color: "transparent"
-    exclusionMode: ExclusionMode.Ignore
-    WlrLayershell.namespace: root.layerNamespace
-    WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-
     onOpenChanged: {
         if (open) {
             pop = 0;
-            Qt.callLater(function() {
+            Qt.callLater(function () {
                 if (!root.open)
                     return;
                 pop = 1;
@@ -108,44 +87,103 @@ PanelWindow {
         }
     }
 
-    Item {
-        id: keyCatcher
+    // qmllint disable uncreatable-type
+    PanelWindow {
+        // qmllint enable uncreatable-type
+        id: catcher
 
-        anchors.fill: parent
-        focus: true
+        visible: root.open
+        color: "transparent"
+        exclusionMode: ExclusionMode.Ignore
+        WlrLayershell.namespace: root.layerNamespace
+        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
 
-        Keys.onEscapePressed: root.closeRequested()
-        Keys.onPressed: (event) => {
-            if (event.key === Qt.Key_Q)
-                root.closeRequested();
+        anchors {
+            top: true
+            bottom: true
+            left: true
+            right: true
         }
-        Keys.onReturnPressed: if (!root.running)
-            root.runAgainRequested()
-        Keys.onEnterPressed: if (!root.running)
-            root.runAgainRequested()
 
-        MouseArea {
+        Item {
+            id: keyCatcher
+
             anchors.fill: parent
-            onClicked: root.closeRequested()
+            focus: true
+
+            Keys.onEscapePressed: root.closeRequested()
+            Keys.onPressed: event => {
+                if (event.key === Qt.Key_Q)
+                    root.closeRequested();
+            }
+            Keys.onReturnPressed: if (!root.running)
+                root.runAgainRequested()
+            Keys.onEnterPressed: if (!root.running)
+                root.runAgainRequested()
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: root.closeRequested()
+            }
+        }
+    }
+
+    // qmllint disable uncreatable-type
+    PanelWindow {
+        // qmllint enable uncreatable-type
+        id: cardWindow
+
+        visible: root.open
+        color: "transparent"
+        exclusionMode: ExclusionMode.Ignore
+        WlrLayershell.namespace: root.layerNamespace + "-card"
+        WlrLayershell.layer: WlrLayer.Overlay
+
+        anchors {
+            top: true
+            bottom: true
+            left: true
+            right: true
+        }
+
+        // The layer-shell protocol centers a surface that is anchored to both
+        // edges while carrying a size; the margins then pack it toward the
+        // top/bottom of the center as other overlay cards open or close.
+        // Quickshell sizes anchored dimensions as screen minus margins, so all
+        // four margins carry the centering math explicitly.
+        implicitWidth: card.width
+        implicitHeight: card.height
+
+        margins.left: Math.max(0, Math.round((screen.width - card.width) / 2))
+        margins.right: Math.max(0, screen.width - card.width - margins.left)
+        margins.top: Math.max(0, Math.round((screen.height - card.height) / 2 + (root.stackCenter - 0.5) * screen.height))
+        margins.bottom: Math.max(0, screen.height - card.height - margins.top)
+
+        Behavior on margins.top {
+            NumberAnimation {
+                duration: 220
+                easing.type: Easing.OutCubic
+            }
+        }
+
+        Behavior on margins.bottom {
+            NumberAnimation {
+                duration: 220
+                easing.type: Easing.OutCubic
+            }
         }
 
         Rectangle {
             id: card
 
             radius: 20
-            color: Qt.rgba(0.045, 0.05, 0.075, 0.82)
+            color: Qt.rgba(0.15, 0.15, 0.17, 0.6)
             border.color: Qt.rgba(1, 1, 1, 0.08)
             border.width: 1
 
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.verticalCenter: parent.verticalCenter
-            // Pack the card toward the top/bottom of the center as more
-            // overlays open; the offset eases so repositioning settles into
-            // its slot instead of snapping around.
-            anchors.verticalCenterOffset: (root.stackCenter - 0.5) * parent.height
-
             opacity: root.pop
-            scale: root.pop * Math.min(1, (keyCatcher.width - 32) / Math.max(1, width), (keyCatcher.height - 32) / Math.max(1, height))
+            scale: root.pop
 
             width: content.implicitWidth + 48
             height: content.implicitHeight + 40
@@ -156,16 +194,11 @@ PanelWindow {
                     easing.type: Easing.OutCubic
                 }
             }
+
             Behavior on scale {
                 NumberAnimation {
                     duration: 260
                     easing.type: Easing.OutBack
-                }
-            }
-            Behavior on anchors.verticalCenterOffset {
-                NumberAnimation {
-                    duration: 220
-                    easing.type: Easing.OutCubic
                 }
             }
 
@@ -177,6 +210,8 @@ PanelWindow {
             ColumnLayout {
                 id: content
 
+                spacing: 16
+
                 anchors {
                     fill: parent
                     topMargin: 20
@@ -184,7 +219,6 @@ PanelWindow {
                     leftMargin: 24
                     rightMargin: 24
                 }
-                spacing: 16
 
                 Text {
                     visible: root.title !== ""
@@ -258,9 +292,18 @@ PanelWindow {
         readonly property real fraction: fullScale > 0 ? Math.max(0, Math.min(1, shown / fullScale)) : 0
         readonly property bool arcVisible: fraction > 0.004
 
+        function ignite() {
+            ignition.restart();
+        }
+
         width: diameter
         height: diameter
         opacity: engaged ? 1 : 0.5
+
+        onValueChanged: {
+            if (!ignition.running)
+                shown = value;
+        }
 
         Behavior on opacity {
             NumberAnimation {
@@ -276,35 +319,6 @@ PanelWindow {
                 duration: 600
                 easing.type: Easing.OutCubic
             }
-        }
-
-        onValueChanged: {
-            if (!ignition.running)
-                shown = value;
-        }
-
-        function ignite() {
-            ignition.restart();
-        }
-
-        SequentialAnimation {
-            id: ignition
-
-            NumberAnimation {
-                target: dial
-                property: "shown"
-                to: dial.fullScale
-                duration: 550
-                easing.type: Easing.InOutCubic
-            }
-            NumberAnimation {
-                target: dial
-                property: "shown"
-                to: 0
-                duration: 650
-                easing.type: Easing.OutCubic
-            }
-            onFinished: dial.shown = dial.value
         }
 
         Shape {
@@ -400,10 +414,12 @@ PanelWindow {
                         position: 0.0
                         color: root.accent
                     }
+
                     GradientStop {
                         position: 0.55
                         color: root.accent
                     }
+
                     GradientStop {
                         position: 1.0
                         color: "transparent"
@@ -448,6 +464,28 @@ PanelWindow {
             font.pixelSize: 12
             font.bold: true
             font.letterSpacing: 1.5
+        }
+
+        SequentialAnimation {
+            id: ignition
+
+            onFinished: dial.shown = dial.value
+
+            NumberAnimation {
+                target: dial
+                property: "shown"
+                to: dial.fullScale
+                duration: 550
+                easing.type: Easing.InOutCubic
+            }
+
+            NumberAnimation {
+                target: dial
+                property: "shown"
+                to: 0
+                duration: 650
+                easing.type: Easing.OutCubic
+            }
         }
     }
 }
