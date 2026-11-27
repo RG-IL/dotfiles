@@ -169,6 +169,8 @@ ensure_qt_stack() {
     fi
 }
 
+rebuilt_state="${XDG_CACHE_HOME:-$HOME/.cache}/caelestia-update/rebuilt-soname"
+
 ensure_no_stale_sonames() {
     # Qt is not the only library that can break the shell with an update:
     # any soname bump does (e.g. sndio 1.11 moved libsndio.so.7 -> .9, which
@@ -200,9 +202,23 @@ ensure_no_stale_sonames() {
         elif [[ $pkg == quickshell-git ]]; then
             rebuild_git_clone quickshell-git || true
         else
+            local ver
+            ver=$(pacman -Q "$pkg" | awk '{print $2}')
+            mkdir -p "${rebuilt_state%/*}"
+            touch "$rebuilt_state"
+            if grep -qxF "$pkg $ver" "$rebuilt_state"; then
+                # Rebuilding a -bin package from the same prebuilt source never
+                # relinks anything: the flag is build-date based and repeats
+                # until upstream ships a new binary. Don't redownload for it.
+                add_issue "$pkg ($ver) still flags as stale after a rebuild; it is a prebuilt package, so this is expected. No action needed if it launches"
+                continue
+            fi
             echo ":: $pkg links a stale library; rebuilding"
-            paru -S --rebuild --noconfirm "$pkg" ||
-                add_issue "$pkg: rebuild failed. Fix: run: paru -S --rebuild $pkg"
+            paru -S --rebuild --noconfirm "$pkg" && {
+                newver=$(pacman -Q "$pkg" | awk '{print $2}')
+                sed -i "\|^$pkg |d" "$rebuilt_state" # drop outdated entries
+                printf '%s\n' "$pkg $newver" >> "$rebuilt_state"
+            } || add_issue "$pkg: rebuild failed. Fix: run: paru -S --rebuild $pkg"
         fi
     done <<<"$stale"
 }
