@@ -31,7 +31,6 @@ Item {
         return list.currentItem;
     }
     readonly property bool showingClipboard: content.item?.list?.showClipboard ?? false // qmllint disable missing-property
-    readonly property bool showingEmoji: content.item?.list?.showEmoji ?? false // qmllint disable missing-property
 
     readonly property real maxHeight: {
         let max = screen.height - Config.border.thickness * 2 + Tokens.padding.extraLarge;

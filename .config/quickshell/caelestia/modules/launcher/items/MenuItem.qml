@@ -12,6 +12,8 @@ Item {
     required property var list
 
     readonly property bool isSeparator: root.modelData?.type === "separator"
+    readonly property string iconValue: root.modelData?.icon ?? ""
+    readonly property bool isMaterialIcon: /^[a-z0-9_]+$/.test(root.iconValue)
 
     implicitHeight: root.isSeparator ? Math.round(Tokens.sizes.launcher.itemHeight * 0.4) : Tokens.sizes.launcher.itemHeight
 
@@ -22,8 +24,6 @@ Item {
 
     StateLayer {
         radius: Tokens.rounding.large
-        // Separators and disabled rows are not pickable: no hover ripple, and
-        // the arrow cursor instead of the pointing hand.
         disabled: root.isSeparator || (root.modelData?.type === "item" && root.modelData?.disabled === true)
         onClicked: root.list.enterRow(root.modelData)
     }
@@ -40,45 +40,47 @@ Item {
     }
 
     Item {
+        visible: !root.isSeparator
         anchors.fill: parent
         anchors.leftMargin: Tokens.padding.medium
         anchors.rightMargin: Tokens.padding.medium
         anchors.margins: Tokens.padding.small
 
-        // App rows use the real desktop icon; everything else uses NF glyphs.
-        IconImage {
-            id: appIcon
+        Item {
+            id: leadingIcon
 
-            visible: root.modelData?.type === "app"
-            asynchronous: true
-            source: root.modelData?.type === "app" ? Quickshell.iconPath(root.modelData?.entry?.icon ?? root.modelData?.icon, "image-missing") : ""
-            implicitSize: parent.height * 0.8
-
+            implicitWidth: parent.height * 0.8
+            implicitHeight: parent.height * 0.8
+            anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
-        }
 
-        Text {
-            id: glyph
-
-            visible: root.modelData?.type !== "app"
-            text: root.modelData?.icon ?? ""
-            color: {
-                if (root.modelData?.checked)
-                    return Colours.palette.m3primary;
-                return Colours.palette.m3onSurfaceVariant;
+            IconImage {
+                visible: root.modelData?.type === "app"
+                asynchronous: true
+                source: root.modelData?.type === "app" ? Quickshell.iconPath(root.modelData?.entry?.icon ?? root.iconValue, "image-missing") : ""
+                implicitSize: parent.implicitWidth
+                anchors.centerIn: parent
             }
-            font.family: "JetBrainsMono Nerd Font"
-            font.pixelSize: Math.round(Tokens.sizes.launcher.itemHeight * 0.42)
 
-            anchors.verticalCenter: parent.verticalCenter
+            MaterialIcon {
+                visible: root.modelData?.type !== "app" && root.isMaterialIcon
+                text: root.iconValue
+                color: root.modelData?.checked ? Colours.palette.m3primary : Colours.palette.m3onSurfaceVariant
+                fontStyle: Tokens.font.icon.builders.large.scale(1.15).build()
+                anchors.centerIn: parent
+            }
+
+            StyledText {
+                visible: root.modelData?.type !== "app" && !root.isMaterialIcon && root.iconValue !== ""
+                text: root.iconValue
+                color: root.modelData?.checked ? Colours.palette.m3primary : Colours.palette.m3onSurfaceVariant
+                font: Tokens.font.mono.builders.large.scale(1.15).build()
+                anchors.centerIn: parent
+            }
         }
 
         Column {
-            anchors.left: {
-                if (root.modelData?.type === "app")
-                    return appIcon.right;
-                return glyph.right;
-            }
+            anchors.left: leadingIcon.right
             anchors.leftMargin: Tokens.spacing.medium
             anchors.right: trailing.visible ? trailing.left : parent.right
             anchors.rightMargin: trailing.visible ? Tokens.spacing.medium : 0
@@ -109,22 +111,19 @@ Item {
             }
         }
 
-        // Trailing indicator: checkbox for toggles (filled when on), legacy
-        // check mark for plain checked rows, chevron for submenus.
-        Text {
+        MaterialIcon {
             id: trailing
 
             visible: root.modelData?.checked || root.modelData?.toggle || root.modelData?.type === "submenu"
             text: {
                 if (root.modelData?.type === "submenu")
-                    return "󰅂";
+                    return "chevron_right";
                 if (!root.modelData?.toggle)
-                    return "󰄵";
-                return root.modelData?.checked ? "󰄲" : "󰄱";
+                    return "check";
+                return root.modelData?.checked ? "check_box" : "check_box_outline_blank";
             }
             color: root.modelData?.checked && root.modelData?.type !== "submenu" ? Colours.palette.m3primary : Colours.palette.m3onSurfaceVariant
-            font.family: "JetBrainsMono Nerd Font"
-            font.pixelSize: Math.round(Tokens.sizes.launcher.itemHeight * 0.3)
+            fontStyle: Tokens.font.icon.medium
 
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter

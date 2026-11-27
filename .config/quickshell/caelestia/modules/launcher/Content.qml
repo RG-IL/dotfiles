@@ -21,6 +21,19 @@ Item {
     // through it to drive the preview panel beside the launcher.
     readonly property alias list: list
 
+    // Picker grids walk their own layout (cells and rows); every other
+    // list uses the shared mover.
+    function move(direction: string): void {
+        if (list.showPicker) {
+            list.currentList?.move(direction);
+            return;
+        }
+        if (direction === "up")
+            moveListSelection(-1);
+        else if (direction === "down")
+            moveListSelection(1);
+    }
+
     implicitWidth: listWrapper.width + padding * 2
     implicitHeight: search.height + listWrapper.height + padding + search.anchors.bottomMargin
 
@@ -86,6 +99,11 @@ Item {
         onCrumbClicked: MenuService.back()
 
         onAccepted: {
+            if (list.showPicker) {
+                list.currentList?.activate(false);
+                return;
+            }
+
             const currentItem = list.currentList?.currentItem;
             if (currentItem) {
                 if (list.showMenu) {
@@ -101,9 +119,6 @@ Item {
                     // here means Shift+Enter: copy only.
                     Clipboard.copyToClipboard(currentItem.modelData);
                     root.screenState.launcher = false;
-                } else if (list.showEmoji) {
-                    Emojis.copyEmoji(currentItem.modelData);
-                    root.screenState.launcher = false;
                 } else if (text.startsWith(GlobalConfig.launcher.actionPrefix)) {
                     if (text.startsWith(`${GlobalConfig.launcher.actionPrefix}calc `))
                         currentItem.onClicked();
@@ -116,8 +131,8 @@ Item {
             }
         }
 
-        Keys.onUpPressed: root.moveListSelection(-1)
-        Keys.onDownPressed: root.moveListSelection(1)
+        Keys.onUpPressed: root.move("up")
+        Keys.onDownPressed: root.move("down")
 
         Keys.onEscapePressed: root.screenState.launcher = false
 
@@ -194,22 +209,34 @@ Item {
                 }
             }
 
-            // Left/Right walk the emoji grid cell by cell.
-            if (list.showEmoji && (event.key === Qt.Key_Left || event.key === Qt.Key_Right)) {
-                const gridList = list.currentList;
-                if (gridList && (event.key === Qt.Key_Left ? gridList.moveLeft : gridList.moveRight)) {
-                    if (event.key === Qt.Key_Left)
-                        gridList.moveLeft();
-                    else
-                        gridList.moveRight();
+            // Left/Right walk the picker grid cell by cell (only stolen from
+            // the text cursor while a picker is open).
+            if (event.key === Qt.Key_Left || event.key === Qt.Key_Right) {
+                if (list.showPicker) {
+                    root.move(event.key === Qt.Key_Left ? "left" : "right");
                     event.accepted = true;
                     return;
                 }
             }
 
-            // Tab cycles the category bar in the clipboard and emoji views;
-            // everywhere else it moves the list selection.
-            if ((list.showClipboard || list.showEmoji) && (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab)) {
+            // Alt+Enter copies and pastes a picker item; Tab/Shift+Tab switch
+            // picker categories. The clipboard Tab block above stays scoped
+            // to the clipboard view.
+            if (list.showPicker && (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && (event.modifiers & Qt.AltModifier)) {
+                list.currentList?.activate(true);
+                event.accepted = true;
+                return;
+            }
+            if (list.showPicker && (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab)) {
+                const back = event.key === Qt.Key_Backtab || (event.modifiers & Qt.ShiftModifier);
+                list.currentList?.switchCategory(back ? -1 : 1);
+                event.accepted = true;
+                return;
+            }
+
+            // Tab cycles the category bar in the clipboard view; everywhere
+            // else it moves the list selection.
+            if (list.showClipboard && (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab)) {
                 const delta = event.key === Qt.Key_Backtab || (event.modifiers & Qt.ShiftModifier) ? -1 : 1;
                 list.currentList?.cycleTab(delta);
                 event.accepted = true;
@@ -221,10 +248,16 @@ Item {
 
             if (event.modifiers & Qt.ControlModifier) {
                 if (event.key === Qt.Key_J || event.key === Qt.Key_N) {
-                    root.moveListSelection(1);
+                    root.move("down");
                     event.accepted = true;
                 } else if (event.key === Qt.Key_K || event.key === Qt.Key_P) {
-                    root.moveListSelection(-1);
+                    root.move("up");
+                    event.accepted = true;
+                } else if (list.showPicker && event.key === Qt.Key_H) {
+                    root.move("left");
+                    event.accepted = true;
+                } else if (list.showPicker && event.key === Qt.Key_L) {
+                    root.move("right");
                     event.accepted = true;
                 }
             } else if (event.key === Qt.Key_Tab) {

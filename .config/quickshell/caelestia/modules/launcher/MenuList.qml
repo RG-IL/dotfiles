@@ -33,7 +33,7 @@ StyledListView {
             return;
         }
         // Clipboard & Emoji hand off to the >clipboard / >emoji views.
-        if (row.type === "internal" && (row.internal === "clipboard" || row.internal === "emoji")) {
+        if (row.type === "internal" && ["clipboard", "emoji", "kaomoji", "symbol"].includes(row.internal)) {
             root.search.text = `${GlobalConfig.launcher.actionPrefix}${row.internal} `;
             return;
         }

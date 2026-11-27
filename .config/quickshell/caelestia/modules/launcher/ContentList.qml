@@ -21,11 +21,12 @@ Item {
 
     readonly property bool showWallpapers: search.text.startsWith(`${GlobalConfig.launcher.actionPrefix}wallpaper `)
     readonly property bool showClipboard: search.text.startsWith(`${GlobalConfig.launcher.actionPrefix}clipboard `)
-    readonly property bool showEmoji: search.text.startsWith(`${GlobalConfig.launcher.actionPrefix}emoji `)
+    readonly property var picker: Pickers.forText(search.text) // The open picker (i.e. emoji), if any
+    readonly property bool showPicker: picker !== null
     readonly property bool showMenu: !search.text.startsWith(GlobalConfig.launcher.actionPrefix)
     readonly property string hintText: showMenu ? qsTr("Search menu…") : qsTr("Type \"%1\" for commands").arg(GlobalConfig.launcher.actionPrefix)
-    readonly property var currentList: showMenu ? menuList.item : showWallpapers ? wallpaperList.item : showClipboard ? clipboardList.item : showEmoji ? emojiList.item : appList.item // Can be either ListView or GridView, so can't type properly
-    property string animState: showMenu ? "menu" : showWallpapers ? "wallpapers" : showClipboard ? "clipboard" : showEmoji ? "emoji" : "apps"
+    readonly property var currentList: showMenu ? menuList.item : showWallpapers ? wallpaperList.item : showClipboard ? clipboardList.item : showPicker ? pickerList.item : appList.item // Can be either ListView or GridView, so can't type properly
+    property string animState: showMenu ? "menu" : showWallpapers ? "wallpapers" : showClipboard ? "clipboard" : showPicker ? "picker" : "apps"
 
     anchors.horizontalCenter: parent.horizontalCenter
     anchors.bottom: parent.bottom
@@ -86,12 +87,12 @@ Item {
             }
         },
         State {
-            name: "emoji"
+            name: "picker"
 
             PropertyChanges {
                 root.implicitWidth: root.Tokens.sizes.launcher.itemWidth
-                root.implicitHeight: Math.min(root.maxHeight, emojiList.implicitHeight > 0 ? emojiList.implicitHeight : empty.implicitHeight)
-                emojiList.active: true
+                root.implicitHeight: Math.min(root.maxHeight, pickerList.implicitHeight > 0 ? pickerList.implicitHeight : empty.implicitHeight)
+                pickerList.active: true
             }
 
             AnchorChanges {
@@ -187,18 +188,27 @@ Item {
     }
 
     Loader {
-        id: emojiList
+        id: pickerList
 
         active: false
 
         anchors.fill: parent
 
-        sourceComponent: EmojiList {
-            objectName: "launcherEmojiList"
+        sourceComponent: PickerList {
+            objectName: "launcherPickerList"
 
             search: root.search
             screenState: root.screenState
+            source: root.picker ?? root.lastPicker
         }
+    }
+
+    // Kept so the picker doesn't lose its source while fading out
+    property var lastPicker
+
+    onPickerChanged: {
+        if (picker)
+            lastPicker = picker;
     }
 
     Row {

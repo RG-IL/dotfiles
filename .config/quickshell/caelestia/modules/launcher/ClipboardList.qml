@@ -5,12 +5,12 @@ import QtQuick.Layouts
 import Quickshell
 import Caelestia.Config
 import Caelestia.I18n
-import "items"
-import "services"
 import qs.components
 import qs.components.controls
 import qs.components.containers
 import qs.services
+import qs.modules.launcher.items
+import qs.modules.launcher.services
 
 // Ported from Caelestia PR #1298's ClipboardList.qml: category tabs over the
 // history rows, an item counter, a clear-all with a confirm dialog, and
@@ -35,6 +35,24 @@ Item {
     property string previousCategory: "all"
     property var pendingModelUpdate: null
 
+    readonly property var tabs: [
+        {
+            id: "all",
+            name: Tr.tr("All"),
+            icon: "apps"
+        },
+        {
+            id: "images",
+            name: Tr.tr("Images"),
+            icon: "image"
+        },
+        {
+            id: "misc",
+            name: Tr.tr("Misc"),
+            icon: "description"
+        }
+    ]
+
     function incrementCurrentIndex(): void {
         listView.incrementCurrentIndex();
     }
@@ -42,24 +60,6 @@ Item {
     function decrementCurrentIndex(): void {
         listView.decrementCurrentIndex();
     }
-
-    readonly property var tabs: [
-        {
-            id: "all",
-            name: qsTr("All"),
-            icon: "apps"
-        },
-        {
-            id: "images",
-            name: qsTr("Images"),
-            icon: "image"
-        },
-        {
-            id: "misc",
-            name: qsTr("Misc"),
-            icon: "description"
-        }
-    ]
 
     // Tab / Shift+Tab move through the category bar.
     function cycleTab(delta: int): void {
@@ -137,7 +137,7 @@ Item {
                     property Item activeTab: {
                         for (let i = 0; i < tabsRepeater.count; i++) {
                             const tab = tabsRepeater.itemAt(i);
-                            if (tab && tab.isActive) {
+                            if (tab && tab.isActive) { // qmllint disable missing-property
                                 return tab;
                             }
                         }
@@ -229,7 +229,7 @@ Item {
                     id: countText
 
                     anchors.centerIn: parent
-                    text: qsTr("%n item(s)", "", listView.count)
+                    text: Tr.trN("%n item", "%n items", listView.count)
                     font: Tokens.font.body.small
                     color: Colours.palette.m3onSurfaceVariant
                     opacity: listView.count > 0 ? 1 : 0
@@ -282,13 +282,13 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
 
             StyledText {
-                text: qsTr("No clipboard history")
+                text: Tr.tr("No clipboard history")
                 color: Colours.palette.m3onSurfaceVariant
                 font: Tokens.font.body.builders.large.weight(Font.Medium).build()
             }
 
             StyledText {
-                text: qsTr("Copy something to populate clipboard history")
+                text: Tr.tr("Copy something to populate clipboard history")
                 color: Colours.palette.m3onSurfaceVariant
                 font: Tokens.font.body.medium
             }
@@ -531,11 +531,11 @@ Item {
 
                     text: {
                         if (root.activeCategory === "all") {
-                            return qsTr("Clear all clipboard items?");
+                            return Tr.tr("Clear all clipboard items?");
                         } else if (root.activeCategory === "images") {
-                            return qsTr("Clear image items?");
+                            return Tr.tr("Clear image items?");
                         } else {
-                            return qsTr("Clear misc items?");
+                            return Tr.tr("Clear misc items?");
                         }
                     }
                     font: Tokens.font.body.builders.large.weight(Font.Medium).build()
@@ -546,7 +546,7 @@ Item {
                 StyledText {
                     Layout.fillWidth: true
 
-                    text: qsTr("Non-pinned items in this category will be deleted. Pinned items are preserved.")
+                    text: Tr.tr("Non-pinned items in this category will be deleted. Pinned items are preserved.")
                     color: Colours.palette.m3onSurfaceVariant
                     font: Tokens.font.body.medium
                     wrapMode: Text.WordWrap
@@ -563,13 +563,13 @@ Item {
                     }
 
                     TextButton {
-                        text: qsTr("Cancel")
+                        text: Tr.tr("Cancel")
                         type: TextButton.Text
                         onClicked: root.showClearConfirmation = false
                     }
 
                     TextButton {
-                        text: qsTr("Clear All")
+                        text: Tr.tr("Clear All")
                         type: TextButton.Filled
                         onClicked: {
                             root.showClearConfirmation = false;

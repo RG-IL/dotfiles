@@ -42,6 +42,8 @@
   // Trigger
   "trigger.reminder": {"icon":"󰢌","label":"Reminder","aliases":["reminder"]},
   "trigger.emoji": {"icon":"󰞅","label":"Emoji","aliases":["emoji-picker","emote","smiley"],"internal":"emoji"},
+  "trigger.kaomoji": {"icon":"emoticon","label":"Kaomoji","aliases":["kaomoji","emoticon"],"internal":"kaomoji"},
+  "trigger.symbol": {"icon":"star","label":"Symbols","aliases":["symbol","symbols","special-characters"],"internal":"symbol"},
   "trigger.clipboard": {"icon":"󰅇","label":"Clipboard History","aliases":["clipboard","cliphist"],"internal":"clipboard"},
   "trigger.reminder.set": {"icon":"󰢌","label":"Set one…","aliases":["reminder-set","remind"]},
   "trigger.reminder.show": {"icon":"󰢌","label":"Show all","action":"menu-reminder show"},

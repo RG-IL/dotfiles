@@ -2,12 +2,12 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Layouts
-import Quickshell
 import Caelestia.Config
-import "../services"
+import Caelestia.I18n
 import qs.components
 import qs.components.controls
 import qs.services
+import qs.modules.launcher.services
 
 // Ported from Caelestia PR #1298's items/ClipboardItem.qml: a pin slot, the
 // entry on one line dimmed until the row is selected, its size under it, and
@@ -30,8 +30,8 @@ Item {
 
     onIsItemHoveredChanged: {
         if (isItemHovered) {
-            root.ListView.view.hoveredItem = root;
-            root.ListView.view.lastInteraction = "hover";
+            root.ListView.view.hoveredItem = root; // qmllint disable missing-property
+            root.ListView.view.lastInteraction = "hover"; // qmllint disable missing-property
         }
     }
 
@@ -97,7 +97,7 @@ Item {
 
                     // Image rows carry cliphist's "[[ binary data ... ]]"
                     // marker as their content; show a friendly label instead.
-                    text: root.modelData.isImage ? qsTr("Image · %1").arg(root.modelData.mime.replace("image/", "")) : root.modelData.content
+                    text: root.modelData.isImage ? Tr.tr("Image · %1").arg(root.modelData.mime.replace("image/", "")) : root.modelData.content
                     color: root.isCurrent ? Colours.palette.m3onSurface : Colours.palette.m3onSurfaceVariant
                     font: Tokens.font.body.medium
                     elide: Text.ElideRight
@@ -106,11 +106,11 @@ Item {
                 StyledText {
                     text: {
                         if (root.modelData.isImage)
-                            return qsTr("Image");
+                            return Tr.tr("Image");
                         const content = root.modelData.content;
                         const words = content.split(/\s+/).length;
                         const chars = content.length;
-                        return qsTr("%1 characters, %2 words").arg(chars).arg(words);
+                        return Tr.tr("%1 characters, %2 words").arg(chars).arg(words);
                     }
                     color: Colours.palette.m3onSurfaceVariant
                     font: Tokens.font.body.small
@@ -142,7 +142,7 @@ Item {
                     radius: Tokens.rounding.small
                     padding: Tokens.padding.small
                     onClicked: {
-                        root.ListView.view.deletedItemIndex = root.index;
+                        root.ListView.view.deletedItemIndex = root.index; // qmllint disable missing-property
                         Clipboard.deleteItem(root.modelData);
                     }
                 }
