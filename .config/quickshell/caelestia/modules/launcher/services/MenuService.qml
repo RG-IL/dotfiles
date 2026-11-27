@@ -21,6 +21,10 @@ Singleton {
     // Current navigation state
     property string route: ""
     property string mode: "menu" // "menu" | "keybindings"
+    // Routes visited to reach the current one, so Back retraces the path
+    // taken (through submenus, search jumps, or IPC opens) rather than just
+    // climbing the tree.
+    property var navStack: []
     // A launcher view a keybind or IPC asked for (e.g. "clipboard"), applied
     // by the launcher content whenever it next appears.
     property string pendingPrefix: ""
@@ -66,19 +70,54 @@ Singleton {
     function doRootReset(): void {
         root.route = "";
         root.mode = "menu";
+        root.navStack = [];
         root.viewChanged();
     }
     signal overlayRequested(string name)
 
     function parseJsonc(text: string): var {
-        const stripped = text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "").replace(/,(\s*[}\]])/g, "$1");
-        return JSON.parse(stripped);
+        let out = "";
+        let inString = false;
+        let escaped = false;
+        for (let i = 0; i < text.length; i++) {
+            const ch = text[i];
+            const next = i + 1 < text.length ? text[i + 1] : "";
+            if (inString) {
+                out += ch;
+                if (escaped) {
+                    escaped = false;
+                } else if (ch === "\\") {
+                    escaped = true;
+                } else if (ch === "\"") {
+                    inString = false;
+                }
+                continue;
+            }
+            if (ch === "\"") {
+                inString = true;
+                out += ch;
+            } else if (ch === "/" && next === "/") {
+                i += 2;
+                while (i < text.length && text[i] !== "\n")
+                    i++;
+                if (i < text.length)
+                    out += "\n";
+            } else if (ch === "/" && next === "*") {
+                i += 2;
+                while (i + 1 < text.length && !(text[i] === "*" && text[i + 1] === "/"))
+                    i++;
+                i++;
+            } else {
+                out += ch;
+            }
+        }
+        return JSON.parse(out.replace(/,(\s*[}\]])/g, "$1"));
     }
 
     function rootChildren(): var {
         if (!root.tree)
             return [];
-        return Object.entries(root.tree).map(([id, n]) => Object.assign({
+        return Object.entries(root.tree).filter(([, n]) => n && n.enabled !== false).map(([id, n]) => Object.assign({
                     id
                 }, n));
     }
@@ -122,7 +161,7 @@ Singleton {
             const n = root.tree[fid];
             if (!n)
                 break;
-            parts.push(n.label ?? fid);
+            parts.push(n.title ?? n.label ?? fid);
         }
         return parts.join(" › ");
     }
@@ -137,7 +176,7 @@ Singleton {
 
         if (node.provider && !expandProvider && q === "") {
             const label = node.label ?? "";
-            const hay = `${label} ${node.alias ?? ""} ${node.desc ?? ""}`.toLowerCase();
+            const hay = `${label} ${(node.aliases ?? []).join(" ")} ${node.desc ?? ""}`.toLowerCase();
             if (!(q === "" || hay.includes(q) || q.split("").every(ch => hay.includes(ch))))
                 return [];
             return [{
@@ -183,7 +222,7 @@ Singleton {
             return [];
         }
 
-        const hay = `${node.label ?? ""} ${node.alias ?? ""} ${node.desc ?? ""}`.toLowerCase();
+        const hay = `${node.label ?? ""} ${(node.aliases ?? []).join(" ")} ${node.desc ?? ""}`.toLowerCase();
         const matched = q === "" || hay.includes(q) || q.split("").every(ch => hay.includes(ch));
 
         if (node.internal) {
@@ -483,6 +522,7 @@ Singleton {
     }
 
     function openRoute(path: string): void {
+        root.navStack = [];
         root.route = path.split("/").join(".");
         root.mode = "menu";
         root.viewChanged();
@@ -492,6 +532,10 @@ Singleton {
     function back(): bool {
         if (root.mode === "keybindings") {
             root.mode = "menu";
+        } else if (root.navStack.length > 0) {
+            const next = root.navStack.slice();
+            root.route = next.pop() ?? "";
+            root.navStack = next;
         } else if (root.route !== "") {
             const idx = root.route.lastIndexOf(".");
             root.route = idx > 0 ? root.route.slice(0, idx) : "";
@@ -505,6 +549,8 @@ Singleton {
     function enter(row: var): void {
         switch (row?.type) {
         case "submenu":
+            if (row.id !== root.route)
+                root.navStack = root.navStack.concat([root.route]);
             root.route = row.id;
             root.viewChanged();
             break;
@@ -532,10 +578,19 @@ Singleton {
         }
     }
 
+    // The user's configured terminal (general.apps.terminal) as a single
+    // shell word string, for menu-term-exec to parse. Empty when unset.
+    function terminalEnv(): string {
+        const term = GlobalConfig.general.apps.terminal;
+        if (!term || term.length === 0)
+            return "";
+        return term.join(" ");
+    }
+
     function runAction(action: string): void {
         if (!action)
             return;
-        Quickshell.execDetached(["bash", "-c", `export PATH="${root.binDir}:$PATH"; ${action}`]);
+        Quickshell.execDetached(["bash", "-c", `export PATH="${root.binDir}:$PATH"; export CAELESTIA_TERMINAL=${JSON.stringify(root.terminalEnv())}; ${action}`]);
     }
 
     function runInternal(name: string): void {

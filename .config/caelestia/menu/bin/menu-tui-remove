@@ -11,6 +11,7 @@ DESKTOP_DIR="$HOME/.local/share/applications/"
 
 if (( $# == 0 )); then
   # Find all TUIs
+  TUIS=()
   while IFS= read -r -d '' file; do
     if grep -qE '^Exec=.*ghostty --class=TUI\.' "$file"; then
       TUIS+=("$(basename "${file%.desktop}")")

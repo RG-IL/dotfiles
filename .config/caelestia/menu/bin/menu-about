@@ -1,6 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# Simple system info window (About). No menu branding here — just system info.
+# Display system information in the configured terminal.
 
-exec setsid ghostty --class="org.caelestia.about" --title="About" --window-height=27 --window-width=110 -e bash -c 'clear; fastfetch; echo; menu-show-done'
+exec menu-term-exec --class "org.caelestia.about" --title "About" -- \
+  bash -c 'clear; if command -v fastfetch >/dev/null 2>&1; then fastfetch; else uname -a; fi; echo; menu-show-done'

@@ -164,6 +164,7 @@ tagged_rule(xwl_popup_tag, { { class = "steam", title = "" } })
 
 -- Caelestia shell windows (local)
 hl.window_rule({ match = { class = "org.caelestia.menu.terminal" }, float = true, size = "875 600", center = true })
+hl.window_rule({ match = { class = "org.caelestia.menu.editor" }, float = true, size = "875 600", center = true })
 hl.window_rule({ match = { class = "org.caelestia.about" }, float = true, size = "1000 500", center = true })
 
 -- Ueberzugpp

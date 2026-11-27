@@ -1,10 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-# Open config files in the floating menu editor window.
-# Editor resolution order: menu.conf (MENU_EDITOR) -> $EDITOR -> nvim.
+# Open config files in the configured terminal editor.
+# Editor resolution order: menu.conf (MENU_EDITOR) -> $EDITOR -> nvim -> nano -> vi.
 
-CONF="$HOME/.config/caelestia/menu/menu.conf"
+CONF="${XDG_CONFIG_HOME:-$HOME/.config}/caelestia/menu/menu.conf"
 [[ -f $CONF ]] && source "$CONF"
 
 if (( $# == 0 )); then
@@ -16,8 +16,12 @@ if [[ -n ${MENU_EDITOR:-} ]]; then
   read -ra editor_cmd <<<"$MENU_EDITOR"
 elif [[ -n ${EDITOR:-} ]]; then
   read -ra editor_cmd <<<"$EDITOR"
-else
+elif command -v nvim >/dev/null 2>&1; then
   editor_cmd=(nvim)
+elif command -v nano >/dev/null 2>&1; then
+  editor_cmd=(nano)
+else
+  editor_cmd=(vi)
 fi
 
-exec setsid ghostty --class="org.caelestia.menu.editor" --title="Caelestia Menu Editor" -e "${editor_cmd[@]}" "$@"
+exec menu-term-exec --class "org.caelestia.menu.editor" --title "Caelestia Menu Editor" -- "${editor_cmd[@]}" "$@"

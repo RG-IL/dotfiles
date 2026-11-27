@@ -62,7 +62,7 @@ StyledListView {
 
     // Keyboard selection that steps over separator rows and dimmed disabled
     // rows: neither can take the cursor.
-    function move(dir: int): void {
+    function moveSelection(dir: int): void {
         const vals = menuModel.values ?? [];
         let i = root.currentIndex + dir;
         while (i >= 0 && i < vals.length && !root.pickable(vals[i]))

@@ -454,7 +454,7 @@ dynamic_bindings() {
       fi
 
       if [[ -z $key && -n $description ]]; then
-        key="${LUA_BIND_KEY_MAP["$modmask,$description"]}"
+        key="${LUA_BIND_KEY_MAP["$modmask,$description"]:-}"
       fi
 
       if [[ $dispatcher == "__lua" || $dispatcher == "HL.Dispatcher"* ]] && [[ -n $key ]]; then
@@ -698,11 +698,11 @@ dispatch_binding() {
   esac
 }
 
-if [[ $1 == "--print" || $1 == "-p" ]]; then
+if [[ ${1:-} == "--print" || ${1:-} == "-p" ]]; then
   output_keybindings
-elif [[ $1 == "--records" ]]; then
+elif [[ ${1:-} == "--records" ]]; then
   output_binding_records
-elif [[ $1 == "--dispatch" ]]; then
+elif [[ ${1:-} == "--dispatch" ]]; then
   # Entry point for the launcher's keybindings view: one dispatcher and one
   # full argument, no splitting, so quoted args stay intact.
   dispatch_binding "${2:-}" "${3:-}"

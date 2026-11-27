@@ -37,7 +37,7 @@ install_user_icon() {
   printf '%s\n' "$name"
 }
 
-if (( $# != 4 )); then
+if (( $# != 3 )); then
   echo -e "\e[32mLet's create a TUI shortcut you can start with the app launcher.\n\e[0m"
   APP_NAME=$(gum input --prompt "Name> " --placeholder "My TUI")
   APP_EXEC=$(gum input --prompt "Launch Command> " --placeholder "lazydocker or bash -c 'dust; read -n 1 -s'")
@@ -45,11 +45,16 @@ if (( $# != 4 )); then
 else
   APP_NAME="$1"
   APP_EXEC="$2"
-  ICON_REF="$4"
+  ICON_REF="$3"
 fi
 
 if [[ -z $APP_NAME || -z $APP_EXEC || -z $ICON_REF ]]; then
   echo "You must set app name, app command, and icon URL/name!"
+  exit 1
+fi
+
+if [[ $APP_NAME == *[/]* || $APP_NAME == *$'\n'* ]]; then
+  echo "App name must not contain '/' or newlines!" >&2
   exit 1
 fi
 
@@ -92,6 +97,6 @@ chmod +x "$DESKTOP_FILE"
 # Refresh the menu's Remove conditions so the new TUI shows up immediately.
 qs -c caelestia ipc call menu refresh &>/dev/null || true
 
-if (( $# != 4 )); then
+if (( $# != 3 )); then
   echo -e "You can now find $APP_NAME using the app launcher (SUPER)\n"
 fi

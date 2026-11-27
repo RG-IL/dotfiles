@@ -65,11 +65,6 @@ if (( ${#options[@]} == 0 )); then
   exit 1
 fi
 
-selection_file=$(mktemp)
-done_file=$(mktemp)
-rm -f "$done_file"
-trap 'rm -f "$selection_file" "$done_file"' EXIT
-
 # Same theme as the terminal's fzf, single source of truth.
 [[ -f $HOME/.config/caelestia/menu/fzf-theme.sh ]] &&
   source "$HOME/.config/caelestia/menu/fzf-theme.sh"
@@ -88,9 +83,10 @@ choice=$(printf '%s\n' "${display[@]}" | fzf --prompt="$prompt> " ${menu_maxheig
 for i in "${!display[@]}"; do
   if [[ ${display[i]} == "$choice" ]]; then
     selected="${values[i]}"
-    # Strip a leading glyph column and trailing subtext column, like upstream.
-    selected="${selected#$'*'$'\t'}"
-    [[ $selected == *$'\t'* ]] && selected="${selected%%$'\t'*}"
+    # Strip a leading "<glyph><TAB>" column while preserving "<label><TAB><subtext>".
+    if [[ $selected == *$'\t'* ]]; then
+      selected="${selected#*$'\t'}"
+    fi
     printf '%s\n' "$selected"
     exit 0
   fi

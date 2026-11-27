@@ -33,7 +33,7 @@ Item {
         // Only MenuList has the custom mover; everything else uses the
         // standard index changers.
         if (l.objectName === "launcherMenuList")
-            l.move(delta);
+            l.moveSelection(delta);
         else if (delta < 0)
             l.decrementCurrentIndex();
         else
@@ -140,7 +140,7 @@ Item {
             if ((event.key === Qt.Key_Backspace || event.key === Qt.Key_Left) && !event.modifiers && list.showMenu && text === "") {
                 if (MenuService.back())
                     event.accepted = true;
-                else
+                else if (event.key === Qt.Key_Left)
                     root.screenState.launcher = false;
                 return;
             }
